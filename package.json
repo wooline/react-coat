@@ -2,7 +2,8 @@
   "name": "react-coat",
   "version": "1.0.0",
   "description": "",
-  "main": "rollup.config.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c"
   },

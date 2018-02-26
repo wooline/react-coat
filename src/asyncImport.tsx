@@ -2,20 +2,18 @@ import * as React from 'react';
 import { setLoading } from './loading';
 import { Module } from './types.d';
 
-type TypeComponent < P > = React.ComponentType<P>;
-
 const defaultLoadingComponent = () => <div>Loading...</div>;
 
 export function asyncComponent (
   resolve: () => Promise<Module>,
   componentName: string = 'Main',
-  LoadingComponent: TypeComponent<any> = defaultLoadingComponent
+  LoadingComponent: React.ComponentType<any> = defaultLoadingComponent
 ) {
   class AsyncComponent extends React.Component {
     public state: {
-      Component: TypeComponent<any> | null;
+      Component: React.ComponentType<any> | null;
     };
-    private LoadingComponent: TypeComponent<any>;
+    private LoadingComponent: React.ComponentType<any>;
     constructor (props: {}, context?: any) {
       super(props, context);
       this.LoadingComponent = LoadingComponent;
@@ -44,5 +42,5 @@ export function asyncComponent (
       );
     }
   }
-  return AsyncComponent;
+  return AsyncComponent as React.ComponentType<any>;
 }

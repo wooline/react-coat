@@ -3,10 +3,10 @@ import { connect } from 'react-redux';
 import { Dispatch } from 'redux';
 import { errorAction } from './actions';
 
-interface Props {
+export interface Props {
   dispatch: any;
 }
-interface State {
+export interface State {
   message: string;
 }
 

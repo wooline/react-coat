@@ -8,7 +8,7 @@ externals.push('redux-saga/effects');
 export default {
   input: 'src/index.tsx',
   output: {
-    file: 'dist/bundle.js',
+    file: 'dist/index.js',
     format: 'cjs'
   },
   external: externals,
@@ -16,8 +16,7 @@ export default {
     resolve(),
     commonjs({ include: 'node_modules/**' }),
     typescript({
-      rollupCommonJSResolveHack: true,
-      useTsconfigDeclarationDir: true
+      rollupCommonJSResolveHack: true
     })
   ]
 };

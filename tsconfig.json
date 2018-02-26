@@ -4,6 +4,7 @@
     "rootDir": "src",
     "module": "esnext",
     "target": "esnext",
+    "declaration": true,
     "lib": ["es6", "dom"],
     "sourceMap": true,
     "allowJs": false,
