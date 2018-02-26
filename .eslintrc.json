@@ -1,0 +1,21 @@
+{
+  "parser": "babel-eslint",
+  "extends": ["standard", "standard-jsx"],
+  "env": {
+    "node": true,
+    "es6": true,
+    "browser": true
+  },
+  "rules": {
+    "linebreak-style": "error",
+    "semi": [2, "always"],
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreMemberSort": false,
+        "memberSyntaxSortOrder": ["none", "all", "multiple", "single"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "files.eol": "\n",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "prettier.eslintIntegration": true,
+  "prettier.stylelintIntegration": true,
+  "editor.formatOnSave": true,
+  "typescript.extension.sortImports.sortMethod": "path",
+  "typescript.extension.sortImports.maxNamedImportsInSingleLine": 20,
+  "typescript.extension.sortImports.pathSortOrder": [
+    "package",
+    "relativeDownLevel",
+    "relativeUpLevel"
+  ],
+  "git.ignoreLimitWarning": true
+}
