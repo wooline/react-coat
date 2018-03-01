@@ -1,4 +1,4 @@
-import { Actions, ActionsMap, Module } from './types.d';
+import { Actions, ActionsMap, Module } from "./types.d";
 
 let sagasMap: ActionsMap;
 let reducersMap: ActionsMap;
@@ -6,7 +6,7 @@ let sagaNames: string[];
 
 const sagaNameMap = {};
 
-export default function (
+export default function(
   _reducersMap: ActionsMap,
   _sagasMap: ActionsMap,
   _sagaNames: string[]
@@ -17,14 +17,14 @@ export default function (
   return injectModule;
 }
 
-function pushSagaName (actionName: string) {
+function pushSagaName(actionName: string) {
   if (!sagaNameMap[actionName]) {
     sagaNameMap[actionName] = true;
     sagaNames.push(actionName);
   }
 }
 
-function transformAction (
+function transformAction(
   actionName: string,
   action: Function,
   listenerModule: string,
@@ -39,18 +39,18 @@ function transformAction (
   }
 }
 
-function injectActions (namespace: string, actions: Actions) {
+function injectActions(namespace: string, actions: Actions) {
   Object.keys(actions).forEach(actionName => {
-    if (actionName.substr(0, 1) === '_') {
+    if (actionName.substr(0, 1) === "_") {
       transformAction(
-        namespace + '/' + actionName,
+        namespace + "/" + actionName,
         actions[actionName],
         namespace,
         sagasMap
       );
     } else {
       transformAction(
-        namespace + '/' + actionName,
+        namespace + "/" + actionName,
         actions[actionName],
         namespace,
         reducersMap
@@ -59,9 +59,9 @@ function injectActions (namespace: string, actions: Actions) {
   });
 }
 
-function injectHandlers (listenerModule: string, handlers: Actions) {
+function injectHandlers(listenerModule: string, handlers: Actions) {
   Object.keys(handlers).forEach(handlerName => {
-    if (handlerName.substr(0, 1) === '_') {
+    if (handlerName.substr(0, 1) === "_") {
       transformAction(
         handlerName.substr(1),
         handlers[handlerName],
@@ -79,7 +79,7 @@ function injectHandlers (listenerModule: string, handlers: Actions) {
   });
 }
 
-function injectModule (module: Module) {
+function injectModule(module: Module) {
   injectActions(module.namespace, module.actions);
   injectHandlers(module.namespace, module.handlers);
 }

@@ -1,9 +1,9 @@
 /// <reference types="react" />
-import { ComponentType } from 'react';
-import { Store } from 'redux';
-import { asyncComponent } from './asyncImport';
-import { LoadingState, setLoading } from './loading';
-import { Module } from './types.d';
+import { ComponentType } from "react";
+import { Store } from "redux";
+import { asyncComponent } from "./asyncImport";
+import { LoadingState, setLoading } from "./loading";
+import { Module } from "./types.d";
 export { setLoading, LoadingState };
 export declare function setStore(_store: Store<any>, _reducers: {
     [key: string]: any;

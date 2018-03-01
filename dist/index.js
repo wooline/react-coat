@@ -13,89 +13,168 @@ var reactRouterRedux = require('react-router-redux');
 var redux = require('redux');
 var effects = require('redux-saga/effects');
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+var extendStatics = Object.setPrototypeOf ||
+    ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+    function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+var __assign = Object.assign || function __assign(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+    }
+    return t;
+};
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
+function __values(o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+}
+
+var ErrorActionName = "@@framework/ERROR";
+var LoadingActionName = "LOADING";
+var InitActionName = "INIT";
 function errorAction(error) {
     return {
-        type: '@@framework/ERROR',
-        error
+        type: ErrorActionName,
+        error: error
     };
 }
 function loadingAction(namespace, group, status) {
     return {
-        type: namespace + '/LOADING',
-        data: { [group]: status }
+        type: namespace + "/" + LoadingActionName,
+        data: (_a = {}, _a[group] = status, _a)
     };
+    var _a;
 }
 function initModuleAction(namespace) {
     return {
-        type: namespace + '/' + 'INIT'
+        type: namespace + "/" + InitActionName
     };
 }
 
 function emptyObject(obj) {
-    const arr = [];
-    for (const key in obj) {
+    var arr = [];
+    for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
             arr.push(key);
         }
     }
-    arr.forEach((key) => {
+    arr.forEach(function (key) {
         delete obj[key];
     });
     return obj;
 }
 function findIndexInArray(arr, fun) {
-    for (let i = 0, k = arr.length; i < k; i++) {
+    for (var i = 0, k = arr.length; i < k; i++) {
         if (fun(arr[i])) {
             return i;
         }
     }
     return -1;
 }
-const TaskCountEvent = 'TaskCountEvent';
-const TaskCounterState = {
-    Start: 'Start',
-    Stop: 'Stop',
-    Depth: 'Depth'
+var TaskCountEvent = "TaskCountEvent";
+var TaskCounterState = {
+    Start: "Start",
+    Stop: "Stop",
+    Depth: "Depth"
 };
-class PEvent {
-    constructor(name, data, bubbling = false) {
+var PEvent = /** @class */ (function () {
+    function PEvent(name, data, bubbling) {
+        if (bubbling === void 0) { bubbling = false; }
         this.name = name;
         this.data = data;
         this.bubbling = bubbling;
     }
-    setTarget(target) {
+    PEvent.prototype.setTarget = function (target) {
         this.target = target;
-    }
-    setCurrentTarget(target) {
+    };
+    PEvent.prototype.setCurrentTarget = function (target) {
         this.currentTarget = target;
-    }
-}
-class PDispatcher {
-    constructor(parent) {
+    };
+    return PEvent;
+}());
+var PDispatcher = /** @class */ (function () {
+    function PDispatcher(parent) {
         this.parent = parent;
         this._handlers = {};
     }
-    addListener(ename, handler) {
-        let dictionary = this._handlers[ename];
+    PDispatcher.prototype.addListener = function (ename, handler) {
+        var dictionary = this._handlers[ename];
         if (!dictionary) {
             this._handlers[ename] = dictionary = [];
         }
         dictionary.push(handler);
         return this;
-    }
-    removeListener(ename, handler) {
+    };
+    PDispatcher.prototype.removeListener = function (ename, handler) {
         if (!ename) {
             emptyObject(this._handlers);
         }
         else {
-            const handlers = this._handlers;
+            var handlers = this._handlers;
             if (handlers.propertyIsEnumerable(ename)) {
-                const dictionary = handlers[ename];
+                var dictionary = handlers[ename];
                 if (!handler) {
                     delete handlers[ename];
                 }
                 else {
-                    const n = dictionary.indexOf(handler);
+                    var n = dictionary.indexOf(handler);
                     if (n > -1) {
                         dictionary.splice(n, 1);
                     }
@@ -106,15 +185,15 @@ class PDispatcher {
             }
         }
         return this;
-    }
-    dispatch(evt) {
+    };
+    PDispatcher.prototype.dispatch = function (evt) {
         if (!evt.target) {
             evt.setTarget(this);
         }
         evt.setCurrentTarget(this);
-        const dictionary = this._handlers[evt.name];
+        var dictionary = this._handlers[evt.name];
         if (dictionary) {
-            for (let i = 0, k = dictionary.length; i < k; i++) {
+            for (var i = 0, k = dictionary.length; i < k; i++) {
                 dictionary[i](evt);
             }
         }
@@ -122,36 +201,41 @@ class PDispatcher {
             this.parent.dispatch(evt);
         }
         return this;
-    }
-    setParent(parent) {
+    };
+    PDispatcher.prototype.setParent = function (parent) {
         this.parent = parent;
         return this;
+    };
+    return PDispatcher;
+}());
+var TaskCounter = /** @class */ (function (_super) {
+    __extends(TaskCounter, _super);
+    function TaskCounter(deferSecond) {
+        var _this = _super.call(this) || this;
+        _this.deferSecond = deferSecond;
+        _this.list = [];
+        return _this;
     }
-}
-class TaskCounter extends PDispatcher {
-    constructor(deferSecond) {
-        super();
-        this.deferSecond = deferSecond;
-        this.list = [];
-    }
-    addItem(promise, note = '') {
-        if (!this.list.some(item => item.promise === promise)) {
-            this.list.push({ promise, note });
-            promise.then(value => this.completeItem(promise), reason => this.completeItem(promise));
+    TaskCounter.prototype.addItem = function (promise, note) {
+        var _this = this;
+        if (note === void 0) { note = ""; }
+        if (!this.list.some(function (item) { return item.promise === promise; })) {
+            this.list.push({ promise: promise, note: note });
+            promise.then(function (value) { return _this.completeItem(promise); }, function (reason) { return _this.completeItem(promise); });
             if (this.list.length === 1) {
                 this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Start));
-                this._timer = window.setTimeout(() => {
-                    this._timer = 0;
-                    if (this.list.length > 0) {
-                        this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Depth));
+                this._timer = window.setTimeout(function () {
+                    _this._timer = 0;
+                    if (_this.list.length > 0) {
+                        _this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Depth));
                     }
                 }, this.deferSecond * 1000);
             }
         }
         return promise;
-    }
-    completeItem(promise) {
-        const i = findIndexInArray(this.list, item => item.promise === promise);
+    };
+    TaskCounter.prototype.completeItem = function (promise) {
+        var i = findIndexInArray(this.list, function (item) { return item.promise === promise; });
         if (i > -1) {
             this.list.splice(i, 1);
             if (this.list.length === 0) {
@@ -163,19 +247,22 @@ class TaskCounter extends PDispatcher {
             }
         }
         return this;
-    }
-}
+    };
+    return TaskCounter;
+}(PDispatcher));
 
-const loadings = {};
-let store;
+var loadings = {};
+var store;
 function setStore(_store) {
     store = _store;
 }
-function setLoading(item, namespace = 'app', group = 'global') {
-    const key = namespace + '/' + group;
+function setLoading(item, namespace, group) {
+    if (namespace === void 0) { namespace = "app"; }
+    if (group === void 0) { group = "global"; }
+    var key = namespace + "/" + group;
     if (!loadings[key]) {
         loadings[key] = new TaskCounter(3);
-        loadings[key].addListener(TaskCountEvent, e => {
+        loadings[key].addListener(TaskCountEvent, function (e) {
             store && store.dispatch(loadingAction(namespace, group, e.data));
         });
     }
@@ -183,66 +270,75 @@ function setLoading(item, namespace = 'app', group = 'global') {
     return item;
 }
 
-const defaultLoadingComponent = () => React.createElement("div", null, "Loading...");
-function asyncComponent(resolve, componentName = 'Main', LoadingComponent = defaultLoadingComponent) {
-    class AsyncComponent extends React.Component {
-        constructor(props, context) {
-            super(props, context);
-            this.LoadingComponent = LoadingComponent;
-            this.state = {
+var defaultLoadingComponent = function () { return React.createElement("div", null, "Loading..."); };
+function asyncComponent(resolve, componentName, LoadingComponent) {
+    if (componentName === void 0) { componentName = "Main"; }
+    if (LoadingComponent === void 0) { LoadingComponent = defaultLoadingComponent; }
+    var AsyncComponent = /** @class */ (function (_super) {
+        __extends(AsyncComponent, _super);
+        function AsyncComponent(props, context) {
+            var _this = _super.call(this, props, context) || this;
+            _this.LoadingComponent = LoadingComponent;
+            _this.state = {
                 Component: null
             };
+            return _this;
         }
-        componentDidMount() {
-            const promise = resolve();
-            promise.then(module => {
-                const Component = module.components[componentName];
-                this.setState({
-                    Component
+        AsyncComponent.prototype.componentDidMount = function () {
+            var _this = this;
+            var promise = resolve();
+            promise.then(function (module) {
+                var Component = module.components[componentName];
+                _this.setState({
+                    Component: Component
                 });
             });
             setLoading(promise);
-        }
-        render() {
-            const { Component } = this.state;
-            const { LoadingComponent } = this;
-            return Component ? (React.createElement(Component, Object.assign({}, this.props))) : (React.createElement(LoadingComponent, Object.assign({}, this.props)));
-        }
-    }
+        };
+        AsyncComponent.prototype.render = function () {
+            var Component = this.state.Component;
+            var LoadingComponent = this.LoadingComponent;
+            return Component ? (React.createElement(Component, __assign({}, this.props))) : (React.createElement(LoadingComponent, __assign({}, this.props)));
+        };
+        return AsyncComponent;
+    }(React.Component));
     return AsyncComponent;
 }
 
-class Component extends React__default.PureComponent {
-    constructor() {
-        super(...arguments);
-        this.state = {
-            message: ''
+var Component = /** @class */ (function (_super) {
+    __extends(Component, _super);
+    function Component() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.state = {
+            message: ""
         };
+        return _this;
     }
-    render() {
+    Component.prototype.render = function () {
         if (this.state.message) {
             return React__default.createElement("div", null,
                 "failed to render, error: ",
                 this.state.message);
         }
         return this.props.children;
-    }
-    componentDidCatch(error) {
+    };
+    Component.prototype.componentDidCatch = function (error) {
         this.setState({ message: error.message });
         this.props.dispatch(errorAction(error));
-    }
-}
-const mapDispatchToProps = (dispatch) => {
+    };
+    return Component;
+}(React__default.PureComponent));
+var mapDispatchToProps = function (dispatch) {
     return {
-        dispatch
+        dispatch: dispatch
     };
 };
 var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
 
-let sagasMap;
-let reducersMap;
-let sagaNames;
-const sagaNameMap = {};
+var sagasMap;
+var reducersMap;
+var sagaNames;
+var sagaNameMap = {};
 function getInjector (_reducersMap, _sagasMap, _sagaNames) {
     reducersMap = _reducersMap;
     sagasMap = _sagasMap;
@@ -265,18 +361,18 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
     }
 }
 function injectActions(namespace, actions) {
-    Object.keys(actions).forEach(actionName => {
-        if (actionName.substr(0, 1) === '_') {
-            transformAction(namespace + '/' + actionName, actions[actionName], namespace, sagasMap);
+    Object.keys(actions).forEach(function (actionName) {
+        if (actionName.substr(0, 1) === "_") {
+            transformAction(namespace + "/" + actionName, actions[actionName], namespace, sagasMap);
         }
         else {
-            transformAction(namespace + '/' + actionName, actions[actionName], namespace, reducersMap);
+            transformAction(namespace + "/" + actionName, actions[actionName], namespace, reducersMap);
         }
     });
 }
 function injectHandlers(listenerModule, handlers) {
-    Object.keys(handlers).forEach(handlerName => {
-        if (handlerName.substr(0, 1) === '_') {
+    Object.keys(handlers).forEach(function (handlerName) {
+        if (handlerName.substr(0, 1) === "_") {
             transformAction(handlerName.substr(1), handlers[handlerName], listenerModule, sagasMap);
         }
         else {
@@ -289,14 +385,14 @@ function injectModule(module) {
     injectHandlers(module.namespace, module.handlers);
 }
 
-let store$1;
-let history;
-const sagasMap$1 = {};
-const reducersMap$1 = {};
-const sagaNames$1 = [];
-const injector = getInjector(reducersMap$1, sagasMap$1, sagaNames$1);
+var store$1;
+var history;
+var sagasMap$1 = {};
+var reducersMap$1 = {};
+var sagaNames$1 = [];
+var injector = getInjector(reducersMap$1, sagasMap$1, sagaNames$1);
 function getActionData(action) {
-    const arr = Object.keys(action).filter(key => key !== 'type');
+    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
     if (arr.length === 0) {
         return undefined;
     }
@@ -304,43 +400,70 @@ function getActionData(action) {
         return action[arr[0]];
     }
     else {
-        const data = { ...action };
-        delete data['type'];
+        var data = __assign({}, action);
+        delete data["type"];
         return data;
     }
 }
-function reducer(state = {}, action) {
-    const item = reducersMap$1[action.type];
+function reducer(state, action) {
+    if (state === void 0) { state = {}; }
+    var item = reducersMap$1[action.type];
     if (item) {
-        const rootState = store$1.getState();
-        const newState = { ...state };
-        Object.keys(item).forEach(namespace => {
-            newState[namespace] = item[namespace](getActionData(action), state[namespace], rootState);
+        var rootState_1 = store$1.getState();
+        var newState_1 = __assign({}, state);
+        Object.keys(item).forEach(function (namespace) {
+            newState_1[namespace] = item[namespace](getActionData(action), state[namespace], rootState_1);
         });
-        return newState;
+        return newState_1;
     }
     return state;
 }
 function setStore$1(_store, _reducers, _history, runSaga) {
     _reducers.project = reducer;
     _store.replaceReducer(redux.combineReducers(_reducers));
-    function* sagaHandler(action) {
-        const item = sagasMap$1[action.type];
-        if (item) {
-            const rootState = store$1.getState();
-            const arr = Object.keys(item);
-            for (const moduleName of arr) {
-                try {
-                    yield* item[moduleName](getActionData(action), rootState[moduleName], rootState);
-                }
-                catch (error) {
-                    yield effects.put(errorAction(error));
-                }
+    function sagaHandler(action) {
+        var item, rootState, arr, _i, arr_1, moduleName, error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    item = sagasMap$1[action.type];
+                    if (!item) return [3 /*break*/, 7];
+                    rootState = store$1.getState();
+                    arr = Object.keys(item);
+                    _i = 0, arr_1 = arr;
+                    _a.label = 1;
+                case 1:
+                    if (!(_i < arr_1.length)) return [3 /*break*/, 7];
+                    moduleName = arr_1[_i];
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 4, , 6]);
+                    return [5 /*yield**/, __values(item[moduleName](getActionData(action), rootState[moduleName], rootState))];
+                case 3:
+                    _a.sent();
+                    return [3 /*break*/, 6];
+                case 4:
+                    error_1 = _a.sent();
+                    return [4 /*yield*/, effects.put(errorAction(error_1))];
+                case 5:
+                    _a.sent();
+                    return [3 /*break*/, 6];
+                case 6:
+                    _i++;
+                    return [3 /*break*/, 1];
+                case 7: return [2 /*return*/];
             }
-        }
+        });
     }
-    function* saga() {
-        yield effects.takeEvery(sagaNames$1, sagaHandler);
+    function saga() {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, effects.takeEvery(sagaNames$1, sagaHandler)];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
     }
     runSaga(saga);
     store$1 = _store;
@@ -385,9 +508,9 @@ function setStore$1(_store, _reducers, _history, runSaga) {
 //   }
 //   return state;
 // }
-const hasInjected = {};
+var hasInjected = {};
 function injectModule$1(module) {
-    const namespace = module.namespace;
+    var namespace = module.namespace;
     if (!hasInjected[namespace]) {
         injector(module);
         hasInjected[namespace] = true;
@@ -396,39 +519,38 @@ function injectModule$1(module) {
 }
 function buildActions(namespace) {
     return new Proxy({}, {
-        get: (target, key) => {
-            return (data) => ({ type: namespace + '/' + key, data });
+        get: function (target, key) {
+            return function (data) { return ({ type: namespace + "/" + key, data: data }); };
         }
     });
 }
 function extendState(initState) {
     return Object.assign({
         loading: {
-            global: ''
+            global: ""
         }
     }, initState);
 }
 function extendActions(initState, actions) {
     return Object.assign({
-        INIT(data, moduleState = initState, rootState) {
+        INIT: function (data, moduleState, rootState) {
+            if (moduleState === void 0) { moduleState = initState; }
             return initState;
         },
-        LOADING(loading, moduleState = initState, rootState) {
-            return {
-                ...moduleState,
-                loading: { ...moduleState.loading, ...loading }
-            };
+        LOADING: function (loading, moduleState, rootState) {
+            if (moduleState === void 0) { moduleState = initState; }
+            return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
         }
     }, actions);
 }
 function extendHandlers(initState, handlers) {
     return Object.assign({}, handlers);
 }
-window.onerror = (message, filename, lineno, colno, error) => {
+window.onerror = function (message, filename, lineno, colno, error) {
     store$1.dispatch(errorAction(message)); // TODO: error can be null, think about how to handle all cases
 };
 function createApp(store, component, container) {
-    const WithRouter = reactRouterDom.withRouter(component);
+    var WithRouter = reactRouterDom.withRouter(component);
     ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
         React__default.createElement(ErrorBoundary, null,
             React__default.createElement(reactRouterRedux.ConnectedRouter, { history: history },

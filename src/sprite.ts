@@ -1,4 +1,4 @@
-function emptyObject<T> (obj: any): T {
+function emptyObject<T>(obj: any): T {
   const arr: string[] = [];
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
@@ -10,7 +10,7 @@ function emptyObject<T> (obj: any): T {
   });
   return obj;
 }
-function findIndexInArray<T> (arr: T[], fun: (item: T) => boolean): number {
+function findIndexInArray<T>(arr: T[], fun: (item: T) => boolean): number {
   for (let i = 0, k = arr.length; i < k; i++) {
     if (fun(arr[i])) {
       return i;
@@ -18,29 +18,29 @@ function findIndexInArray<T> (arr: T[], fun: (item: T) => boolean): number {
   }
   return -1;
 }
-export const TaskCountEvent = 'TaskCountEvent';
+export const TaskCountEvent = "TaskCountEvent";
 
 export const TaskCounterState = {
-  Start: 'Start',
-  Stop: 'Stop',
-  Depth: 'Depth'
+  Start: "Start",
+  Stop: "Stop",
+  Depth: "Depth"
 };
 
 export class PEvent {
   public readonly target: PDispatcher;
   public readonly currentTarget: PDispatcher;
 
-  constructor (
+  constructor(
     public readonly name: string,
     public readonly data?: any,
     public bubbling: boolean = false
   ) {}
 
-  public setTarget (target: PDispatcher) {
+  public setTarget(target: PDispatcher) {
     (this as any).target = target;
   }
 
-  public setCurrentTarget (target: PDispatcher) {
+  public setCurrentTarget(target: PDispatcher) {
     (this as any).currentTarget = target;
   }
 }
@@ -50,9 +50,9 @@ export class PDispatcher {
     [key: string]: Array<(e: PEvent) => void>;
   } = {};
 
-  constructor (public readonly parent?: PDispatcher | undefined) {}
+  constructor(public readonly parent?: PDispatcher | undefined) {}
 
-  public addListener (ename: string, handler: (e: PEvent) => void): this {
+  public addListener(ename: string, handler: (e: PEvent) => void): this {
     let dictionary = this._handlers[ename];
     if (!dictionary) {
       this._handlers[ename] = dictionary = [];
@@ -61,7 +61,7 @@ export class PDispatcher {
     return this;
   }
 
-  public removeListener (ename?: string, handler?: (e: PEvent) => void): this {
+  public removeListener(ename?: string, handler?: (e: PEvent) => void): this {
     if (!ename) {
       emptyObject(this._handlers);
     } else {
@@ -84,7 +84,7 @@ export class PDispatcher {
     return this;
   }
 
-  public dispatch (evt: PEvent): this {
+  public dispatch(evt: PEvent): this {
     if (!evt.target) {
       evt.setTarget(this);
     }
@@ -100,7 +100,7 @@ export class PDispatcher {
     }
     return this;
   }
-  public setParent (parent?: PDispatcher): this {
+  public setParent(parent?: PDispatcher): this {
     (this as any).parent = parent;
     return this;
   }
@@ -109,10 +109,10 @@ export class PDispatcher {
 export class TaskCounter extends PDispatcher {
   public readonly list: { promise: Promise<any>; note: string }[] = [];
   private _timer: number;
-  constructor (public deferSecond: number) {
+  constructor(public deferSecond: number) {
     super();
   }
-  public addItem (promise: Promise<any>, note: string = ''): Promise<any> {
+  public addItem(promise: Promise<any>, note: string = ""): Promise<any> {
     if (!this.list.some(item => item.promise === promise)) {
       this.list.push({ promise, note });
       promise.then(
@@ -131,7 +131,7 @@ export class TaskCounter extends PDispatcher {
     }
     return promise;
   }
-  private completeItem (promise: Promise<any>): this {
+  private completeItem(promise: Promise<any>): this {
     const i = findIndexInArray(this.list, item => item.promise === promise);
     if (i > -1) {
       this.list.splice(i, 1);

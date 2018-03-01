@@ -1,21 +1,21 @@
-import React, { ComponentType } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { withRouter } from 'react-router-dom';
-import { ConnectedRouter } from 'react-router-redux';
-import { combineReducers, Store } from 'redux';
-import { put, takeEvery } from 'redux-saga/effects';
-import { errorAction, initModuleAction } from './actions';
-import { asyncComponent } from './asyncImport';
-import ErrorBoundary from './ErrorBoundary';
-import getInjector from './inject';
+import React, { ComponentType } from "react";
+import ReactDOM from "react-dom";
+import { Provider } from "react-redux";
+import { withRouter } from "react-router-dom";
+import { ConnectedRouter } from "react-router-redux";
+import { combineReducers, Store } from "redux";
+import { put, takeEvery } from "redux-saga/effects";
+import { errorAction, initModuleAction } from "./actions";
+import { asyncComponent } from "./asyncImport";
+import ErrorBoundary from "./ErrorBoundary";
+import getInjector from "./inject";
 import {
   LoadingState,
   setLoading,
   setStore as setLoadingStore
-} from './loading';
+} from "./loading";
 
-import { ActionsMap, Module } from './types.d';
+import { ActionsMap, Module } from "./types.d";
 
 export { setLoading, LoadingState };
 
@@ -27,20 +27,20 @@ const sagaNames: string[] = [];
 
 const injector = getInjector(reducersMap, sagasMap, sagaNames);
 
-function getActionData (action: {}) {
-  const arr = Object.keys(action).filter(key => key !== 'type');
+function getActionData(action: {}) {
+  const arr = Object.keys(action).filter(key => key !== "type");
   if (arr.length === 0) {
     return undefined;
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
     const data = { ...action };
-    delete data['type'];
+    delete data["type"];
     return data;
   }
 }
 
-function reducer (state: any = {}, action: { type: string; data: any }) {
+function reducer(state: any = {}, action: { type: string; data: any }) {
   const item = reducersMap[action.type];
   if (item) {
     const rootState = store.getState();
@@ -56,7 +56,7 @@ function reducer (state: any = {}, action: { type: string; data: any }) {
   }
   return state;
 }
-export function setStore (
+export function setStore(
   _store: Store<any>,
   _reducers: { [key: string]: any },
   _history: any,
@@ -64,14 +64,14 @@ export function setStore (
 ) {
   _reducers.project = reducer;
   _store.replaceReducer(combineReducers(_reducers));
-  function * sagaHandler (action: { type: string; data: any }) {
+  function* sagaHandler(action: { type: string; data: any }) {
     const item = sagasMap[action.type];
     if (item) {
       const rootState = store.getState();
       const arr = Object.keys(item);
       for (const moduleName of arr) {
         try {
-          yield * item[moduleName](
+          yield* item[moduleName](
             getActionData(action),
             rootState[moduleName],
             rootState
@@ -82,7 +82,7 @@ export function setStore (
       }
     }
   }
-  function * saga () {
+  function* saga() {
     yield takeEvery(sagaNames, sagaHandler);
   }
   runSaga(saga);
@@ -136,7 +136,7 @@ export function setStore (
 
 const hasInjected: { [moduleName: string]: boolean } = {};
 
-export function injectModule (module: Module) {
+export function injectModule(module: Module) {
   const namespace = module.namespace;
   if (!hasInjected[namespace]) {
     injector(module);
@@ -147,34 +147,34 @@ export function injectModule (module: Module) {
 
 export { asyncComponent };
 
-export function buildActions (namespace: string) {
+export function buildActions(namespace: string) {
   return new Proxy(
     {},
     {
       get: (target: {}, key: string) => {
-        return (data: any) => ({ type: namespace + '/' + key, data });
+        return (data: any) => ({ type: namespace + "/" + key, data });
       }
     }
   );
 }
 
-export function extendState<S> (initState: S) {
+export function extendState<S>(initState: S) {
   return Object.assign(
     {
       loading: {
-        global: ''
+        global: ""
       }
     },
     initState
   );
 }
-export function extendActions<S, R> (initState: S, actions: R) {
+export function extendActions<S, R>(initState: S, actions: R) {
   return Object.assign(
     {
-      INIT (data: any, moduleState: S = initState, rootState?: any): S {
+      INIT(data: any, moduleState: S = initState, rootState?: any): S {
         return initState;
       },
-      LOADING (
+      LOADING(
         loading: { [group: string]: string },
         moduleState: S = initState,
         rootState?: any
@@ -189,7 +189,7 @@ export function extendActions<S, R> (initState: S, actions: R) {
   );
 }
 
-export function extendHandlers<S, R> (initState: S, handlers: R) {
+export function extendHandlers<S, R>(initState: S, handlers: R) {
   return Object.assign({}, handlers);
 }
 
@@ -203,7 +203,7 @@ window.onerror = (
   store.dispatch(errorAction(message)); // TODO: error can be null, think about how to handle all cases
 };
 
-export function createApp (
+export function createApp(
   store: Store<any>,
   component: ComponentType<any>,
   container: string

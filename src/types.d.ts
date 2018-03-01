@@ -1,4 +1,4 @@
-import { ComponentType } from 'react';
+import { ComponentType } from "react";
 
 export type ActionsMap = { [action: string]: { [module: string]: Function } };
 export type Actions = { [action: string]: Function } | {};

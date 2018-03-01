@@ -1,21 +1,25 @@
-export function errorAction (error: any) {
+export let ErrorActionName: string = "@@framework/ERROR";
+export let LoadingActionName: string = "LOADING";
+export let InitActionName: string = "INIT";
+
+export function errorAction(error: any) {
   return {
-    type: '@@framework/ERROR',
+    type: ErrorActionName,
     error
   };
 }
-export function loadingAction (
+export function loadingAction(
   namespace: string,
   group: string,
   status: string
 ) {
   return {
-    type: namespace + '/LOADING',
+    type: namespace + "/" + LoadingActionName,
     data: { [group]: status }
   };
 }
-export function initModuleAction (namespace: string) {
+export function initModuleAction(namespace: string) {
   return {
-    type: namespace + '/' + 'INIT'
+    type: namespace + "/" + InitActionName
   };
 }
