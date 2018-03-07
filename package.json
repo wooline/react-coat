@@ -1,7 +1,8 @@
 {
   "name": "react-coat",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description":
+    "A Micro-Framework for React + Redux + Redux-Saga + React-Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,13 +12,16 @@
     "type": "git",
     "url": "git+https://github.com/wooline/react-coat.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/wooline/react-coat/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/wooline/react-coat#readme",
-  "dependencies": {
+  "appDependencies":{
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
@@ -26,6 +30,7 @@
     "redux": "^3.7.2",
     "redux-saga": "^0.16.0"
   },
+  "dependencies": {},
   "devDependencies": {
     "@types/react": "^16.0.38",
     "@types/react-dom": "^16.0.4",
