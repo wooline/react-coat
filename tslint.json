@@ -9,9 +9,9 @@
     "jsx-no-lambda": false,
     "prefer-const": true,
     "ordered-imports": true,
-    "linebreak-style": true,
     "space-before-function-paren": false,
     "quotemark": [true, "double"],
-    "ter-indent": false
+    "ter-indent": false,
+    "no-floating-promises": false
   }
 }

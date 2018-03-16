@@ -1,6 +1,7 @@
 export declare let ErrorActionName: string;
 export declare let LoadingActionName: string;
-export declare let InitActionName: string;
+export declare let InitModuleActionName: string;
+export declare let LocationChangeActionName: string;
 export declare function errorAction(error: any): {
     type: string;
     error: any;

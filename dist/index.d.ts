@@ -1,26 +1,48 @@
+/// <reference types="node" />
 /// <reference types="react" />
 import { ComponentType } from "react";
-import { Store } from "redux";
+import { Middleware } from "redux";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading } from "./loading";
-import { Module } from "./types.d";
-export { setLoading, LoadingState };
-export declare function setStore(_store: Store<any>, _reducers: {
-    [key: string]: any;
-}, _history: any, runSaga: (saga: Function) => void): Store<any>;
-export declare function injectModule(module: Module): void;
-export { asyncComponent };
-export declare function buildActions(namespace: string): {};
-export declare function extendState<S>(initState: S): {
+import { getStore, State, storeHistory } from "./storeProxy";
+import { Model } from "./types";
+export declare function buildFacade(namespace: string): {
+    namespace: string;
+    actions: {
+        [action: string]: Function;
+    };
+};
+export declare function buildState<S>(initState: S): S & {
     loading: {
         global: string;
     };
-} & S;
-export declare function extendActions<S, R>(initState: S, actions: R): {
-    INIT(data: any, moduleState?: S, rootState?: any): S;
-    LOADING(loading: {
-        [group: string]: string;
-    }, moduleState?: S, rootState?: any): S;
-} & R;
-export declare function extendHandlers<S, R>(initState: S, handlers: R): R & {};
-export declare function createApp(store: Store<any>, component: ComponentType<any>, container: string): void;
+};
+export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): (data: T) => {
+    type: string;
+    data: T;
+};
+export declare function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>): (data: T) => {
+    type: string;
+    data: T;
+};
+export declare function buildModel<S, A, H>(state: S, initActions: A, initHandlers: H): {
+    state: S;
+    actions: {
+        INIT: (data: any) => {
+            type: string;
+            data: any;
+        };
+        LOADING: (data: {
+            [group: string]: string;
+        }) => {
+            type: string;
+            data: {
+                [group: string]: string;
+            };
+        };
+    } & A;
+    handlers: H & {};
+};
+export declare function injectComponents<T>(namespace: string, components: T, module: Model): T;
+export declare function createApp(component: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
+export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, State };

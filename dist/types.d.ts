@@ -1,11 +1,21 @@
-import { ComponentType } from 'react';
-
-export type ActionsMap = { [action: string]: { [module: string]: Function } };
-export type Actions = { [action: string]: Function } | {};
-
-export interface Module {
-  namespace: string;
-  components: { [componentName: string]: ComponentType<any> };
-  actions: Actions;
-  handlers: Actions;
+/// <reference types="react" />
+import { ComponentType } from "react";
+export interface ActionsMap {
+    [action: string]: {
+        [module: string]: Function;
+    };
+}
+export declare type Actions = {
+    [action: string]: Function;
+} | {};
+export interface Components {
+    [componentName: string]: ComponentType<any>;
+}
+export interface Model {
+    state: {};
+    actions: Actions;
+    handlers: Actions;
+}
+export interface ModuleComponents {
+    default: Components;
 }

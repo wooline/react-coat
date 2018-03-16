@@ -7,11 +7,13 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var React = require('react');
 var React__default = _interopDefault(React);
 var reactRedux = require('react-redux');
-var ReactDOM = _interopDefault(require('react-dom'));
-var reactRouterDom = require('react-router-dom');
+var createHistory = _interopDefault(require('history/createBrowserHistory'));
 var reactRouterRedux = require('react-router-redux');
 var redux = require('redux');
+var createSagaMiddleware = _interopDefault(require('redux-saga'));
 var effects = require('redux-saga/effects');
+var ReactDOM = _interopDefault(require('react-dom'));
+var reactRouterDom = require('react-router-dom');
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -88,7 +90,8 @@ function __values(o) {
 
 var ErrorActionName = "@@framework/ERROR";
 var LoadingActionName = "LOADING";
-var InitActionName = "INIT";
+var InitModuleActionName = "INIT";
+var LocationChangeActionName = "@@router/LOCATION_CHANGE";
 function errorAction(error) {
     return {
         type: ErrorActionName,
@@ -104,8 +107,165 @@ function loadingAction(namespace, group, status) {
 }
 function initModuleAction(namespace) {
     return {
-        type: namespace + "/" + InitActionName
+        type: namespace + "/" + InitModuleActionName
     };
+}
+
+var Component = /** @class */ (function (_super) {
+    __extends(Component, _super);
+    function Component() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.state = {
+            message: ""
+        };
+        return _this;
+    }
+    Component.prototype.render = function () {
+        if (this.state.message) {
+            return React__default.createElement("div", null,
+                "failed to render, error: ",
+                this.state.message);
+        }
+        return this.props.children;
+    };
+    Component.prototype.componentDidCatch = function (error) {
+        this.setState({ message: error.message });
+        this.props.dispatch(errorAction(error));
+    };
+    return Component;
+}(React__default.PureComponent));
+var mapDispatchToProps = function (dispatch) {
+    return {
+        dispatch: dispatch
+    };
+};
+var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
+
+var storeHistory = createHistory();
+var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
+var reducers = {
+    router: reactRouterRedux.routerReducer
+};
+var sagaMiddleware = createSagaMiddleware();
+var devtools = function (options) { return function (noop) { return noop; }; };
+if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
+}
+function initStore(storeMiddlewares, storeEnhancers) {
+    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
+    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
+    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
+    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
+}
+
+var _store = undefined;
+var routeInited;
+var sagasMap = {};
+var reducersMap = {};
+var sagaNames = [];
+function getActionData(action) {
+    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
+    if (arr.length === 0) {
+        return undefined;
+    }
+    else if (arr.length === 1) {
+        return action[arr[0]];
+    }
+    else {
+        var data = __assign({}, action);
+        delete data["type"];
+        return data;
+    }
+}
+function reducer(state, action) {
+    if (state === void 0) { state = {}; }
+    if (action.type === LocationChangeActionName) {
+        // 为统一同步模块和异步模块，模块被加载时，监听不到当前的locationChange
+        if (!routeInited) {
+            routeInited = true;
+            return state;
+        }
+    }
+    var item = reducersMap[action.type];
+    if (item && _store) {
+        var rootState_1 = _store.getState();
+        var newState_1 = __assign({}, state);
+        Object.keys(item).forEach(function (namespace) {
+            newState_1[namespace] = item[namespace](getActionData(action), state[namespace], rootState_1);
+        });
+        return newState_1;
+    }
+    return state;
+}
+function sagaHandler(action) {
+    var item, rootState, arr, _i, arr_1, moduleName, error_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                item = sagasMap[action.type];
+                if (!(item && _store)) return [3 /*break*/, 7];
+                rootState = _store.getState();
+                arr = Object.keys(item);
+                _i = 0, arr_1 = arr;
+                _a.label = 1;
+            case 1:
+                if (!(_i < arr_1.length)) return [3 /*break*/, 7];
+                moduleName = arr_1[_i];
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, 4, , 6]);
+                return [5 /*yield**/, __values(item[moduleName](getActionData(action), rootState[moduleName], rootState))];
+            case 3:
+                _a.sent();
+                return [3 /*break*/, 6];
+            case 4:
+                error_1 = _a.sent();
+                return [4 /*yield*/, effects.put(errorAction(error_1))];
+            case 5:
+                _a.sent();
+                return [3 /*break*/, 6];
+            case 6:
+                _i++;
+                return [3 /*break*/, 1];
+            case 7: return [2 /*return*/];
+        }
+    });
+}
+function saga() {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, effects.takeEvery(sagaNames, sagaHandler)];
+            case 1:
+                _a.sent();
+                return [2 /*return*/];
+        }
+    });
+}
+function buildStore(storeMiddlewares, storeEnhancers, injectedModules) {
+    var _a = initStore(storeMiddlewares, storeEnhancers), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
+    _store = store;
+    reducers.project = reducer;
+    store.replaceReducer(redux.combineReducers(reducers));
+    sagaMiddleware.run(saga);
+    window.onerror = function (message, filename, lineno, colno, error) {
+        store.dispatch(errorAction(message));
+    };
+    injectedModules.forEach(function (action) {
+        store.dispatch(action);
+    });
+    injectedModules.length = 0;
+    return store;
+}
+function getStore() {
+    return _store;
+}
+
+function buildApp(component, container, storeMiddlewares, storeEnhancers, store) {
+    var WithRouter = reactRouterDom.withRouter(component);
+    ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
+        React__default.createElement(ErrorBoundary, null,
+            React__default.createElement(reactRouterRedux.ConnectedRouter, { history: storeHistory },
+                React__default.createElement(WithRouter, null)))), document.getElementById(container));
 }
 
 function emptyObject(obj) {
@@ -252,10 +412,6 @@ var TaskCounter = /** @class */ (function (_super) {
 }(PDispatcher));
 
 var loadings = {};
-var store;
-function setStore(_store) {
-    store = _store;
-}
 function setLoading(item, namespace, group) {
     if (namespace === void 0) { namespace = "app"; }
     if (group === void 0) { group = "global"; }
@@ -263,6 +419,7 @@ function setLoading(item, namespace, group) {
     if (!loadings[key]) {
         loadings[key] = new TaskCounter(3);
         loadings[key].addListener(TaskCountEvent, function (e) {
+            var store = getStore();
             store && store.dispatch(loadingAction(namespace, group, e.data));
         });
     }
@@ -271,6 +428,7 @@ function setLoading(item, namespace, group) {
 }
 
 var defaultLoadingComponent = function () { return React.createElement("div", null, "Loading..."); };
+var defaultErrorComponent = function () { return React.createElement("div", null, "Error..."); };
 function asyncComponent(resolve, componentName, LoadingComponent) {
     if (componentName === void 0) { componentName = "Main"; }
     if (LoadingComponent === void 0) { LoadingComponent = defaultLoadingComponent; }
@@ -284,11 +442,20 @@ function asyncComponent(resolve, componentName, LoadingComponent) {
             };
             return _this;
         }
+        AsyncComponent.prototype.shouldComponentUpdate = function (nextProps, nextState) {
+            return nextState.Component !== this.state.Component;
+        };
         AsyncComponent.prototype.componentDidMount = function () {
             var _this = this;
-            var promise = resolve();
-            promise.then(function (module) {
-                var Component = module.components[componentName];
+            var promise = resolve()
+                .then(function (module) {
+                var Component = module.default[componentName];
+                _this.setState({
+                    Component: Component
+                });
+            })
+                .catch(function (errorData) {
+                var Component = defaultErrorComponent;
                 _this.setState({
                     Component: Component
                 });
@@ -298,53 +465,14 @@ function asyncComponent(resolve, componentName, LoadingComponent) {
         AsyncComponent.prototype.render = function () {
             var Component = this.state.Component;
             var LoadingComponent = this.LoadingComponent;
-            return Component ? (React.createElement(Component, __assign({}, this.props))) : (React.createElement(LoadingComponent, __assign({}, this.props)));
+            return Component ? React.createElement(Component, __assign({}, this.props)) : React.createElement(LoadingComponent, __assign({}, this.props));
         };
         return AsyncComponent;
     }(React.Component));
     return AsyncComponent;
 }
 
-var Component = /** @class */ (function (_super) {
-    __extends(Component, _super);
-    function Component() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.state = {
-            message: ""
-        };
-        return _this;
-    }
-    Component.prototype.render = function () {
-        if (this.state.message) {
-            return React__default.createElement("div", null,
-                "failed to render, error: ",
-                this.state.message);
-        }
-        return this.props.children;
-    };
-    Component.prototype.componentDidCatch = function (error) {
-        this.setState({ message: error.message });
-        this.props.dispatch(errorAction(error));
-    };
-    return Component;
-}(React__default.PureComponent));
-var mapDispatchToProps = function (dispatch) {
-    return {
-        dispatch: dispatch
-    };
-};
-var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
-
-var sagasMap;
-var reducersMap;
-var sagaNames;
 var sagaNameMap = {};
-function getInjector (_reducersMap, _sagasMap, _sagaNames) {
-    reducersMap = _reducersMap;
-    sagasMap = _sagasMap;
-    sagaNames = _sagaNames;
-    return injectModule;
-}
 function pushSagaName(actionName) {
     if (!sagaNameMap[actionName]) {
         sagaNameMap[actionName] = true;
@@ -380,190 +508,113 @@ function injectHandlers(listenerModule, handlers) {
         }
     });
 }
-function injectModule(module) {
-    injectActions(module.namespace, module.actions);
-    injectHandlers(module.namespace, module.handlers);
+
+function assignObject(target, source) {
+    for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+            target[key] = source[key];
+        }
+    }
+    return target;
 }
 
-var store$1;
-var history;
-var sagasMap$1 = {};
-var reducersMap$1 = {};
-var sagaNames$1 = [];
-var injector = getInjector(reducersMap$1, sagasMap$1, sagaNames$1);
-function getActionData(action) {
-    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
-    if (arr.length === 0) {
-        return undefined;
-    }
-    else if (arr.length === 1) {
-        return action[arr[0]];
-    }
-    else {
-        var data = __assign({}, action);
-        delete data["type"];
-        return data;
-    }
+var injectedModules = [];
+var hasInjected = {};
+var actionsProxy = {};
+function buildFacade(namespace) {
+    // const proxy = actionsMap[namespace].reduce((prev, key) => {
+    //   prev[key] = true;
+    //   return prev;
+    // }, {});
+    // const actions = new Proxy(proxy, {
+    //   get: (target: {}, key: string) => {
+    //     return (data: any) => ({ type: namespace + "/" + key, data });
+    //   }
+    // }) as T;
+    var actions = getModuleActions(namespace);
+    return {
+        namespace: namespace,
+        actions: actions
+    };
 }
-function reducer(state, action) {
-    if (state === void 0) { state = {}; }
-    var item = reducersMap$1[action.type];
-    if (item) {
-        var rootState_1 = store$1.getState();
-        var newState_1 = __assign({}, state);
-        Object.keys(item).forEach(function (namespace) {
-            newState_1[namespace] = item[namespace](getActionData(action), state[namespace], rootState_1);
-        });
-        return newState_1;
+function getModuleActions(namespace) {
+    var actions = actionsProxy[namespace] || {};
+    actionsProxy[namespace] = actions;
+    return actions;
+}
+function buildState(initState) {
+    var state = initState;
+    if (!state.loading) {
+        state.loading = {};
     }
+    state.loading.global = "";
     return state;
 }
-function setStore$1(_store, _reducers, _history, runSaga) {
-    _reducers.project = reducer;
-    _store.replaceReducer(redux.combineReducers(_reducers));
-    function sagaHandler(action) {
-        var item, rootState, arr, _i, arr_1, moduleName, error_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    item = sagasMap$1[action.type];
-                    if (!item) return [3 /*break*/, 7];
-                    rootState = store$1.getState();
-                    arr = Object.keys(item);
-                    _i = 0, arr_1 = arr;
-                    _a.label = 1;
-                case 1:
-                    if (!(_i < arr_1.length)) return [3 /*break*/, 7];
-                    moduleName = arr_1[_i];
-                    _a.label = 2;
-                case 2:
-                    _a.trys.push([2, 4, , 6]);
-                    return [5 /*yield**/, __values(item[moduleName](getActionData(action), rootState[moduleName], rootState))];
-                case 3:
-                    _a.sent();
-                    return [3 /*break*/, 6];
-                case 4:
-                    error_1 = _a.sent();
-                    return [4 /*yield*/, effects.put(errorAction(error_1))];
-                case 5:
-                    _a.sent();
-                    return [3 /*break*/, 6];
-                case 6:
-                    _i++;
-                    return [3 /*break*/, 1];
-                case 7: return [2 /*return*/];
-            }
-        });
-    }
-    function saga() {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, effects.takeEvery(sagaNames$1, sagaHandler)];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    }
-    runSaga(saga);
-    store$1 = _store;
-    history = _history;
-    setStore(store$1);
-    return store$1;
+function buildActionByReducer(reducer) {
+    var fun = reducer;
+    return fun;
 }
-// export type LocationHandler = (data: any) => string | boolean | { type: string, data: any };
-// const locationHandlers: { [namespace: string]: LocationHandler } = {};
-// function checkLocation(namespace: string) {
-//   const handler = locationHandlers[namespace];
-//   if (handler) {
-//     const location = store.getState()['router']['location'];
-//     const saga = handler(location);
-//     if (typeof saga === "object") {
-//       store.dispatch({ type: namespace + "/__startup", data: saga });
-//     } else if (typeof saga === "string") {
-//       store.dispatch({ type: namespace + "/" + saga, data: location });
-//     } else if (saga) {
-//       store.dispatch({ type: namespace + "/__startup", data: location });
-//     }
-//   }
-// }
-// function checkLocationHandelr(namespace?: string) {
-//   if (namespace) {// 新加载的模块在本轮来不及监听location，所以会补充一次
-//     checkLocation(namespace);
-//   } else {
-//     Object.keys(locationHandlers).forEach(checkLocation);
-//   }
-// }
-// let locationHasInited = false;
-// export function reducerHandler(state: any = {}, action: { type: string, data: any }) {
-//   if (action.type === "@@router/LOCATION_CHANGE") {
-//     locationHasInited = true;
-//     setTimeout(() => checkLocationHandelr(), 0);
-//   } else {
-//     const fun = reducersMap[action.type];
-//     const namespace = action.type.split("/")[0];
-//     if (fun) {
-//       return { ...state, [namespace]: fun(getActionData(action), state[namespace], store.getState()) };
-//     }
-//   }
-//   return state;
-// }
-var hasInjected = {};
-function injectModule$1(module) {
-    var namespace = module.namespace;
+function buildActionByEffect(effect) {
+    var fun = effect;
+    return fun;
+}
+function buildModel(state, initActions, initHandlers) {
+    var actions = extendActions(state, initActions);
+    var handlers = extendHandlers(state, initHandlers);
+    return { state: state, actions: actions, handlers: handlers };
+}
+function injectComponents(namespace, components, module) {
     if (!hasInjected[namespace]) {
-        injector(module);
+        injectActions(namespace, module.actions);
+        injectHandlers(namespace, module.handlers);
+        var actions_1 = getModuleActions(namespace);
+        Object.keys(module.actions).forEach(function (key) {
+            actions_1[key] = function (data) { return ({ type: namespace + "/" + key, data: data }); };
+        });
         hasInjected[namespace] = true;
-        store$1.dispatch(initModuleAction(namespace));
+        var action = initModuleAction(namespace);
+        var store = getStore();
+        if (store) {
+            store.dispatch(action);
+        }
+        else {
+            injectedModules.push(action);
+        }
     }
-}
-function buildActions(namespace) {
-    return new Proxy({}, {
-        get: function (target, key) {
-            return function (data) { return ({ type: namespace + "/" + key, data: data }); };
-        }
-    });
-}
-function extendState(initState) {
-    return Object.assign({
-        loading: {
-            global: ""
-        }
-    }, initState);
+    return components;
 }
 function extendActions(initState, actions) {
-    return Object.assign({
-        INIT: function (data, moduleState, rootState) {
+    return assignObject({
+        INIT: buildActionByReducer(function (data, moduleState, rootState) {
             if (moduleState === void 0) { moduleState = initState; }
             return initState;
-        },
-        LOADING: function (loading, moduleState, rootState) {
+        }),
+        LOADING: buildActionByReducer(function (loading, moduleState, rootState) {
             if (moduleState === void 0) { moduleState = initState; }
             return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
-        }
+        })
     }, actions);
 }
 function extendHandlers(initState, handlers) {
-    return Object.assign({}, handlers);
+    return assignObject({}, handlers);
 }
-window.onerror = function (message, filename, lineno, colno, error) {
-    store$1.dispatch(errorAction(message)); // TODO: error can be null, think about how to handle all cases
-};
-function createApp(store, component, container) {
-    var WithRouter = reactRouterDom.withRouter(component);
-    ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
-        React__default.createElement(ErrorBoundary, null,
-            React__default.createElement(reactRouterRedux.ConnectedRouter, { history: history },
-                React__default.createElement(WithRouter, null)))), document.getElementById(container));
+function createApp(component, container, storeMiddlewares, storeEnhancers) {
+    if (storeMiddlewares === void 0) { storeMiddlewares = []; }
+    if (storeEnhancers === void 0) { storeEnhancers = []; }
+    var store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
+    buildApp(component, container, storeMiddlewares, storeEnhancers, store);
 }
 
+exports.buildFacade = buildFacade;
+exports.buildState = buildState;
+exports.buildActionByReducer = buildActionByReducer;
+exports.buildActionByEffect = buildActionByEffect;
+exports.buildModel = buildModel;
+exports.injectComponents = injectComponents;
+exports.createApp = createApp;
+exports.storeHistory = storeHistory;
+exports.getStore = getStore;
+exports.asyncComponent = asyncComponent;
 exports.setLoading = setLoading;
 exports.LoadingState = TaskCounterState;
-exports.setStore = setStore$1;
-exports.injectModule = injectModule$1;
-exports.asyncComponent = asyncComponent;
-exports.buildActions = buildActions;
-exports.extendState = extendState;
-exports.extendActions = extendActions;
-exports.extendHandlers = extendHandlers;
-exports.createApp = createApp;
+//# sourceMappingURL=index.js.map
