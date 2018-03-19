@@ -1,11 +1,11 @@
 import * as React from "react";
 import { setLoading } from "./loading";
-import { ModuleComponents } from "./types";
+import { ModuleViews } from "./types";
 
 const defaultLoadingComponent = () => <div>Loading...</div>;
 const defaultErrorComponent = () => <div>Error...</div>;
 
-export function asyncComponent(resolve: () => Promise<ModuleComponents>, componentName: string = "Main", LoadingComponent: React.ComponentType<any> = defaultLoadingComponent) {
+export function asyncComponent(resolve: () => Promise<ModuleViews>, componentName: string = "Main", LoadingComponent: React.ComponentType<any> = defaultLoadingComponent) {
   class AsyncComponent extends React.Component {
     public state: {
       Component: React.ComponentType<any> | null;

@@ -6,11 +6,9 @@ import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading } from "./loading";
 import { getStore, State, storeHistory } from "./storeProxy";
 import { Model } from "./types";
-export declare function buildFacade(namespace: string): {
+export declare function buildFacade<T>(namespace: string): {
     namespace: string;
-    actions: {
-        [action: string]: Function;
-    };
+    actions: T;
 };
 export declare function buildState<S>(initState: S): S & {
     loading: {
@@ -22,6 +20,14 @@ export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleStat
     data: T;
 };
 export declare function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>): (data: T) => {
+    type: string;
+    data: T;
+};
+export declare function buildHandlerByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): (data: T) => {
+    type: string;
+    data: T;
+};
+export declare function buildHandlerByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>): (data: T) => {
     type: string;
     data: T;
 };

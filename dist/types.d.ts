@@ -8,14 +8,14 @@ export interface ActionsMap {
 export declare type Actions = {
     [action: string]: Function;
 } | {};
-export interface Components {
-    [componentName: string]: ComponentType<any>;
+export interface Views {
+    [viewName: string]: ComponentType<any>;
 }
 export interface Model {
     state: {};
     actions: Actions;
     handlers: Actions;
 }
-export interface ModuleComponents {
-    default: Components;
+export interface ModuleViews {
+    default: Views;
 }

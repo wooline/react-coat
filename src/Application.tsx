@@ -7,8 +7,8 @@ import { Middleware, Store } from "redux";
 import ErrorBoundary from "./ErrorBoundary";
 import { storeHistory } from "./storeProxy";
 
-export default function buildApp(component: ComponentType<any>, container: string, storeMiddlewares: Middleware[], storeEnhancers: Function[], store: Store<any>) {
-  const WithRouter = withRouter(component);
+export default function buildApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[], storeEnhancers: Function[], store: Store<any>) {
+  const WithRouter = withRouter(view);
   ReactDOM.render(
     <Provider store={store}>
       <ErrorBoundary>

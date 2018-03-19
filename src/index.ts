@@ -13,17 +13,20 @@ const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
 const actionsProxy: { [moduleName: string]: { [action: string]: Function } } = {};
 
-export function buildFacade(namespace: string) {
-  // const proxy = actionsMap[namespace].reduce((prev, key) => {
-  //   prev[key] = true;
-  //   return prev;
-  // }, {});
-  // const actions = new Proxy(proxy, {
-  //   get: (target: {}, key: string) => {
-  //     return (data: any) => ({ type: namespace + "/" + key, data });
-  //   }
-  // }) as T;
-  const actions = getModuleActions(namespace);
+export function buildFacade<T>(namespace: string) {
+  let actions: T;
+  if (window["Proxy"]) {
+    actions = new window["Proxy"](
+      {},
+      {
+        get: (target: {}, key: string) => {
+          return (data: any) => ({ type: namespace + "/" + key, data });
+        }
+      }
+    );
+  } else {
+    actions = getModuleActions(namespace) as any;
+  }
   return {
     namespace,
     actions
@@ -55,9 +58,18 @@ export function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, ro
 }
 export function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
   const fun = effect as any;
+  fun.__effect__ = true;
   return fun as (data: T) => { type: string; data: T };
 }
-
+export function buildHandlerByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S) {
+  const fun = reducer as any;
+  return fun as (data: T) => { type: string; data: T };
+}
+export function buildHandlerByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
+  const fun = effect as any;
+  fun.__effect__ = true;
+  return fun as (data: T) => { type: string; data: T };
+}
 export function buildModel<S, A, H>(state: S, initActions: A, initHandlers: H) {
   const actions = extendActions(state, initActions);
   const handlers = extendHandlers(state, initHandlers);

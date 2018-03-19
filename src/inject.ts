@@ -22,21 +22,13 @@ function transformAction(actionName: string, action: Function, listenerModule: s
 
 export function injectActions(namespace: string, actions: Actions) {
   Object.keys(actions).forEach(actionName => {
-    if (actionName.substr(0, 1) === "_") {
-      transformAction(namespace + "/" + actionName, actions[actionName], namespace, sagasMap);
-    } else {
-      transformAction(namespace + "/" + actionName, actions[actionName], namespace, reducersMap);
-    }
+    transformAction(namespace + "/" + actionName, actions[actionName], namespace, actions[actionName].__effect__ ? sagasMap : reducersMap);
   });
 }
 
 export function injectHandlers(listenerModule: string, handlers: Actions) {
   Object.keys(handlers).forEach(handlerName => {
-    if (handlerName.substr(0, 1) === "_") {
-      transformAction(handlerName.substr(1), handlers[handlerName], listenerModule, sagasMap);
-    } else {
-      transformAction(handlerName, handlers[handlerName], listenerModule, reducersMap);
-    }
+    transformAction(handlerName, handlers[handlerName], listenerModule, handlers[handlerName].__effect__ ? sagasMap : reducersMap);
   });
 }
 

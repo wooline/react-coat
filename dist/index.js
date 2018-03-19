@@ -248,7 +248,7 @@ function buildStore(storeMiddlewares, storeEnhancers, injectedModules) {
     store.replaceReducer(redux.combineReducers(reducers));
     sagaMiddleware.run(saga);
     window.onerror = function (message, filename, lineno, colno, error) {
-        store.dispatch(errorAction(message));
+        store.dispatch(errorAction(error || { message: message }));
     };
     injectedModules.forEach(function (action) {
         store.dispatch(action);
@@ -260,8 +260,8 @@ function getStore() {
     return _store;
 }
 
-function buildApp(component, container, storeMiddlewares, storeEnhancers, store) {
-    var WithRouter = reactRouterDom.withRouter(component);
+function buildApp(view, container, storeMiddlewares, storeEnhancers, store) {
+    var WithRouter = reactRouterDom.withRouter(view);
     ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
         React__default.createElement(ErrorBoundary, null,
             React__default.createElement(reactRouterRedux.ConnectedRouter, { history: storeHistory },
@@ -490,22 +490,12 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
 }
 function injectActions(namespace, actions) {
     Object.keys(actions).forEach(function (actionName) {
-        if (actionName.substr(0, 1) === "_") {
-            transformAction(namespace + "/" + actionName, actions[actionName], namespace, sagasMap);
-        }
-        else {
-            transformAction(namespace + "/" + actionName, actions[actionName], namespace, reducersMap);
-        }
+        transformAction(namespace + "/" + actionName, actions[actionName], namespace, actions[actionName].__effect__ ? sagasMap : reducersMap);
     });
 }
 function injectHandlers(listenerModule, handlers) {
     Object.keys(handlers).forEach(function (handlerName) {
-        if (handlerName.substr(0, 1) === "_") {
-            transformAction(handlerName.substr(1), handlers[handlerName], listenerModule, sagasMap);
-        }
-        else {
-            transformAction(handlerName, handlers[handlerName], listenerModule, reducersMap);
-        }
+        transformAction(handlerName, handlers[handlerName], listenerModule, handlers[handlerName].__effect__ ? sagasMap : reducersMap);
     });
 }
 
@@ -522,16 +512,17 @@ var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
 function buildFacade(namespace) {
-    // const proxy = actionsMap[namespace].reduce((prev, key) => {
-    //   prev[key] = true;
-    //   return prev;
-    // }, {});
-    // const actions = new Proxy(proxy, {
-    //   get: (target: {}, key: string) => {
-    //     return (data: any) => ({ type: namespace + "/" + key, data });
-    //   }
-    // }) as T;
-    var actions = getModuleActions(namespace);
+    var actions;
+    if (window["Proxy"]) {
+        actions = new window["Proxy"]({}, {
+            get: function (target, key) {
+                return function (data) { return ({ type: namespace + "/" + key, data: data }); };
+            }
+        });
+    }
+    else {
+        actions = getModuleActions(namespace);
+    }
     return {
         namespace: namespace,
         actions: actions
@@ -556,6 +547,16 @@ function buildActionByReducer(reducer) {
 }
 function buildActionByEffect(effect) {
     var fun = effect;
+    fun.__effect__ = true;
+    return fun;
+}
+function buildHandlerByReducer(reducer) {
+    var fun = reducer;
+    return fun;
+}
+function buildHandlerByEffect(effect) {
+    var fun = effect;
+    fun.__effect__ = true;
     return fun;
 }
 function buildModel(state, initActions, initHandlers) {
@@ -609,6 +610,8 @@ exports.buildFacade = buildFacade;
 exports.buildState = buildState;
 exports.buildActionByReducer = buildActionByReducer;
 exports.buildActionByEffect = buildActionByEffect;
+exports.buildHandlerByReducer = buildHandlerByReducer;
+exports.buildHandlerByEffect = buildHandlerByEffect;
 exports.buildModel = buildModel;
 exports.injectComponents = injectComponents;
 exports.createApp = createApp;

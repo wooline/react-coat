@@ -83,7 +83,7 @@ export function buildStore(storeMiddlewares: Middleware[], storeEnhancers: Funct
   sagaMiddleware.run(saga as any);
 
   window.onerror = (message: string, filename?: string, lineno?: number, colno?: number, error?: Error) => {
-    store.dispatch(errorAction(message));
+    store.dispatch(errorAction(error || { message }));
   };
 
   injectedModules.forEach(action => {

@@ -10,8 +10,8 @@ export type Actions =
     }
   | {};
 
-export interface Components {
-  [componentName: string]: ComponentType<any>;
+export interface Views {
+  [viewName: string]: ComponentType<any>;
 }
 
 export interface Model {
@@ -20,6 +20,6 @@ export interface Model {
   handlers: Actions;
 }
 
-export interface ModuleComponents {
-  default: Components;
+export interface ModuleViews {
+  default: Views;
 }
