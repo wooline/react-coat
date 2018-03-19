@@ -57,7 +57,9 @@ IE9 或 IE9 以上
 
 ## 使用：
 
-一个最简单的目录结构如下
+> [一个简单的 Hello Word]()
+
+最简单的目录结构如下
 
 ```
 src
@@ -154,7 +156,7 @@ const handlers = {
 };
 ```
 
-### 模块的对外接口有 4 笔：namespace、actions、views、State
+### 模块的对外接口
 
 1. 模块根目录下的 index.ts，该文件将输出 3 笔数据：namespace、actions、State
 
@@ -185,3 +187,24 @@ export default function(){
   return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
 }
 ```
+
+### 框架 API
+
+* Model 相关：
+  * `function buildState(initState)` 创建模块的 state
+  * `function buildActionByReducer(reducer)` 创建模块的 reducer action
+  * `function buildActionByEffect(reducer)` 创建模块的 effect action
+  * `function buildHandlerByReducer(reducer)` 创建模块的 reducer handler
+  * `function buildHandlerByEffect(reducer)` 创建模块的 effect handler
+  * `function buildModel(state, actions, handlers)` 创建模块的 Model
+* View 相关
+  * `function buildViews(namespace, views, model)` 创建模块的对外调用接口
+* 模块调用相关
+
+  * `function buildFacade(namespace)` 创建模块的对外调用接口
+  * `createApp(component, container, storeMiddlewares? storeEnhancers?)` 创建 App
+  * `getStore()` 获取全局的 Redux Store
+  * `asyncComponent(ModuleViews)` 异步加载模块的视图
+  * `setLoading(promiseItem, namespace, group)` 设置 loading 状态
+  * `storeHistory` 全局的 history
+  * `LoadingState` loading 的状态

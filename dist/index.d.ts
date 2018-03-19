@@ -49,6 +49,6 @@ export declare function buildModel<S, A, H>(state: S, initActions: A, initHandle
     } & A;
     handlers: H & {};
 };
-export declare function injectComponents<T>(namespace: string, components: T, module: Model): T;
-export declare function createApp(component: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
+export declare function buildViews<T>(namespace: string, views: T, model: Model): T;
+export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
 export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, State };

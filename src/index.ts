@@ -76,12 +76,12 @@ export function buildModel<S, A, H>(state: S, initActions: A, initHandlers: H) {
   return { state, actions, handlers };
 }
 
-export function injectComponents<T>(namespace: string, components: T, module: Model) {
+export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
-    injectActions(namespace, module.actions);
-    injectHandlers(namespace, module.handlers);
+    injectActions(namespace, model.actions);
+    injectHandlers(namespace, model.handlers);
     const actions = getModuleActions(namespace);
-    Object.keys(module.actions).forEach(key => {
+    Object.keys(model.actions).forEach(key => {
       actions[key] = (data: any) => ({ type: namespace + "/" + key, data });
     });
     hasInjected[namespace] = true;
@@ -93,7 +93,7 @@ export function injectComponents<T>(namespace: string, components: T, module: Mo
       injectedModules.push(action);
     }
   }
-  return components;
+  return views;
 }
 
 function extendActions<S, R>(initState: S, actions: R) {
@@ -117,8 +117,8 @@ function extendHandlers<S, R>(initState: S, handlers: R) {
   return assignObject({}, handlers);
 }
 
-export function createApp(component: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = []) {
+export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = []) {
   const store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
-  buildApp(component, container, storeMiddlewares, storeEnhancers, store);
+  buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
 export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, State };

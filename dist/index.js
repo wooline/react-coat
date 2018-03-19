@@ -564,12 +564,12 @@ function buildModel(state, initActions, initHandlers) {
     var handlers = extendHandlers(state, initHandlers);
     return { state: state, actions: actions, handlers: handlers };
 }
-function injectComponents(namespace, components, module) {
+function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
-        injectActions(namespace, module.actions);
-        injectHandlers(namespace, module.handlers);
+        injectActions(namespace, model.actions);
+        injectHandlers(namespace, model.handlers);
         var actions_1 = getModuleActions(namespace);
-        Object.keys(module.actions).forEach(function (key) {
+        Object.keys(model.actions).forEach(function (key) {
             actions_1[key] = function (data) { return ({ type: namespace + "/" + key, data: data }); };
         });
         hasInjected[namespace] = true;
@@ -582,7 +582,7 @@ function injectComponents(namespace, components, module) {
             injectedModules.push(action);
         }
     }
-    return components;
+    return views;
 }
 function extendActions(initState, actions) {
     return assignObject({
@@ -599,11 +599,11 @@ function extendActions(initState, actions) {
 function extendHandlers(initState, handlers) {
     return assignObject({}, handlers);
 }
-function createApp(component, container, storeMiddlewares, storeEnhancers) {
+function createApp(view, container, storeMiddlewares, storeEnhancers) {
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
     if (storeEnhancers === void 0) { storeEnhancers = []; }
     var store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
-    buildApp(component, container, storeMiddlewares, storeEnhancers, store);
+    buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
 
 exports.buildFacade = buildFacade;
@@ -613,7 +613,7 @@ exports.buildActionByEffect = buildActionByEffect;
 exports.buildHandlerByReducer = buildHandlerByReducer;
 exports.buildHandlerByEffect = buildHandlerByEffect;
 exports.buildModel = buildModel;
-exports.injectComponents = injectComponents;
+exports.buildViews = buildViews;
 exports.createApp = createApp;
 exports.storeHistory = storeHistory;
 exports.getStore = getStore;
