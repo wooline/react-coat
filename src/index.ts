@@ -5,9 +5,8 @@ import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading } from "./loading";
-import { buildStore, getStore, State, storeHistory } from "./storeProxy";
+import { buildStore, getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
-import { assignObject } from "./utils";
 
 const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
@@ -39,16 +38,9 @@ function getModuleActions(namespace: string) {
   return actions;
 }
 
-export function buildState<S>(initState: S) {
-  const state = initState as any;
-  if (!state.loading) {
-    state.loading = {};
-  }
-  state.loading.global = "";
-  return state as S & {
-    loading: {
-      global: string;
-    };
+export interface BaseState {
+  loading: {
+    global: string;
   };
 }
 
@@ -61,18 +53,30 @@ export function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, root
   fun.__effect__ = true;
   return fun as (data: T) => { type: string; data: T };
 }
-export function buildHandlerByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S) {
-  const fun = reducer as any;
-  return fun as (data: T) => { type: string; data: T };
+function translateMap(cls: any) {
+  const ins = new cls();
+  const map = {};
+  Object.keys(ins).reduce((pre, key) => {
+    pre[key] = ins[key];
+    return pre;
+  }, map);
+  const poto = cls.prototype;
+  for (const key in poto) {
+    if (map[key]) {
+      map[key].__loading__ = poto[key];
+    }
+  }
+  return map as any;
 }
-export function buildHandlerByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
-  const fun = effect as any;
-  fun.__effect__ = true;
-  return fun as (data: T) => { type: string; data: T };
+
+export function buildLoading(moduleName: string = "app", group: string = "global") {
+  return (target: any, key: string) => {
+    target[key] = [moduleName, group];
+  };
 }
-export function buildModel<S, A, H>(state: S, initActions: A, initHandlers: H) {
-  const actions = extendActions(state, initActions);
-  const handlers = extendHandlers(state, initHandlers);
+export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
+  const actions: A = translateMap(actionClass);
+  const handlers: H = translateMap(handlerClass);
   return { state, actions, handlers };
 }
 
@@ -85,7 +89,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
       actions[key] = (data: any) => ({ type: namespace + "/" + key, data });
     });
     hasInjected[namespace] = true;
-    const action = initModuleAction(namespace);
+    const action = initModuleAction(namespace, model.state);
     const store = getStore();
     if (store) {
       store.dispatch(action);
@@ -96,30 +100,39 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
   return views;
 }
 
-function extendActions<S, R>(initState: S, actions: R) {
-  return assignObject(
-    {
-      INIT: buildActionByReducer(function(data: any, moduleState: S = initState, rootState?: any): S {
-        return initState;
-      }),
-      LOADING: buildActionByReducer(function(loading: { [group: string]: string }, moduleState: S = initState, rootState?: any): S {
-        return {
-          ...(moduleState as any),
-          loading: { ...(moduleState as any).loading, ...loading }
-        };
-      })
-    },
-    actions
-  );
+export class BaseActions<S> {
+  INIT = buildActionByReducer(function(data: S, moduleState: S, rootState: any): S {
+    return data;
+  });
+  LOADING = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: S, rootState: any): S {
+    return {
+      ...(moduleState as any),
+      loading: { ...(moduleState as any).loading, ...loading }
+    };
+  });
 }
 
-function extendHandlers<S, R>(initState: S, handlers: R) {
-  return assignObject({}, handlers);
+export interface State {
+  router: {
+    location: {
+      pathname: string;
+      search: {};
+      hash: string;
+      key: string;
+    };
+  };
+  project: {
+    app: {
+      loading: {
+        global: string;
+      };
+    };
+  };
 }
 
 export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = []) {
   const store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
-export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, State };
+export { storeHistory, getStore, asyncComponent, setLoading, LoadingState };
 export { ErrorActionName, InitModuleActionName, LoadingActionName, LocationChangeActionName };

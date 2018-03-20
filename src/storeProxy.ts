@@ -1,6 +1,7 @@
 import { combineReducers, Middleware, Store } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import { errorAction, LocationChangeActionName } from "./actions";
+import { setLoading } from "./loading";
 import { initStore, storeHistory } from "./store";
 import { ActionsMap } from "./types";
 
@@ -49,9 +50,27 @@ function* sagaHandler(action: { type: string; data: any }) {
     const rootState = _store.getState();
     const arr = Object.keys(item);
     for (const moduleName of arr) {
+      const fun = item[moduleName];
+      const loading: string[] | null = fun["__loading__"];
+      let loadingCallback: any;
+      if (loading) {
+        setLoading(
+          new Promise<any>((resolve, reject) => {
+            loadingCallback = resolve;
+          }),
+          loading[0],
+          loading[1]
+        );
+      }
       try {
-        yield* item[moduleName](getActionData(action), rootState[moduleName], rootState);
+        yield* fun(getActionData(action), rootState[moduleName], rootState);
+        if (loadingCallback) {
+          loadingCallback(true);
+        }
       } catch (error) {
+        if (loadingCallback) {
+          loadingCallback(true);
+        }
         yield put(errorAction(error));
       }
     }
@@ -60,18 +79,6 @@ function* sagaHandler(action: { type: string; data: any }) {
 
 function* saga() {
   yield takeEvery(sagaNames, sagaHandler);
-}
-
-export interface State {
-  router: {
-    location: {
-      pathname: string;
-      search: {};
-      hash: string;
-      key: string;
-    };
-  };
-  project: {};
 }
 
 export function buildStore(storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: { type: string }[]) {

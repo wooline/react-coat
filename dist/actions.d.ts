@@ -12,6 +12,7 @@ export declare function loadingAction(namespace: string, group: string, status: 
         [x: string]: string;
     };
 };
-export declare function initModuleAction(namespace: string): {
+export declare function initModuleAction(namespace: string, data: any): {
     type: string;
+    data: any;
 };

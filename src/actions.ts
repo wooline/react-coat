@@ -17,8 +17,9 @@ export function loadingAction(namespace: string, group: string, status: string) 
   };
 }
 
-export function initModuleAction(namespace: string) {
+export function initModuleAction(namespace: string, data: any) {
   return {
-    type: namespace + "/" + InitModuleActionName
+    type: namespace + "/" + InitModuleActionName,
+    data
   };
 }

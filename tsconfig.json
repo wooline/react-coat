@@ -9,7 +9,7 @@
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
-    "lib": ["dom", "es5"],
+    "lib": ["dom", "es5", "es2015.promise"],
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
