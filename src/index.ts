@@ -1,6 +1,6 @@
 import { ComponentType } from "react";
 import { Middleware } from "redux";
-import { initModuleAction } from "./actions";
+import { ErrorActionName, initModuleAction, InitModuleActionName, LoadingActionName, LocationChangeActionName } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
@@ -122,3 +122,4 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
 export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, State };
+export { ErrorActionName, InitModuleActionName, LoadingActionName, LocationChangeActionName };

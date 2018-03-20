@@ -211,7 +211,14 @@ export default function(){
   * `storeHistory` 全局的 history
   * `LoadingState` loading 的状态
 
-  ### FAQ
+### 框架内置 Action
 
-  * `使用本框架必须使用typescript吗？`  
-    答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
+* `ErrorActionName` = "@@framework/ERROR" 当出现错误时触发
+* `InitModuleActionName` = "INIT" 当模块初始化时触发
+* `LoadingActionName` = "LOADING" 当出现 loading 状态时触发
+* `LocationChangeActionName` = "@@router/LOCATION_CHANGE" 当路由切换时触发
+
+### FAQ
+
+* `使用本框架必须使用typescript吗？`  
+  答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
