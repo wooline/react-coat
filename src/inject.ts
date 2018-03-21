@@ -1,5 +1,6 @@
 import { reducersMap, sagaNames, sagasMap } from "./storeProxy";
 import { Actions, ActionsMap } from "./types";
+import { isGenerator } from "./utils";
 
 const sagaNameMap = {};
 
@@ -14,6 +15,9 @@ function transformAction(actionName: string, action: Function, listenerModule: s
   if (!actionsMap[actionName]) {
     actionsMap[actionName] = {};
   }
+  if (actionsMap[actionName][listenerModule]) {
+    throw new Error(`Action duplicate or conflict : ${actionName}.`);
+  }
   actionsMap[actionName][listenerModule] = action;
   if (actionsMap === sagasMap) {
     pushSagaName(actionName);
@@ -22,13 +26,13 @@ function transformAction(actionName: string, action: Function, listenerModule: s
 
 export function injectActions(namespace: string, actions: Actions) {
   Object.keys(actions).forEach(actionName => {
-    transformAction(namespace + "/" + actionName, actions[actionName], namespace, actions[actionName].__effect__ ? sagasMap : reducersMap);
+    transformAction(namespace + "/" + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
   });
 }
 
 export function injectHandlers(listenerModule: string, handlers: Actions) {
   Object.keys(handlers).forEach(handlerName => {
-    transformAction(handlerName, handlers[handlerName], listenerModule, handlers[handlerName].__effect__ ? sagasMap : reducersMap);
+    transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
   });
 }
 

@@ -142,6 +142,195 @@ var mapDispatchToProps = function (dispatch) {
 };
 var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
 
+var storeHistory = createHistory();
+var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
+var reducers = {
+    router: reactRouterRedux.routerReducer
+};
+var sagaMiddleware = createSagaMiddleware();
+var devtools = function (options) { return function (noop) { return noop; }; };
+if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
+}
+function initStore(storeMiddlewares, storeEnhancers) {
+    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
+    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
+    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
+    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
+}
+
+var _store = undefined;
+var lastLocationAction;
+var sagasMap = {};
+var reducersMap = {};
+var sagaNames = [];
+function getActionData(action) {
+    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
+    if (arr.length === 0) {
+        return undefined;
+    }
+    else if (arr.length === 1) {
+        return action[arr[0]];
+    }
+    else {
+        var data = __assign({}, action);
+        delete data["type"];
+        return data;
+    }
+}
+function reducer(state, action) {
+    if (state === void 0) { state = {}; }
+    if (action.type === LocationChangeActionName) {
+        lastLocationAction = action;
+    }
+    var item = reducersMap[action.type];
+    if (item && _store) {
+        var rootState_1 = _store.getState();
+        var newState_1 = __assign({}, state);
+        Object.keys(item).forEach(function (namespace) {
+            var fun = item[namespace];
+            var decorators = fun["__decorators__"];
+            if (decorators) {
+                decorators.forEach(function (item) {
+                    item[2] = item[0](action.type, namespace);
+                });
+            }
+            newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
+            var locationHandler = fun["__LocationHandler__"];
+            if (locationHandler && lastLocationAction) {
+                newState_1[namespace] = locationHandler(getActionData(lastLocationAction), newState_1[namespace], rootState_1);
+            }
+            if (decorators) {
+                decorators.forEach(function (item) {
+                    item[1](item[2], newState_1[namespace]);
+                    item[2] = null;
+                });
+            }
+        });
+        return newState_1;
+    }
+    return state;
+}
+function sagaHandler(action) {
+    var item, rootState, arr, _loop_1, _i, arr_1, moduleName;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                item = sagasMap[action.type];
+                if (!(item && _store)) return [3 /*break*/, 4];
+                rootState = _store.getState();
+                arr = Object.keys(item);
+                _loop_1 = function (moduleName) {
+                    var fun, state, locationHandler, decorators, err, error_1;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                fun = item[moduleName];
+                                state = rootState.project[moduleName];
+                                locationHandler = fun["__LocationHandler__"];
+                                decorators = fun["__decorators__"];
+                                err = undefined;
+                                if (decorators) {
+                                    decorators.forEach(function (item) {
+                                        item[2] = item[0](action.type, moduleName);
+                                    });
+                                }
+                                _a.label = 1;
+                            case 1:
+                                _a.trys.push([1, 10, , 11]);
+                                if (!locationHandler) return [3 /*break*/, 7];
+                                if (!(typeof locationHandler === "function")) return [3 /*break*/, 4];
+                                return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
+                            case 2:
+                                _a.sent();
+                                return [5 /*yield**/, __values(locationHandler(getActionData(lastLocationAction), state, rootState))];
+                            case 3:
+                                _a.sent();
+                                return [3 /*break*/, 6];
+                            case 4: return [5 /*yield**/, __values(fun(getActionData(lastLocationAction), state, rootState))];
+                            case 5:
+                                _a.sent();
+                                _a.label = 6;
+                            case 6: return [3 /*break*/, 9];
+                            case 7: return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
+                            case 8:
+                                _a.sent();
+                                _a.label = 9;
+                            case 9: return [3 /*break*/, 11];
+                            case 10:
+                                error_1 = _a.sent();
+                                err = error_1;
+                                return [3 /*break*/, 11];
+                            case 11:
+                                if (!err) return [3 /*break*/, 13];
+                                return [4 /*yield*/, effects.put(errorAction(err))];
+                            case 12:
+                                _a.sent();
+                                _a.label = 13;
+                            case 13:
+                                if (decorators) {
+                                    decorators.forEach(function (item) {
+                                        item[1](item[2], err);
+                                        item[2] = null;
+                                    });
+                                }
+                                return [2 /*return*/];
+                        }
+                    });
+                };
+                _i = 0, arr_1 = arr;
+                _a.label = 1;
+            case 1:
+                if (!(_i < arr_1.length)) return [3 /*break*/, 4];
+                moduleName = arr_1[_i];
+                return [5 /*yield**/, _loop_1(moduleName)];
+            case 2:
+                _a.sent();
+                _a.label = 3;
+            case 3:
+                _i++;
+                return [3 /*break*/, 1];
+            case 4: return [2 /*return*/];
+        }
+    });
+}
+function saga() {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, effects.takeEvery(sagaNames, sagaHandler)];
+            case 1:
+                _a.sent();
+                return [2 /*return*/];
+        }
+    });
+}
+function buildStore(storeMiddlewares, storeEnhancers, injectedModules) {
+    var _a = initStore(storeMiddlewares, storeEnhancers), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
+    _store = store;
+    reducers.project = reducer;
+    store.replaceReducer(redux.combineReducers(reducers));
+    sagaMiddleware.run(saga);
+    window.onerror = function (message, filename, lineno, colno, error) {
+        store.dispatch(errorAction(error || { message: message }));
+    };
+    injectedModules.forEach(function (action) {
+        store.dispatch(action);
+    });
+    injectedModules.length = 0;
+    return store;
+}
+function getStore() {
+    return _store;
+}
+
+function buildApp(view, container, storeMiddlewares, storeEnhancers, store) {
+    var WithRouter = reactRouterDom.withRouter(view);
+    ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
+        React__default.createElement(ErrorBoundary, null,
+            React__default.createElement(reactRouterRedux.ConnectedRouter, { history: storeHistory },
+                React__default.createElement(WithRouter, null)))), document.getElementById(container));
+}
+
 function emptyObject(obj) {
     var arr = [];
     for (var key in obj) {
@@ -301,159 +490,6 @@ function setLoading(item, namespace, group) {
     return item;
 }
 
-var storeHistory = createHistory();
-var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
-var reducers = {
-    router: reactRouterRedux.routerReducer
-};
-var sagaMiddleware = createSagaMiddleware();
-var devtools = function (options) { return function (noop) { return noop; }; };
-if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
-    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
-}
-function initStore(storeMiddlewares, storeEnhancers) {
-    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
-    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
-    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
-    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
-}
-
-var _store = undefined;
-var routeInited;
-var sagasMap = {};
-var reducersMap = {};
-var sagaNames = [];
-function getActionData(action) {
-    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
-    if (arr.length === 0) {
-        return undefined;
-    }
-    else if (arr.length === 1) {
-        return action[arr[0]];
-    }
-    else {
-        var data = __assign({}, action);
-        delete data["type"];
-        return data;
-    }
-}
-function reducer(state, action) {
-    if (state === void 0) { state = {}; }
-    if (action.type === LocationChangeActionName) {
-        // 为统一同步模块和异步模块，模块被加载时，监听不到当前的locationChange
-        if (!routeInited) {
-            routeInited = true;
-            return state;
-        }
-    }
-    var item = reducersMap[action.type];
-    if (item && _store) {
-        var rootState_1 = _store.getState();
-        var newState_1 = __assign({}, state);
-        Object.keys(item).forEach(function (namespace) {
-            newState_1[namespace] = item[namespace](getActionData(action), state[namespace], rootState_1);
-        });
-        return newState_1;
-    }
-    return state;
-}
-function sagaHandler(action) {
-    var item, rootState, arr, _loop_1, _i, arr_1, moduleName;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                item = sagasMap[action.type];
-                if (!(item && _store)) return [3 /*break*/, 4];
-                rootState = _store.getState();
-                arr = Object.keys(item);
-                _loop_1 = function (moduleName) {
-                    var fun, loading, loadingCallback, error_1;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                fun = item[moduleName];
-                                loading = fun["__loading__"];
-                                if (loading) {
-                                    setLoading(new Promise(function (resolve, reject) {
-                                        loadingCallback = resolve;
-                                    }), loading[0], loading[1]);
-                                }
-                                _a.label = 1;
-                            case 1:
-                                _a.trys.push([1, 3, , 5]);
-                                return [5 /*yield**/, __values(fun(getActionData(action), rootState[moduleName], rootState))];
-                            case 2:
-                                _a.sent();
-                                if (loadingCallback) {
-                                    loadingCallback(true);
-                                }
-                                return [3 /*break*/, 5];
-                            case 3:
-                                error_1 = _a.sent();
-                                if (loadingCallback) {
-                                    loadingCallback(true);
-                                }
-                                return [4 /*yield*/, effects.put(errorAction(error_1))];
-                            case 4:
-                                _a.sent();
-                                return [3 /*break*/, 5];
-                            case 5: return [2 /*return*/];
-                        }
-                    });
-                };
-                _i = 0, arr_1 = arr;
-                _a.label = 1;
-            case 1:
-                if (!(_i < arr_1.length)) return [3 /*break*/, 4];
-                moduleName = arr_1[_i];
-                return [5 /*yield**/, _loop_1(moduleName)];
-            case 2:
-                _a.sent();
-                _a.label = 3;
-            case 3:
-                _i++;
-                return [3 /*break*/, 1];
-            case 4: return [2 /*return*/];
-        }
-    });
-}
-function saga() {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, effects.takeEvery(sagaNames, sagaHandler)];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
-        }
-    });
-}
-function buildStore(storeMiddlewares, storeEnhancers, injectedModules) {
-    var _a = initStore(storeMiddlewares, storeEnhancers), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
-    _store = store;
-    reducers.project = reducer;
-    store.replaceReducer(redux.combineReducers(reducers));
-    sagaMiddleware.run(saga);
-    window.onerror = function (message, filename, lineno, colno, error) {
-        store.dispatch(errorAction(error || { message: message }));
-    };
-    injectedModules.forEach(function (action) {
-        store.dispatch(action);
-    });
-    injectedModules.length = 0;
-    return store;
-}
-function getStore() {
-    return _store;
-}
-
-function buildApp(view, container, storeMiddlewares, storeEnhancers, store) {
-    var WithRouter = reactRouterDom.withRouter(view);
-    ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
-        React__default.createElement(ErrorBoundary, null,
-            React__default.createElement(reactRouterRedux.ConnectedRouter, { history: storeHistory },
-                React__default.createElement(WithRouter, null)))), document.getElementById(container));
-}
-
 var defaultLoadingComponent = function () { return React.createElement("div", null, "Loading..."); };
 var defaultErrorComponent = function () { return React.createElement("div", null, "Error..."); };
 function asyncComponent(resolve, componentName, LoadingComponent) {
@@ -499,6 +535,22 @@ function asyncComponent(resolve, componentName, LoadingComponent) {
     return AsyncComponent;
 }
 
+// export function assignObject<T, U>(target: T, source: U): T & U {
+//   for (const key in source) {
+//     if (source.hasOwnProperty(key)) {
+//       (target as any)[key] = source[key];
+//     }
+//   }
+//   return target as T & U;
+// }
+function isGenerator(fun) {
+    return Boolean(fun["__generator__"]);
+}
+function setGenerator(fun) {
+    fun["__generator__"] = true;
+    return fun;
+}
+
 var sagaNameMap = {};
 function pushSagaName(actionName) {
     if (!sagaNameMap[actionName]) {
@@ -510,6 +562,9 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
     if (!actionsMap[actionName]) {
         actionsMap[actionName] = {};
     }
+    if (actionsMap[actionName][listenerModule]) {
+        throw new Error("Action duplicate or conflict : " + actionName + ".");
+    }
     actionsMap[actionName][listenerModule] = action;
     if (actionsMap === sagasMap) {
         pushSagaName(actionName);
@@ -517,19 +572,19 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
 }
 function injectActions(namespace, actions) {
     Object.keys(actions).forEach(function (actionName) {
-        transformAction(namespace + "/" + actionName, actions[actionName], namespace, actions[actionName].__effect__ ? sagasMap : reducersMap);
+        transformAction(namespace + "/" + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
     });
 }
 function injectHandlers(listenerModule, handlers) {
     Object.keys(handlers).forEach(function (handlerName) {
-        transformAction(handlerName, handlers[handlerName], listenerModule, handlers[handlerName].__effect__ ? sagasMap : reducersMap);
+        transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
     });
 }
 
 var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
-function buildFacade(namespace) {
+function buildModule(namespace) {
     var actions;
     if (window["Proxy"]) {
         actions = new window["Proxy"]({}, {
@@ -556,9 +611,36 @@ function buildActionByReducer(reducer) {
     return fun;
 }
 function buildActionByEffect(effect) {
-    var fun = effect;
-    fun.__effect__ = true;
+    var fun = setGenerator(effect);
     return fun;
+}
+function buildLoading(moduleName, group) {
+    if (moduleName === void 0) { moduleName = "app"; }
+    if (group === void 0) { group = "global"; }
+    return function (target, key) {
+        var before = function () {
+            var loadingCallback = null;
+            setLoading(new Promise(function (resolve, reject) {
+                loadingCallback = resolve;
+            }), moduleName, group);
+            return loadingCallback;
+        };
+        var after = function (resolve, error) {
+            resolve(error);
+        };
+        if (!target[key]) {
+            target[key] = [];
+        }
+        target[key].push([before, after]);
+    };
+}
+function buildlogger(before, after) {
+    return function (target, key) {
+        if (!target[key]) {
+            target[key] = [];
+        }
+        target[key].push([before, after]);
+    };
 }
 function translateMap(cls) {
     var ins = new cls();
@@ -570,17 +652,10 @@ function translateMap(cls) {
     var poto = cls.prototype;
     for (var key in poto) {
         if (map[key]) {
-            map[key].__loading__ = poto[key];
+            map[key].__decorators__ = poto[key];
         }
     }
     return map;
-}
-function buildLoading(moduleName, group) {
-    if (moduleName === void 0) { moduleName = "app"; }
-    if (group === void 0) { group = "global"; }
-    return function (target, key) {
-        target[key] = [moduleName, group];
-    };
 }
 function buildModel(state, actionClass, handlerClass) {
     var actions = translateMap(actionClass);
@@ -589,6 +664,24 @@ function buildModel(state, actionClass, handlerClass) {
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
+        var selfInitAction = model.actions[InitModuleActionName];
+        var selfInitHandler = model.handlers[namespace + "/" + InitModuleActionName];
+        var locationChangeHandler = model.handlers[LocationChangeActionName];
+        if (locationChangeHandler) {
+            if (isGenerator(locationChangeHandler)) {
+                if (selfInitHandler) {
+                    selfInitHandler["__LocationHandler__"] = locationChangeHandler;
+                }
+                else {
+                    model.handlers[namespace + "/" + InitModuleActionName] = locationChangeHandler;
+                    locationChangeHandler["__LocationHandler__"] = true;
+                }
+            }
+            else {
+                selfInitAction["__decorators__"] = locationChangeHandler["__decorators__"];
+                selfInitAction["__LocationHandler__"] = locationChangeHandler;
+            }
+        }
         injectActions(namespace, model.actions);
         injectHandlers(namespace, model.handlers);
         var actions_1 = getModuleActions(namespace);
@@ -625,10 +718,11 @@ function createApp(view, container, storeMiddlewares, storeEnhancers) {
     buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
 
-exports.buildFacade = buildFacade;
+exports.buildModule = buildModule;
 exports.buildActionByReducer = buildActionByReducer;
 exports.buildActionByEffect = buildActionByEffect;
 exports.buildLoading = buildLoading;
+exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;
 exports.buildViews = buildViews;
 exports.BaseActions = BaseActions;

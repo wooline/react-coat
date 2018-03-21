@@ -1,1 +1,2 @@
-export declare function assignObject<T, U>(target: T, source: U): T & U;
+export declare function isGenerator(fun: Function): boolean;
+export declare function setGenerator(fun: Function): Function;

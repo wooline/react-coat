@@ -7,7 +7,7 @@ import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading } from "./loading";
 import { getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
-export declare function buildFacade<T>(namespace: string): {
+export declare function buildModule<T>(namespace: string): {
     namespace: string;
     actions: T;
 };
@@ -25,6 +25,7 @@ export declare function buildActionByEffect<T, S>(effect: (data: T, moduleState:
     data: T;
 };
 export declare function buildLoading(moduleName?: string, group?: string): (target: any, key: string) => void;
+export declare function buildlogger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string) => void;
 export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H): {
     state: S;
     actions: A;
