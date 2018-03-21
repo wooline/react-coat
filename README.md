@@ -103,58 +103,67 @@ import appViews from "modules/app/views";
 createApp(appViews.Main, "root");
 ```
 
-### Model 中的概念
+### 关于 Model
 
 框架最大的创新在于对 model 的封装，model 用于组织和管理整个模块的数据，Model 的典型结构如下：
 
 ```js
-// 定义该模块的State数据结构，也就是存放在Redux Store中的数据结构
-interface InintState {
+// 定义该模块的State数据结构
+interface State extends BaseState {
   curUser: {
     uid: string;
     username: string;
   };
 }
-// 定义该模块的State数据结构的初始值
-const state = buildState<InintState>({
+// 定义该模块的State的初始值
+const state: State = {
   curUser: {
     uid: "",
     username: ""
   }
 });
 
-type State = typeof state;
-
-// 定义该模块所有的操作
-const actions = {
+// 定义该模块的操作
+class ModuleActions extends BaseActions<State> {
 
   // 定义一个Reducer来更新state
-  updateCurUser: buildActionByReducer(function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
-    return { ...moduleState, curUser };
-  }),
+  updateCurUser = buildActionByReducer(
+    function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
+      // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
+      return { ...moduleState, curUser };
+    }
+  );
 
-  // 定义一个Effect来登录提交并更新
-  login: buildActionByEffect(function*({ username, password }: { username: string; password: string }): any {
-    const curUser: userService.LoginResponse = yield call(userService.login, username, password);
-    yield put(thisModule.actions.updateCurUser(curUser));
-  })
+  // 定义一个Effect来登录提交并更新，对于Effect可用decorator：buildLoading()
+  @buildLoading(namespace)
+  login = buildActionByEffect(
+    function*({ username, password }: { username: string; password: string }): any {
+      const curUser: userService.LoginResponse = yield call(userService.login, username, password);
+      yield put(thisModule.actions.updateCurUser(curUser));
+    }
+  );
 
 };
 
 // 以观察者模式定义该模块对action的监听
-const handlers = {
+class ModuleHandlers {
 
   // 当监听到有"app/Init"这个action发出的时候，去获取当前用户信息并更新
-  "app/Init":buildHandlerByEffect(function*(){
-    const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-    yield put(thisModule.actions.updateCurUser(curUser));
-  }),
+  @buildLoading()
+  "app/Init" = buildHandlerByEffect(
+    function*(){
+      const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
+      yield put(thisModule.actions.updateCurUser(curUser));
+    }
+  ),
 
   // 当监听到有"@framework/ERROR"这个action发出的时候，弹出错误信息
-  "@@framework/ERROR": buildHandlerByReducer(function({ message }, moduleState: State, rootState: any): State {
-    alert(message);
-    return moduleState;
-  })
+  "@@framework/ERROR" = buildHandlerByReducer(
+    function({ message }, moduleState: State, rootState: any): State {
+      alert(message);
+      return moduleState;
+    }
+  )
 };
 ```
 
@@ -193,22 +202,29 @@ export default function(){
 ### 框架 API
 
 * Model 相关：
-  * `function buildState(initState)` 创建模块的 state
-  * `function buildActionByReducer(reducer)` 创建模块的 reducer action
-  * `function buildActionByEffect(reducer)` 创建模块的 effect action
-  * `function buildHandlerByReducer(reducer)` 创建模块的 reducer handler
-  * `function buildHandlerByEffect(reducer)` 创建模块的 effect handler
-  * `function buildModel(state, actions, handlers)` 创建模块的 Model
+
+  * `BaseState` 模块 State 需继承此 interface
+  * `BaseActions` 模块 Actions 需继承此基类
+  * `buildState(initState)` 创建模块的 state
+  * `buildActionByReducer(reducer)` 使用 reducer 创建 action
+  * `buildActionByEffect(reducer)` 使用 effect 创建 action
+  * `buildModel(state, actions, handlers)` 创建模块的 Model
+
 * View 相关
-  * `function buildViews(namespace, views, model)` 创建模块的对外调用接口
+
+  * `buildViews(namespace, views, model)` 创建模块的对外调用接口
+
 * 模块调用相关
 
-  * `function buildFacade(namespace)` 创建模块的对外调用接口
+  * `buildModule(namespace)` 创建模块的对外调用接口
   * `createApp(component, container, storeMiddlewares? storeEnhancers?)` 创建 App
   * `getStore()` 获取全局的 Redux Store
   * `asyncComponent(ModuleViews)` 异步加载模块的视图
-  * `setLoading(promiseItem, namespace, group)` 设置 loading 状态
   * `storeHistory` 全局的 history
+
+* Loading 相关
+  * `@buildLoading(moduleName, group)` 以 Decorator 的方式设置 loading
+  * `setLoading(promiseItem, moduleName, group)` 用函数的方式设置 loading
   * `LoadingState` loading 的状态
 
 ### 框架内置 Action
