@@ -1,11 +1,11 @@
 import { combineReducers, Middleware, Store } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, LocationChangeActionName } from "./actions";
+import { errorAction, initLocationAction, InitModuleActionName, LocationChangeActionName } from "./actions";
 import { initStore, storeHistory } from "./store";
 import { ActionsMap } from "./types";
 
 let _store: Store<any> | undefined = undefined;
-let lastLocationAction: { type: string };
+let lastLocationAction: any;
 const sagasMap: ActionsMap = {};
 const reducersMap: ActionsMap = {};
 const sagaNames: string[] = [];
@@ -23,9 +23,9 @@ function getActionData(action: {}) {
   }
 }
 
-function reducer(state: any = {}, action: { type: string; data: any }) {
+function reducer(state: any = {}, action: { type: string; data?: any }) {
   if (action.type === LocationChangeActionName) {
-    lastLocationAction = action;
+    lastLocationAction = getActionData(action);
   }
   const item = reducersMap[action.type];
   if (item && _store) {
@@ -40,9 +40,11 @@ function reducer(state: any = {}, action: { type: string; data: any }) {
         });
       }
       newState[namespace] = fun(getActionData(action), state[namespace], rootState);
-      const locationHandler: Function | undefined = fun["__LocationHandler__"];
-      if (locationHandler && lastLocationAction) {
-        newState[namespace] = locationHandler(getActionData(lastLocationAction), newState[namespace], rootState);
+      if (lastLocationAction && action.type === namespace + "/" + InitModuleActionName) {
+        // 对异步模块补发一次locationChange
+        setTimeout(() => {
+          _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
+        }, 0);
       }
       if (decorators) {
         decorators.forEach(item => {
@@ -64,7 +66,6 @@ function* sagaHandler(action: { type: string; data: any }) {
     for (const moduleName of arr) {
       const fun = item[moduleName];
       const state = rootState.project[moduleName];
-      const locationHandler: Function | boolean | undefined = fun["__LocationHandler__"];
       const decorators: [(actionName: string, moduleName: string) => any, (data: any, error?: Error) => void, any][] | null = fun["__decorators__"];
       let err: Error | undefined = undefined;
       if (decorators) {
@@ -73,16 +74,7 @@ function* sagaHandler(action: { type: string; data: any }) {
         });
       }
       try {
-        if (locationHandler) {
-          if (typeof locationHandler === "function") {
-            yield* fun(getActionData(action), state, rootState);
-            yield* locationHandler(getActionData(lastLocationAction), state, rootState);
-          } else {
-            yield* fun(getActionData(lastLocationAction), state, rootState);
-          }
-        } else {
-          yield* fun(getActionData(action), state, rootState);
-        }
+        yield* fun(getActionData(action), state, rootState);
       } catch (error) {
         err = error;
       }

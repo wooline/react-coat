@@ -1,13 +1,13 @@
 import { ComponentType } from "react";
 import { Middleware } from "redux";
-import { ErrorActionName, initModuleAction, InitModuleActionName, LoadingActionName, LocationChangeActionName } from "./actions";
+import { ErrorActionName, InitLocationActionName, initModuleAction, InitModuleActionName, LoadingActionName, LocationChangeActionName } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading } from "./loading";
 import { buildStore, getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
-import { isGenerator, setGenerator } from "./utils";
+import { setGenerator } from "./utils";
 
 const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
@@ -100,28 +100,26 @@ function translateMap(cls: any) {
   return map as any;
 }
 export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
-  const actions: A = translateMap(actionClass);
+  const map = translateMap(actionClass);
+  map.INIT = buildActionByReducer(function(data: S, moduleState: S, rootState: any): S {
+    return data;
+  });
+  map.LOADING = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: S, rootState: any): S {
+    return {
+      ...(moduleState as any),
+      loading: { ...(moduleState as any).loading, ...loading }
+    };
+  });
+  const actions: A = map;
   const handlers: H = translateMap(handlerClass);
   return { state, actions, handlers };
 }
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
-    const selfInitAction = model.actions[InitModuleActionName] as Function;
-    const selfInitHandler = model.handlers[namespace + "/" + InitModuleActionName] as undefined | Function;
-    const locationChangeHandler = model.handlers[LocationChangeActionName] as undefined | Function;
+    const locationChangeHandler = model.handlers[LocationChangeActionName];
     if (locationChangeHandler) {
-      if (isGenerator(locationChangeHandler)) {
-        if (selfInitHandler) {
-          selfInitHandler["__LocationHandler__"] = locationChangeHandler;
-        } else {
-          model.handlers[namespace + "/" + InitModuleActionName] = locationChangeHandler;
-          locationChangeHandler["__LocationHandler__"] = true;
-        }
-      } else {
-        selfInitAction["__decorators__"] = locationChangeHandler["__decorators__"];
-        selfInitAction["__LocationHandler__"] = locationChangeHandler;
-      }
+      model.handlers[namespace + "/" + InitLocationActionName] = locationChangeHandler;
     }
     injectActions(namespace, model.actions);
     injectHandlers(namespace, model.handlers);
@@ -139,18 +137,6 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
     }
   }
   return views;
-}
-
-export class BaseActions<S> {
-  INIT = buildActionByReducer(function(data: S, moduleState: S, rootState: any): S {
-    return data;
-  });
-  LOADING = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: S, rootState: any): S {
-    return {
-      ...(moduleState as any),
-      loading: { ...(moduleState as any).loading, ...loading }
-    };
-  });
 }
 
 export interface State {

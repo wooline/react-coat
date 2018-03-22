@@ -32,20 +32,6 @@ export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, 
     handlers: H;
 };
 export declare function buildViews<T>(namespace: string, views: T, model: Model): T;
-export declare class BaseActions<S> {
-    INIT: (data: S) => {
-        type: string;
-        data: S;
-    };
-    LOADING: (data: {
-        [group: string]: string;
-    }) => {
-        type: string;
-        data: {
-            [group: string]: string;
-        };
-    };
-}
 export interface State {
     router: {
         location: {

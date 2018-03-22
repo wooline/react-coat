@@ -91,6 +91,7 @@ function __values(o) {
 var ErrorActionName = "@@framework/ERROR";
 var LoadingActionName = "LOADING";
 var InitModuleActionName = "INIT";
+var InitLocationActionName = "@@router/LOCATION_CHANGE";
 var LocationChangeActionName = "@@router/LOCATION_CHANGE";
 function errorAction(error) {
     return {
@@ -108,6 +109,12 @@ function loadingAction(namespace, group, status) {
 function initModuleAction(namespace, data) {
     return {
         type: namespace + "/" + InitModuleActionName,
+        data: data
+    };
+}
+function initLocationAction(namespace, data) {
+    return {
+        type: namespace + "/" + InitLocationActionName,
         data: data
     };
 }
@@ -181,7 +188,7 @@ function getActionData(action) {
 function reducer(state, action) {
     if (state === void 0) { state = {}; }
     if (action.type === LocationChangeActionName) {
-        lastLocationAction = action;
+        lastLocationAction = getActionData(action);
     }
     var item = reducersMap[action.type];
     if (item && _store) {
@@ -196,9 +203,11 @@ function reducer(state, action) {
                 });
             }
             newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
-            var locationHandler = fun["__LocationHandler__"];
-            if (locationHandler && lastLocationAction) {
-                newState_1[namespace] = locationHandler(getActionData(lastLocationAction), newState_1[namespace], rootState_1);
+            if (lastLocationAction && action.type === namespace + "/" + InitModuleActionName) {
+                // 对异步模块补发一次locationChange
+                setTimeout(function () {
+                    _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
+                }, 0);
             }
             if (decorators) {
                 decorators.forEach(function (item) {
@@ -221,13 +230,12 @@ function sagaHandler(action) {
                 rootState = _store.getState();
                 arr = Object.keys(item);
                 _loop_1 = function (moduleName) {
-                    var fun, state, locationHandler, decorators, err, error_1;
+                    var fun, state, decorators, err, error_1;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 fun = item[moduleName];
                                 state = rootState.project[moduleName];
-                                locationHandler = fun["__LocationHandler__"];
                                 decorators = fun["__decorators__"];
                                 err = undefined;
                                 if (decorators) {
@@ -237,37 +245,22 @@ function sagaHandler(action) {
                                 }
                                 _a.label = 1;
                             case 1:
-                                _a.trys.push([1, 10, , 11]);
-                                if (!locationHandler) return [3 /*break*/, 7];
-                                if (!(typeof locationHandler === "function")) return [3 /*break*/, 4];
+                                _a.trys.push([1, 3, , 4]);
                                 return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
                             case 2:
                                 _a.sent();
-                                return [5 /*yield**/, __values(locationHandler(getActionData(lastLocationAction), state, rootState))];
+                                return [3 /*break*/, 4];
                             case 3:
-                                _a.sent();
-                                return [3 /*break*/, 6];
-                            case 4: return [5 /*yield**/, __values(fun(getActionData(lastLocationAction), state, rootState))];
+                                error_1 = _a.sent();
+                                err = error_1;
+                                return [3 /*break*/, 4];
+                            case 4:
+                                if (!err) return [3 /*break*/, 6];
+                                return [4 /*yield*/, effects.put(errorAction(err))];
                             case 5:
                                 _a.sent();
                                 _a.label = 6;
-                            case 6: return [3 /*break*/, 9];
-                            case 7: return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
-                            case 8:
-                                _a.sent();
-                                _a.label = 9;
-                            case 9: return [3 /*break*/, 11];
-                            case 10:
-                                error_1 = _a.sent();
-                                err = error_1;
-                                return [3 /*break*/, 11];
-                            case 11:
-                                if (!err) return [3 /*break*/, 13];
-                                return [4 /*yield*/, effects.put(errorAction(err))];
-                            case 12:
-                                _a.sent();
-                                _a.label = 13;
-                            case 13:
+                            case 6:
                                 if (decorators) {
                                     decorators.forEach(function (item) {
                                         item[1](item[2], err);
@@ -480,7 +473,7 @@ function setLoading(item, namespace, group) {
     if (group === void 0) { group = "global"; }
     var key = namespace + "/" + group;
     if (!loadings[key]) {
-        loadings[key] = new TaskCounter(3);
+        loadings[key] = new TaskCounter(2);
         loadings[key].addListener(TaskCountEvent, function (e) {
             var store = getStore();
             store && store.dispatch(loadingAction(namespace, group, e.data));
@@ -658,29 +651,22 @@ function translateMap(cls) {
     return map;
 }
 function buildModel(state, actionClass, handlerClass) {
-    var actions = translateMap(actionClass);
+    var map = translateMap(actionClass);
+    map.INIT = buildActionByReducer(function (data, moduleState, rootState) {
+        return data;
+    });
+    map.LOADING = buildActionByReducer(function (loading, moduleState, rootState) {
+        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
+    });
+    var actions = map;
     var handlers = translateMap(handlerClass);
     return { state: state, actions: actions, handlers: handlers };
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
-        var selfInitAction = model.actions[InitModuleActionName];
-        var selfInitHandler = model.handlers[namespace + "/" + InitModuleActionName];
         var locationChangeHandler = model.handlers[LocationChangeActionName];
         if (locationChangeHandler) {
-            if (isGenerator(locationChangeHandler)) {
-                if (selfInitHandler) {
-                    selfInitHandler["__LocationHandler__"] = locationChangeHandler;
-                }
-                else {
-                    model.handlers[namespace + "/" + InitModuleActionName] = locationChangeHandler;
-                    locationChangeHandler["__LocationHandler__"] = true;
-                }
-            }
-            else {
-                selfInitAction["__decorators__"] = locationChangeHandler["__decorators__"];
-                selfInitAction["__LocationHandler__"] = locationChangeHandler;
-            }
+            model.handlers[namespace + "/" + InitLocationActionName] = locationChangeHandler;
         }
         injectActions(namespace, model.actions);
         injectHandlers(namespace, model.handlers);
@@ -700,17 +686,6 @@ function buildViews(namespace, views, model) {
     }
     return views;
 }
-var BaseActions = /** @class */ (function () {
-    function BaseActions() {
-        this.INIT = buildActionByReducer(function (data, moduleState, rootState) {
-            return data;
-        });
-        this.LOADING = buildActionByReducer(function (loading, moduleState, rootState) {
-            return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
-        });
-    }
-    return BaseActions;
-}());
 function createApp(view, container, storeMiddlewares, storeEnhancers) {
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
     if (storeEnhancers === void 0) { storeEnhancers = []; }
@@ -725,7 +700,6 @@ exports.buildLoading = buildLoading;
 exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;
 exports.buildViews = buildViews;
-exports.BaseActions = BaseActions;
 exports.createApp = createApp;
 exports.storeHistory = storeHistory;
 exports.getStore = getStore;

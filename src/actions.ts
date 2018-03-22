@@ -1,6 +1,7 @@
 export let ErrorActionName: string = "@@framework/ERROR";
 export let LoadingActionName: string = "LOADING";
 export let InitModuleActionName: string = "INIT";
+export let InitLocationActionName: string = "@@router/LOCATION_CHANGE";
 export let LocationChangeActionName: string = "@@router/LOCATION_CHANGE";
 
 export function errorAction(error: any) {
@@ -20,6 +21,13 @@ export function loadingAction(namespace: string, group: string, status: string) 
 export function initModuleAction(namespace: string, data: any) {
   return {
     type: namespace + "/" + InitModuleActionName,
+    data
+  };
+}
+
+export function initLocationAction(namespace: string, data: any) {
+  return {
+    type: namespace + "/" + InitLocationActionName,
     data
   };
 }

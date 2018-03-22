@@ -1,6 +1,7 @@
 export declare let ErrorActionName: string;
 export declare let LoadingActionName: string;
 export declare let InitModuleActionName: string;
+export declare let InitLocationActionName: string;
 export declare let LocationChangeActionName: string;
 export declare function errorAction(error: any): {
     type: string;
@@ -13,6 +14,10 @@ export declare function loadingAction(namespace: string, group: string, status: 
     };
 };
 export declare function initModuleAction(namespace: string, data: any): {
+    type: string;
+    data: any;
+};
+export declare function initLocationAction(namespace: string, data: any): {
     type: string;
     data: any;
 };

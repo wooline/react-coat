@@ -1,6 +1,6 @@
-react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。本框架放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
+react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 特点：
+## react-coat 特点：
 
 * 集成"history", "react-router-redux", "react-router-dom", "redux-saga"
 * 精简，源码不到 500 行，编译成 ES5 并压缩后仅 11k 左右
@@ -23,7 +23,7 @@ dispatch({ type: 'moduleA/query', payload:{args:[10]} })
 dispatch(moduleA.actions.query([10]))
 ```
 
-## 安装：
+## 安装 react-coat：
 
     $ yarn add react-coat
 
@@ -55,26 +55,26 @@ IE9 或 IE9 以上
 
 本框架依赖于浏览器 API "Promise"，低版本浏览器请自行安装 polyfill
 
-## 使用：
+## 使用 react-coat：
 
 > 快速上手：[一个简单的 Hello Word](https://github.com/wooline/react-coat-demo-simple)
 
 > 快速上手：[使用 react-coat 重构 antd-pro](https://github.com/wooline/react-coat-antd)
 
-目录结构示例如下
+基本目录结构如下
 
 ```
 src
-├── modules
-│       ├── admin
-│       │     ├── views
-│       │     │     ├── Other.tsX
-│       │     │     ├── Main.tsx
-│       │     │     └── index.ts
-│       │     ├── model.ts
-│       │     ├── index.ts
-│       │     └── namespace.ts
-│       └── app
+├── modules  \\存放业务模块
+│       ├── admin  \\一个名叫admin的业务模块
+│       │     ├── views  \\存放该业务模块的视图
+│       │     │     ├── Other.tsX  \\一个名叫Other的视图
+│       │     │     ├── Main.tsx  \\一个名叫Main的视图
+│       │     │     └── index.ts  \\导出该模块对外的视图
+│       │     ├── model.ts  \\该模块的数据模型定义和操作
+│       │     ├── index.ts  \\导出该模块对外的操作
+│       │     └── namespace.ts \\该模块的命名空间
+│       └── app  \\一个名叫app的业务模块
 │             ├── views
 │             │     ├── Other.tsX
 │             │     ├── Main.tsx
@@ -82,18 +82,8 @@ src
 │             ├── model.ts
 │             ├── index.ts
 │             └── namespace.ts
-└── index.tsx
+└── index.tsx  \\入口文件
 ```
-
-* 业务模块 Module：为了解耦与分解，我们将业务上比较独立的功能区块划分成一个 Module，该 Module 可独立打包和按需加载，**一个模块由 model、namespace、以及一组 view 组成**，图中表示有两个业务模块 admin 和 app
-
-* 业务视图 View：一个业务模块将包含一组 UI 视图，它们为普通的 react component 文件，我们可以从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于交互逻辑的表现，它们多为公共的交互控件，一般不会直接关联到 Store。
-
-* 数据模型 Model：一个业务模块将包含一个 Model 来集中管理其数据模型，与该模块相关的 State、Reducer、SagaEffect 等对数据的定义与操作都集中书写在 Model 中
-
-* 命名空间 Namespace：一个业务模块将包含一个命名空间定义文件 namespace.ts，模块的命名空间不能重复和冲突，一般以目录名作为值。例如：
-
-* src/index.tsx 为入口文件，例如：
 
 ```JS
 // src/index.tsx
@@ -103,9 +93,68 @@ import appViews from "modules/app/views";
 createApp(appViews.Main, "root");
 ```
 
-### 关于 Model
+### react-coat 的 Module 机制
 
-框架最大的创新在于对 model 的封装，model 用于组织和管理整个模块的数据，Model 的典型结构如下：
+> react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发测试，可以独立打包、可以同步或异步加载。**一个基本的业务 Module 由 model、namespace、以及一组 view 组成，放在 modules 目录下**。
+
+* namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突，一般以目录名为值
+* view 为普通的 React Component 文件，一个 Module 可以有多个 view，我们建议从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于抽象的交互逻辑，它们多为公共的交互控件，一般不会直接关联到全局 Store。
+* model 集中编写模块的数据定义和操作
+
+### react-coat 的 Module 接口机制
+
+> Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**namespace、actions、State、views**
+
+1. 模块根目录下的 index.ts，该文件将输出：namespace、actions、State
+
+   * namespace 为该模块的命名空间
+   * State 为一个 Type 类型，是该模块的 State 数据结构
+   * actions 包含了该模块所有可以被外界调用的操作
+
+2. 模块 views 目录下的 index.ts，该文件将输出：views
+
+> 例如，模块 A 可以 dispatch 模块 B 的 action：
+
+```JS
+// src/modules/A/views/Main.tsx
+import B from "modules/B";
+
+export default function(){
+  return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
+}
+```
+
+### react-coat 的 Module 加载机制
+
+> react-coat 中的业务 Module 是相对独立的，可以同步加载，也可以按需加载。
+
+* 同步加载：直接引用一个 Module 的 View，会执行同步加载。 例如，模块 A 直接使用模块 B 的视图
+
+```js
+// src/modules/A/views/Main.tsx
+import BViews from "modules/B/views";
+
+export default function() {
+  return (
+    <div>
+      <BViews.Main />
+    </div>
+  );
+}
+```
+
+* 按需加载：使用 react-router 的方式加载。本框架集成了 react-router-redux 5，
+
+```js
+// src/modules/A/views/Main.tsx
+const BViewsLoader = asyncComponent(() => import("modules/B/views"));
+...
+<Route component={BViewsLoader} />;
+```
+
+### react-coat 的 Model 机制
+
+> model 用于组织和管理整个模块的数据，Model 的典型结构如下：
 
 ```js
 // 定义该模块的State数据结构
@@ -124,9 +173,9 @@ const state: State = {
 });
 
 // 定义该模块的操作
-class ModuleActions extends BaseActions<State> {
+class ModuleActions {
 
-  // 定义一个Reducer来更新state
+  // 定义一个名为updateCurUser的Action
   updateCurUser = buildActionByReducer(
     function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
       // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
@@ -134,8 +183,8 @@ class ModuleActions extends BaseActions<State> {
     }
   );
 
-  // 定义一个Effect来登录提交并更新，对于Effect可用decorator：buildLoading()
-  @buildLoading(namespace)
+  // 定义一个名为login的Action
+  @buildLoading(namespace) //注入加载状态
   login = buildActionByEffect(
     function*({ username, password }: { username: string; password: string }): any {
       const curUser: userService.LoginResponse = yield call(userService.login, username, password);
@@ -145,20 +194,20 @@ class ModuleActions extends BaseActions<State> {
 
 };
 
-// 以观察者模式定义该模块对action的监听
+// 以观察者模式对action监听
 class ModuleHandlers {
 
-  // 当监听到有"app/Init"这个action发出的时候，去获取当前用户信息并更新
-  @buildLoading()
-  "app/Init" = buildHandlerByEffect(
+  // 监听"app/Init"这个action
+  @buildLoading() //注入加载状态
+  "app/Init" = buildActionByEffect(
     function*(){
       const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
       yield put(thisModule.actions.updateCurUser(curUser));
     }
   ),
 
-  // 当监听到有"@framework/ERROR"这个action发出的时候，弹出错误信息
-  "@@framework/ERROR" = buildHandlerByReducer(
+  // 监听"@framework/ERROR"这个action
+  "@@framework/ERROR" = buildActionByReducer(
     function({ message }, moduleState: State, rootState: any): State {
       alert(message);
       return moduleState;
@@ -167,36 +216,51 @@ class ModuleHandlers {
 };
 ```
 
-### 模块的对外接口
+### react-coat 的 Action 机制
 
-1. 模块根目录下的 index.ts，该文件将输出 3 笔数据：namespace、actions、State
+> Action 用于调用 Reducer 或 saga-effect 来加载和更新模块的 State。原则上每个模块的 Action 只能更新自已的 State。
 
-   * namespace 为该模块的命名空间
-   * State 为一个 Typescript 类型，是该模块的 State 数据结构
-   * actions 包含了该模块所有可以被外界调用的操作
+* 定义 Action，使用 `buildActionByReducer` 和 `buildActionByEffect` 在 Model 中集中集中编写整个模块的 Action
+* 执行 Action，使用 redux 的 `dispatch` 或 saga 的 `put` 方法
+* 监听 Action，模块可以监听所有 Action 来修改本模块的 State
+* 框架内置 Action，在特定的生命周期，框架会自动触发以下特定的 Action，你可以监听它们，但不要覆盖或修改它们
 
-2. 模块 views 目录下的 index.ts，该文件将输出 1 笔数据：views，将模块的视图暴露给外界使用
+  * `ErrorActionName` = "@@framework/ERROR" 当出现错误时触发
+  * `LocationChangeActionName` = "@@router/LOCATION_CHANGE" 当路由切换时触发
+  * `InitModuleActionName` = moduleName + "INIT" 当模块初始化时触发
+  * `LoadingActionName` = moduleName + "LOADING" 当出现 loading 状态时触发
+  * `InitLocationActionName` = moduleName+"@@router/LOCATION_CHANGE" 异步模块初始化路由时触发
 
-例如，模块 A 可以直接使用模块 B 的视图
+  ### react-coat 的 Loading 机制
 
-```JS
-// src/modules/A/views/Main.tsx
-import BViews from "modules/B/views";
+* loading 状态存放在每个 module 的 state 中，可以让组件绑定此状态，固定的 key 为 loading，每个模块有一个固定的 loading 分组为 global 例如：
 
-export default function(){
-  return <div><BViews.Main /></div>
-}
+```
+app: {
+  username: string;
+  loading: {  // 固定key名
+    global: string; // 固定分组
+    login: string; // 自定义分组
+  };
+};
 ```
 
-例如，模块 A 可以 dispatch 模块 B 的 action：
+* loading 每个模块都有自已的一组 loading 状态，同属于一组的多个 loading 会合并，例如
 
-```JS
-// src/modules/A/views/Main.tsx
-import B from "modules/B";
+```
+// 假设发起了多个异步请求，但他们可以共用一个loading状态
+// 当同组内所有请求全部完成时，loading状态才Stop
+setLoading(promise1, "app", "login");
+setLoading(promise2, "app", "login");
+```
 
-export default function(){
-  return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
-}
+* 每个 loading 状态有三种变化值：Start、Depth、Stop，Depth 表示深度加载，当超过一定时间，默认为 2 秒，还没有返回，则过渡为 Depth 状态
+
+* 设置 Loading 状态有两种方法：函数式、Decorator。Decorator 方便用于对 action 的注入
+
+```
+setLoading(item: Promise, moduleName?: string="app", group?: string="global")
+@buildLoading(moduleName:string, group:string)
 ```
 
 ### 框架 API
@@ -204,7 +268,6 @@ export default function(){
 * Model 相关：
 
   * `BaseState` 模块 State 需继承此 interface
-  * `BaseActions` 模块 Actions 需继承此基类
   * `buildState(initState)` 创建模块的 state
   * `buildActionByReducer(reducer)` 使用 reducer 创建 action
   * `buildActionByEffect(reducer)` 使用 effect 创建 action
@@ -225,16 +288,10 @@ export default function(){
 * Loading 相关
   * `@buildLoading(moduleName, group)` 以 Decorator 的方式设置 loading
   * `setLoading(promiseItem, moduleName, group)` 用函数的方式设置 loading
-  * `LoadingState` loading 的状态
-
-### 框架内置 Action
-
-* `ErrorActionName` = "@@framework/ERROR" 当出现错误时触发
-* `InitModuleActionName` = "INIT" 当模块初始化时触发
-* `LoadingActionName` = "LOADING" 当出现 loading 状态时触发
-* `LocationChangeActionName` = "@@router/LOCATION_CHANGE" 当路由切换时触发
+  * `LoadingState` loading 的三种状态
 
 ### FAQ
 
-* `使用本框架必须使用typescript吗？`  
+* `使用本框架必须使用typescript吗？`
+
   答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
