@@ -198,6 +198,17 @@ class ModuleActions {
 class ModuleHandlers {
 
   // 监听"app/Init"这个action
+  @buildlogger( //注入跟踪勾子，打印该Action的执行时间
+    (actionName: string, moduleName: string) => {
+      const startTime = new Date().getTime();
+      console.log(moduleName,actionName,"start at",time)
+      return {startTime, moduleName, actionName};
+    },
+    ({startTime, moduleName, actionName}) => {
+      const endTime = new Date().getTime();
+      console.log(moduleName,actionName,"spend",endTime-startTime)
+    }
+  )
   @buildLoading() //注入加载状态
   "app/Init" = buildActionByEffect(
     function*(){
@@ -223,6 +234,9 @@ class ModuleHandlers {
 * 定义 Action，使用 `buildActionByReducer` 和 `buildActionByEffect` 在 Model 中集中集中编写整个模块的 Action
 * 执行 Action，使用 redux 的 `dispatch` 或 saga 的 `put` 方法
 * 监听 Action，模块可以监听所有 Action 来修改本模块的 State
+* Action 装饰器，框架提供两个 Decorator
+  * `@buildLoading(moduleName, group)` 为 Action 注入 loading 状态
+  * `@buildlogger(beforeFun, afterFun)` 为 Action 注入踪勾子
 * 框架内置 Action，在特定的生命周期，框架会自动触发以下特定的 Action，你可以监听它们，但不要覆盖或修改它们
 
   * `ErrorActionName` = "@@framework/ERROR" 当出现错误时触发
@@ -272,6 +286,7 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
   * `buildActionByReducer(reducer)` 使用 reducer 创建 action
   * `buildActionByEffect(reducer)` 使用 effect 创建 action
   * `buildModel(state, actions, handlers)` 创建模块的 Model
+  * `@buildlogger(beforeFun, afterFun)` 提供一个 Action 的 Decorator，用来跟踪 Action 的执行情况
 
 * View 相关
 
