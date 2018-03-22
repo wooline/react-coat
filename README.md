@@ -93,7 +93,7 @@ import appViews from "modules/app/views";
 createApp(appViews.Main, "root");
 ```
 
-### react-coat 的 Module 机制
+### Module 机制
 
 > react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发测试，可以独立打包、可以同步或异步加载。**一个基本的业务 Module 由 model、namespace、以及一组 view 组成，放在 modules 目录下**。
 
@@ -101,7 +101,7 @@ createApp(appViews.Main, "root");
 * view 为普通的 React Component 文件，一个 Module 可以有多个 view，我们建议从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于抽象的交互逻辑，它们多为公共的交互控件，一般不会直接关联到全局 Store。
 * model 集中编写模块的数据定义和操作
 
-### react-coat 的 Module 接口机制
+### Module 接口机制
 
 > Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**namespace、actions、State、views**
 
@@ -124,7 +124,7 @@ export default function(){
 }
 ```
 
-### react-coat 的 Module 加载机制
+### Module 加载机制
 
 > react-coat 中的业务 Module 是相对独立的，可以同步加载，也可以按需加载。
 
@@ -152,7 +152,7 @@ const BViewsLoader = asyncComponent(() => import("modules/B/views"));
 <Route component={BViewsLoader} />;
 ```
 
-### react-coat 的 Model 机制
+### Model 机制
 
 > model 用于组织和管理整个模块的数据，Model 的典型结构如下：
 
@@ -216,7 +216,7 @@ class ModuleHandlers {
 };
 ```
 
-### react-coat 的 Action 机制
+### Action 机制
 
 > Action 用于调用 Reducer 或 saga-effect 来加载和更新模块的 State。原则上每个模块的 Action 只能更新自已的 State。
 
@@ -231,7 +231,7 @@ class ModuleHandlers {
   * `LoadingActionName` = moduleName + "LOADING" 当出现 loading 状态时触发
   * `InitLocationActionName` = moduleName+"@@router/LOCATION_CHANGE" 异步模块初始化路由时触发
 
-  ### react-coat 的 Loading 机制
+### Loading 机制
 
 * loading 状态存放在每个 module 的 state 中，可以让组件绑定此状态，固定的 key 为 loading，每个模块有一个固定的 loading 分组为 global 例如：
 
