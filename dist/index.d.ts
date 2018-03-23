@@ -2,16 +2,17 @@
 /// <reference types="react" />
 import { ComponentType } from "react";
 import { Middleware } from "redux";
-import { ErrorActionName, InitModuleActionName, LoadingActionName, LocationChangeActionName } from "./actions";
+import { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading } from "./loading";
 import { getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
+import { delayPromise } from "./utils";
 export declare function buildModule<T>(namespace: string): {
     namespace: string;
     actions: T;
 };
-export interface BaseState {
+export interface BaseModuleState {
     loading: {
         global: string;
     };
@@ -32,7 +33,7 @@ export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, 
     handlers: H;
 };
 export declare function buildViews<T>(namespace: string, views: T, model: Model): T;
-export interface State {
+export interface StoreState<P> {
     router: {
         location: {
             pathname: string;
@@ -41,14 +42,8 @@ export interface State {
             key: string;
         };
     };
-    project: {
-        app: {
-            loading: {
-                global: string;
-            };
-        };
-    };
+    project: P;
 }
 export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
-export { storeHistory, getStore, asyncComponent, setLoading, LoadingState };
-export { ErrorActionName, InitModuleActionName, LoadingActionName, LocationChangeActionName };
+export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, delayPromise };
+export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

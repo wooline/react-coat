@@ -73,7 +73,7 @@ src
 │       │     │     └── index.ts  \\导出该模块对外的视图
 │       │     ├── model.ts  \\该模块的数据模型定义和操作
 │       │     ├── index.ts  \\导出该模块对外的操作
-│       │     └── namespace.ts \\该模块的命名空间
+│       │     └── namespace.ts \\该模块的命名空间和常量输出
 │       └── app  \\一个名叫app的业务模块
 │             ├── views
 │             │     ├── Other.tsX
@@ -97,21 +97,22 @@ createApp(appViews.Main, "root");
 
 > react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发测试，可以独立打包、可以同步或异步加载。**一个基本的业务 Module 由 model、namespace、以及一组 view 组成，放在 modules 目录下**。
 
-* namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突，一般以目录名为值
+* namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突
 * view 为普通的 React Component 文件，一个 Module 可以有多个 view，我们建议从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于抽象的交互逻辑，它们多为公共的交互控件，一般不会直接关联到全局 Store。
 * model 集中编写模块的数据定义和操作
 
 ### Module 接口机制
 
-> Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**namespace、actions、State、views**
+> Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**NAMESPACE、actions、State、views**
 
-1. 模块根目录下的 index.ts，该文件将输出：namespace、actions、State
+1. 模块根目录下的 index.ts，该文件将输出：actions、State
 
-   * namespace 为该模块的命名空间
    * State 为一个 Type 类型，是该模块的 State 数据结构
    * actions 包含了该模块所有可以被外界调用的操作
 
 2. 模块 views 目录下的 index.ts，该文件将输出：views
+
+3. 模块根目录下的 namespace.ts 该文件将输出该模块定义的常量
 
 > 例如，模块 A 可以 dispatch 模块 B 的 action：
 
@@ -158,7 +159,7 @@ const BViewsLoader = asyncComponent(() => import("modules/B/views"));
 
 ```js
 // 定义该模块的State数据结构
-interface State extends BaseState {
+interface State extends BaseModuleState {
   curUser: {
     uid: string;
     username: string;
@@ -184,7 +185,7 @@ class ModuleActions {
   );
 
   // 定义一个名为login的Action
-  @buildLoading(namespace) //注入加载状态
+  @buildLoading(NAMESPACE) //注入加载状态
   login = buildActionByEffect(
     function*({ username, password }: { username: string; password: string }): any {
       const curUser: userService.LoginResponse = yield call(userService.login, username, password);
@@ -236,14 +237,14 @@ class ModuleHandlers {
 * 监听 Action，模块可以监听所有 Action 来修改本模块的 State
 * Action 装饰器，框架提供两个 Decorator
   * `@buildLoading(moduleName, group)` 为 Action 注入 loading 状态
-  * `@buildlogger(beforeFun, afterFun)` 为 Action 注入踪勾子
+  * `@buildlogger(beforeFun, afterFun)` 为 Action 注入跟踪勾子
 * 框架内置 Action，在特定的生命周期，框架会自动触发以下特定的 Action，你可以监听它们，但不要覆盖或修改它们
 
-  * `ErrorActionName` = "@@framework/ERROR" 当出现错误时触发
-  * `LocationChangeActionName` = "@@router/LOCATION_CHANGE" 当路由切换时触发
-  * `InitModuleActionName` = moduleName + "INIT" 当模块初始化时触发
-  * `LoadingActionName` = moduleName + "LOADING" 当出现 loading 状态时触发
-  * `InitLocationActionName` = moduleName+"@@router/LOCATION_CHANGE" 异步模块初始化路由时触发
+  * `ERROR_ACTION_NAME` = "@@framework/ERROR" 当出现错误时触发
+  * `LOCATION_CHANGE_ACTION_NAME` = "@@router/LOCATION_CHANGE" 当路由切换时触发
+  * `moduleName + "INIT"` 当模块初始化时触发，每个模块只会触发一次
+  * `moduleName + "LOADING"` 当出现 loading 状态时触发
+  * `moduleName + "@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
 
 ### Loading 机制
 
@@ -281,7 +282,8 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 
 * Model 相关：
 
-  * `BaseState` 模块 State 需继承此 interface
+  * `StoreState<P>` 整个 Store 的 State 类型
+  * `BaseModuleState` 模块 State 需继承此 interface
   * `buildState(initState)` 创建模块的 state
   * `buildActionByReducer(reducer)` 使用 reducer 创建 action
   * `buildActionByEffect(reducer)` 使用 effect 创建 action

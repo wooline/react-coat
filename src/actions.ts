@@ -1,33 +1,33 @@
-export let ErrorActionName: string = "@@framework/ERROR";
-export let LoadingActionName: string = "LOADING";
-export let InitModuleActionName: string = "INIT";
-export let InitLocationActionName: string = "@@router/LOCATION_CHANGE";
-export let LocationChangeActionName: string = "@@router/LOCATION_CHANGE";
+export const ERROR_ACTION_NAME = "@@framework/ERROR";
+export const LOADING_ACTION_NAME = "LOADING";
+export const INIT_MODULE_ACTION_NAME = "INIT";
+export const INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
+export const LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
 
 export function errorAction(error: any) {
   return {
-    type: ErrorActionName,
+    type: ERROR_ACTION_NAME,
     error
   };
 }
 
 export function loadingAction(namespace: string, group: string, status: string) {
   return {
-    type: namespace + "/" + LoadingActionName,
+    type: namespace + "/" + LOADING_ACTION_NAME,
     data: { [group]: status }
   };
 }
 
 export function initModuleAction(namespace: string, data: any) {
   return {
-    type: namespace + "/" + InitModuleActionName,
+    type: namespace + "/" + INIT_MODULE_ACTION_NAME,
     data
   };
 }
 
 export function initLocationAction(namespace: string, data: any) {
   return {
-    type: namespace + "/" + InitLocationActionName,
+    type: namespace + "/" + INIT_LOCATION_ACTION_NAME,
     data
   };
 }

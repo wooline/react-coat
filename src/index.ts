@@ -1,13 +1,13 @@
 import { ComponentType } from "react";
 import { Middleware } from "redux";
-import { ErrorActionName, InitLocationActionName, initModuleAction, InitModuleActionName, LoadingActionName, LocationChangeActionName } from "./actions";
+import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, initModuleAction, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading } from "./loading";
 import { buildStore, getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
-import { setGenerator } from "./utils";
+import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
@@ -39,7 +39,7 @@ function getModuleActions(namespace: string) {
   return actions;
 }
 
-export interface BaseState {
+export interface BaseModuleState {
   loading: {
     global: string;
   };
@@ -117,9 +117,9 @@ export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerC
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
-    const locationChangeHandler = model.handlers[LocationChangeActionName];
+    const locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
     if (locationChangeHandler) {
-      model.handlers[namespace + "/" + InitLocationActionName] = locationChangeHandler;
+      model.handlers[namespace + "/" + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
     }
     injectActions(namespace, model.actions);
     injectHandlers(namespace, model.handlers);
@@ -139,7 +139,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
   return views;
 }
 
-export interface State {
+export interface StoreState<P> {
   router: {
     location: {
       pathname: string;
@@ -148,18 +148,12 @@ export interface State {
       key: string;
     };
   };
-  project: {
-    app: {
-      loading: {
-        global: string;
-      };
-    };
-  };
+  project: P;
 }
 
 export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = []) {
   const store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
-export { storeHistory, getStore, asyncComponent, setLoading, LoadingState };
-export { ErrorActionName, InitModuleActionName, LoadingActionName, LocationChangeActionName };
+export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, delayPromise };
+export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

@@ -88,33 +88,33 @@ function __values(o) {
     };
 }
 
-var ErrorActionName = "@@framework/ERROR";
-var LoadingActionName = "LOADING";
-var InitModuleActionName = "INIT";
-var InitLocationActionName = "@@router/LOCATION_CHANGE";
-var LocationChangeActionName = "@@router/LOCATION_CHANGE";
+var ERROR_ACTION_NAME = "@@framework/ERROR";
+var LOADING_ACTION_NAME = "LOADING";
+var INIT_MODULE_ACTION_NAME = "INIT";
+var INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
+var LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
 function errorAction(error) {
     return {
-        type: ErrorActionName,
+        type: ERROR_ACTION_NAME,
         error: error
     };
 }
 function loadingAction(namespace, group, status) {
     return {
-        type: namespace + "/" + LoadingActionName,
+        type: namespace + "/" + LOADING_ACTION_NAME,
         data: (_a = {}, _a[group] = status, _a)
     };
     var _a;
 }
 function initModuleAction(namespace, data) {
     return {
-        type: namespace + "/" + InitModuleActionName,
+        type: namespace + "/" + INIT_MODULE_ACTION_NAME,
         data: data
     };
 }
 function initLocationAction(namespace, data) {
     return {
-        type: namespace + "/" + InitLocationActionName,
+        type: namespace + "/" + INIT_LOCATION_ACTION_NAME,
         data: data
     };
 }
@@ -187,7 +187,7 @@ function getActionData(action) {
 }
 function reducer(state, action) {
     if (state === void 0) { state = {}; }
-    if (action.type === LocationChangeActionName) {
+    if (action.type === LOCATION_CHANGE_ACTION_NAME) {
         lastLocationAction = getActionData(action);
     }
     var item = reducersMap[action.type];
@@ -203,7 +203,7 @@ function reducer(state, action) {
                 });
             }
             newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
-            if (lastLocationAction && action.type === namespace + "/" + InitModuleActionName) {
+            if (lastLocationAction && action.type === namespace + "/" + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
                     _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
@@ -543,6 +543,25 @@ function setGenerator(fun) {
     fun["__generator__"] = true;
     return fun;
 }
+function delayPromise(second) {
+    return function (target, propertyKey, descriptor) {
+        var fun = descriptor.value;
+        descriptor.value = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var delay = new Promise(function (resolve) {
+                setTimeout(function () {
+                    resolve(true);
+                }, second * 1000);
+            });
+            return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
+                return items[1];
+            });
+        };
+    };
+}
 
 var sagaNameMap = {};
 function pushSagaName(actionName) {
@@ -664,9 +683,9 @@ function buildModel(state, actionClass, handlerClass) {
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
-        var locationChangeHandler = model.handlers[LocationChangeActionName];
+        var locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
         if (locationChangeHandler) {
-            model.handlers[namespace + "/" + InitLocationActionName] = locationChangeHandler;
+            model.handlers[namespace + "/" + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
         }
         injectActions(namespace, model.actions);
         injectHandlers(namespace, model.handlers);
@@ -706,8 +725,7 @@ exports.getStore = getStore;
 exports.asyncComponent = asyncComponent;
 exports.setLoading = setLoading;
 exports.LoadingState = TaskCounterState;
-exports.ErrorActionName = ErrorActionName;
-exports.InitModuleActionName = InitModuleActionName;
-exports.LoadingActionName = LoadingActionName;
-exports.LocationChangeActionName = LocationChangeActionName;
+exports.delayPromise = delayPromise;
+exports.ERROR_ACTION_NAME = ERROR_ACTION_NAME;
+exports.LOCATION_CHANGE_ACTION_NAME = LOCATION_CHANGE_ACTION_NAME;
 //# sourceMappingURL=index.js.map
