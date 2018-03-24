@@ -29,16 +29,18 @@
     "redux": "^3.7.2"
   },
   "dependencies": {
+    "@types/history": "^4.6.2",
+    "@types/react": "^16.0.38",
+    "@types/react-dom": "^16.0.4",
+    "@types/react-redux": "^5.0.15",
+    "@types/react-router-dom": "^4.2.4",
+    "@types/react-router-redux": "^5.0.12",
     "history": "^4.7.2",
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
     "redux-saga": "^0.16.0"
   },
   "devDependencies": {
-    "@types/react": "^16.0.38",
-    "@types/react-dom": "^16.0.4",
-    "@types/react-redux": "^5.0.15",
-    "@types/react-router-dom": "^4.2.4",
     "babel-eslint": "^8.2.1",
     "cross-env": "^5.1.4",
     "eslint": "^4.17.0",
