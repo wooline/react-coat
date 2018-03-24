@@ -306,13 +306,14 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
   * `buildModule(namespace)` 创建模块的对外调用接口
   * `createApp(component, container, storeMiddlewares? storeEnhancers?)` 创建 App
   * `getStore()` 获取全局的 Redux Store
-  * `asyncComponent(ModuleViews)` 异步加载模块的视图
+  * `asyncComponent(ModuleViews, componentName, LoadingComponent, ErrorComponent)` 异步加载模块的视图
   * `storeHistory` 全局的 history
 
 * Loading 相关
   * `@buildLoading(moduleName, group)` 以 Decorator 的方式设置 loading
   * `setLoading(promiseItem, moduleName, group)` 用函数的方式设置 loading
   * `LoadingState` loading 的三种状态
+  * `setLoadingDepthTime(second)` 设置 Loading 等待多少秒后转 Depth 状态
 
 ### FAQ
 
