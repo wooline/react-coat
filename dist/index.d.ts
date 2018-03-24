@@ -1,11 +1,12 @@
 /// <reference types="node" />
 /// <reference types="react" />
+import { History } from "history";
 import { ComponentType } from "react";
 import { Middleware } from "redux";
 import { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
-import { getStore, storeHistory } from "./storeProxy";
+import { getStore } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise } from "./utils";
 export declare function buildModule<T>(namespace: string): {
@@ -44,6 +45,7 @@ export interface StoreState<P> {
     };
     project: P;
 }
-export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
-export { storeHistory, getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
+export declare function getHistory(): History;
+export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[], storeHistory?: History): void;
+export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

@@ -1,7 +1,8 @@
+import { History } from "history";
 import { combineReducers, Middleware, Store } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import { errorAction, INIT_MODULE_ACTION_NAME, initLocationAction, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
-import { initStore, storeHistory } from "./store";
+import { initStore } from "./store";
 import { ActionsMap } from "./types";
 
 let _store: Store<any> | undefined = undefined;
@@ -95,8 +96,8 @@ function* saga() {
   yield takeEvery(sagaNames, sagaHandler);
 }
 
-export function buildStore(storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: { type: string }[]) {
-  const { store, reducers, sagaMiddleware } = initStore(storeMiddlewares, storeEnhancers);
+export function buildStore(storeHistory: History, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: { type: string }[]) {
+  const { store, reducers, sagaMiddleware } = initStore(storeMiddlewares, storeEnhancers, storeHistory);
   _store = store;
   reducers.project = reducer;
   store.replaceReducer(combineReducers(reducers));
@@ -116,4 +117,4 @@ export function buildStore(storeMiddlewares: Middleware[], storeEnhancers: Funct
 export function getStore() {
   return _store;
 }
-export { storeHistory, sagasMap, reducersMap, sagaNames };
+export { sagasMap, reducersMap, sagaNames };

@@ -91,9 +91,10 @@ import appViews from "modules/app/views";
 import { createApp } from "react-coat";
 
 /*
-createApp()还可以传两个参数以自定义扩展Store：
+createApp()还可以传入三个可选参数以自定义扩展Store：
 storeMiddlewares?: Middleware[]
 storeEnhancers?: Function[]
+storeHistory?: History  //如果不传，则使用history/createBrowserHistory
 */
 createApp(appViews.Main, "root");
 ```
@@ -303,8 +304,8 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 
 * 模块调用相关
 
+  * `createApp(component, container, storeMiddlewares?, storeEnhancers?, storeHistory?)` 创建 App
   * `buildModule(namespace)` 创建模块的对外调用接口
-  * `createApp(component, container, storeMiddlewares? storeEnhancers?)` 创建 App
   * `getStore()` 获取全局的 Redux Store
   * `asyncComponent(ModuleViews, componentName, LoadingComponent, ErrorComponent)` 异步加载模块的视图
   * `storeHistory` 全局的 history

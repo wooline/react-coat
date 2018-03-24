@@ -4,16 +4,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var React = require('react');
-var React__default = _interopDefault(React);
+var React = _interopDefault(require('react'));
 var reactRedux = require('react-redux');
-var createHistory = _interopDefault(require('history/createBrowserHistory'));
+var ReactDOM = _interopDefault(require('react-dom'));
+var reactRouterDom = require('react-router-dom');
 var reactRouterRedux = require('react-router-redux');
 var redux = require('redux');
 var createSagaMiddleware = _interopDefault(require('redux-saga'));
 var effects = require('redux-saga/effects');
-var ReactDOM = _interopDefault(require('react-dom'));
-var reactRouterDom = require('react-router-dom');
+var createHistory = _interopDefault(require('history/createBrowserHistory'));
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -131,7 +130,7 @@ var Component = /** @class */ (function (_super) {
     }
     Component.prototype.render = function () {
         if (this.state.message) {
-            return React__default.createElement("div", null,
+            return React.createElement("div", null,
                 "failed to render, error: ",
                 this.state.message);
         }
@@ -142,7 +141,7 @@ var Component = /** @class */ (function (_super) {
         this.props.dispatch(errorAction(error));
     };
     return Component;
-}(React__default.PureComponent));
+}(React.PureComponent));
 var mapDispatchToProps = function (dispatch) {
     return {
         dispatch: dispatch
@@ -150,179 +149,12 @@ var mapDispatchToProps = function (dispatch) {
 };
 var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
 
-var storeHistory = createHistory();
-var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
-var reducers = {
-    router: reactRouterRedux.routerReducer
-};
-var sagaMiddleware = createSagaMiddleware();
-var devtools = function (options) { return function (noop) { return noop; }; };
-if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
-    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
-}
-function initStore(storeMiddlewares, storeEnhancers) {
-    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
-    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
-    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
-    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
-}
-
-var _store = undefined;
-var lastLocationAction;
-var sagasMap = {};
-var reducersMap = {};
-var sagaNames = [];
-function getActionData(action) {
-    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
-    if (arr.length === 0) {
-        return undefined;
-    }
-    else if (arr.length === 1) {
-        return action[arr[0]];
-    }
-    else {
-        var data = __assign({}, action);
-        delete data["type"];
-        return data;
-    }
-}
-function reducer(state, action) {
-    if (state === void 0) { state = {}; }
-    if (action.type === LOCATION_CHANGE_ACTION_NAME) {
-        lastLocationAction = getActionData(action);
-    }
-    var item = reducersMap[action.type];
-    if (item && _store) {
-        var rootState_1 = _store.getState();
-        var newState_1 = __assign({}, state);
-        Object.keys(item).forEach(function (namespace) {
-            var fun = item[namespace];
-            var decorators = fun["__decorators__"];
-            if (decorators) {
-                decorators.forEach(function (item) {
-                    item[2] = item[0](action.type, namespace);
-                });
-            }
-            newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
-            if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
-                // 对异步模块补发一次locationChange
-                setTimeout(function () {
-                    _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
-                }, 0);
-            }
-            if (decorators) {
-                decorators.forEach(function (item) {
-                    item[1](item[2], newState_1[namespace]);
-                    item[2] = null;
-                });
-            }
-        });
-        return newState_1;
-    }
-    return state;
-}
-function sagaHandler(action) {
-    var item, rootState, arr, _loop_1, _i, arr_1, moduleName;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                item = sagasMap[action.type];
-                if (!(item && _store)) return [3 /*break*/, 4];
-                rootState = _store.getState();
-                arr = Object.keys(item);
-                _loop_1 = function (moduleName) {
-                    var fun, state, decorators, err, error_1;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                fun = item[moduleName];
-                                state = rootState.project[moduleName];
-                                decorators = fun["__decorators__"];
-                                err = undefined;
-                                if (decorators) {
-                                    decorators.forEach(function (item) {
-                                        item[2] = item[0](action.type, moduleName);
-                                    });
-                                }
-                                _a.label = 1;
-                            case 1:
-                                _a.trys.push([1, 3, , 4]);
-                                return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
-                            case 2:
-                                _a.sent();
-                                return [3 /*break*/, 4];
-                            case 3:
-                                error_1 = _a.sent();
-                                err = error_1;
-                                return [3 /*break*/, 4];
-                            case 4:
-                                if (!err) return [3 /*break*/, 6];
-                                return [4 /*yield*/, effects.put(errorAction(err))];
-                            case 5:
-                                _a.sent();
-                                _a.label = 6;
-                            case 6:
-                                if (decorators) {
-                                    decorators.forEach(function (item) {
-                                        item[1](item[2], err);
-                                        item[2] = null;
-                                    });
-                                }
-                                return [2 /*return*/];
-                        }
-                    });
-                };
-                _i = 0, arr_1 = arr;
-                _a.label = 1;
-            case 1:
-                if (!(_i < arr_1.length)) return [3 /*break*/, 4];
-                moduleName = arr_1[_i];
-                return [5 /*yield**/, _loop_1(moduleName)];
-            case 2:
-                _a.sent();
-                _a.label = 3;
-            case 3:
-                _i++;
-                return [3 /*break*/, 1];
-            case 4: return [2 /*return*/];
-        }
-    });
-}
-function saga() {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, effects.takeEvery(sagaNames, sagaHandler)];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
-        }
-    });
-}
-function buildStore(storeMiddlewares, storeEnhancers, injectedModules) {
-    var _a = initStore(storeMiddlewares, storeEnhancers), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
-    _store = store;
-    reducers.project = reducer;
-    store.replaceReducer(redux.combineReducers(reducers));
-    sagaMiddleware.run(saga);
-    window.onerror = function (message, filename, lineno, colno, error) {
-        store.dispatch(errorAction(error || { message: message }));
-    };
-    injectedModules.forEach(function (action) {
-        store.dispatch(action);
-    });
-    injectedModules.length = 0;
-    return store;
-}
-function getStore() {
-    return _store;
-}
-
-function buildApp(view, container, storeMiddlewares, storeEnhancers, store) {
+function buildApp(view, container, storeMiddlewares, storeEnhancers, store, history) {
     var WithRouter = reactRouterDom.withRouter(view);
-    ReactDOM.render(React__default.createElement(reactRedux.Provider, { store: store },
-        React__default.createElement(ErrorBoundary, null,
-            React__default.createElement(reactRouterRedux.ConnectedRouter, { history: storeHistory },
-                React__default.createElement(WithRouter, null)))), document.getElementById(container));
+    ReactDOM.render(React.createElement(reactRedux.Provider, { store: store },
+        React.createElement(ErrorBoundary, null,
+            React.createElement(reactRouterRedux.ConnectedRouter, { history: history },
+                React.createElement(WithRouter, null)))), document.getElementById(container));
 }
 
 function emptyObject(obj) {
@@ -468,6 +300,172 @@ var TaskCounter = /** @class */ (function (_super) {
     return TaskCounter;
 }(PDispatcher));
 
+var reducers = {
+    router: reactRouterRedux.routerReducer
+};
+var sagaMiddleware = createSagaMiddleware();
+var devtools = function (options) { return function (noop) { return noop; }; };
+if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
+}
+function initStore(storeMiddlewares, storeEnhancers, storeHistory) {
+    var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
+    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
+    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
+    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
+    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
+}
+
+var _store = undefined;
+var lastLocationAction;
+var sagasMap = {};
+var reducersMap = {};
+var sagaNames = [];
+function getActionData(action) {
+    var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
+    if (arr.length === 0) {
+        return undefined;
+    }
+    else if (arr.length === 1) {
+        return action[arr[0]];
+    }
+    else {
+        var data = __assign({}, action);
+        delete data["type"];
+        return data;
+    }
+}
+function reducer(state, action) {
+    if (state === void 0) { state = {}; }
+    if (action.type === LOCATION_CHANGE_ACTION_NAME) {
+        lastLocationAction = getActionData(action);
+    }
+    var item = reducersMap[action.type];
+    if (item && _store) {
+        var rootState_1 = _store.getState();
+        var newState_1 = __assign({}, state);
+        Object.keys(item).forEach(function (namespace) {
+            var fun = item[namespace];
+            var decorators = fun["__decorators__"];
+            if (decorators) {
+                decorators.forEach(function (item) {
+                    item[2] = item[0](action.type, namespace);
+                });
+            }
+            newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
+            if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
+                // 对异步模块补发一次locationChange
+                setTimeout(function () {
+                    _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
+                }, 0);
+            }
+            if (decorators) {
+                decorators.forEach(function (item) {
+                    item[1](item[2], newState_1[namespace]);
+                    item[2] = null;
+                });
+            }
+        });
+        return newState_1;
+    }
+    return state;
+}
+function sagaHandler(action) {
+    var item, rootState, arr, _loop_1, _i, arr_1, moduleName;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                item = sagasMap[action.type];
+                if (!(item && _store)) return [3 /*break*/, 4];
+                rootState = _store.getState();
+                arr = Object.keys(item);
+                _loop_1 = function (moduleName) {
+                    var fun, state, decorators, err, error_1;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                fun = item[moduleName];
+                                state = rootState.project[moduleName];
+                                decorators = fun["__decorators__"];
+                                err = undefined;
+                                if (decorators) {
+                                    decorators.forEach(function (item) {
+                                        item[2] = item[0](action.type, moduleName);
+                                    });
+                                }
+                                _a.label = 1;
+                            case 1:
+                                _a.trys.push([1, 3, , 4]);
+                                return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
+                            case 2:
+                                _a.sent();
+                                return [3 /*break*/, 4];
+                            case 3:
+                                error_1 = _a.sent();
+                                err = error_1;
+                                return [3 /*break*/, 4];
+                            case 4:
+                                if (!err) return [3 /*break*/, 6];
+                                return [4 /*yield*/, effects.put(errorAction(err))];
+                            case 5:
+                                _a.sent();
+                                _a.label = 6;
+                            case 6:
+                                if (decorators) {
+                                    decorators.forEach(function (item) {
+                                        item[1](item[2], err);
+                                        item[2] = null;
+                                    });
+                                }
+                                return [2 /*return*/];
+                        }
+                    });
+                };
+                _i = 0, arr_1 = arr;
+                _a.label = 1;
+            case 1:
+                if (!(_i < arr_1.length)) return [3 /*break*/, 4];
+                moduleName = arr_1[_i];
+                return [5 /*yield**/, _loop_1(moduleName)];
+            case 2:
+                _a.sent();
+                _a.label = 3;
+            case 3:
+                _i++;
+                return [3 /*break*/, 1];
+            case 4: return [2 /*return*/];
+        }
+    });
+}
+function saga() {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, effects.takeEvery(sagaNames, sagaHandler)];
+            case 1:
+                _a.sent();
+                return [2 /*return*/];
+        }
+    });
+}
+function buildStore(storeHistory, storeMiddlewares, storeEnhancers, injectedModules) {
+    var _a = initStore(storeMiddlewares, storeEnhancers, storeHistory), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
+    _store = store;
+    reducers.project = reducer;
+    store.replaceReducer(redux.combineReducers(reducers));
+    sagaMiddleware.run(saga);
+    window.onerror = function (message, filename, lineno, colno, error) {
+        store.dispatch(errorAction(error || { message: message }));
+    };
+    injectedModules.forEach(function (action) {
+        store.dispatch(action);
+    });
+    injectedModules.length = 0;
+    return store;
+}
+function getStore() {
+    return _store;
+}
+
 var loadings = {};
 var depthTime = 2;
 function setLoadingDepthTime(second) {
@@ -489,7 +487,11 @@ function setLoading(item, namespace, group) {
 }
 
 var defaultLoadingComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-loading" }, "Loading..."); };
-var defaultErrorComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-error" }, "Error..."); };
+var defaultErrorComponent = function (props) {
+    return React.createElement("div", { className: "react-coat-asyncComponent-error" },
+        "Error: ",
+        props.message);
+};
 function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent) {
     if (componentName === void 0) { componentName = "Main"; }
     if (LoadingComponent === void 0) { LoadingComponent = defaultLoadingComponent; }
@@ -518,7 +520,9 @@ function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent
                 });
             })
                 .catch(function (errorData) {
+                _this.errorMessage = errorData.message;
                 var Component = _this.ErrorComponent;
+                _this.props.dispatch(errorAction(errorData));
                 _this.setState({
                     Component: Component
                 });
@@ -528,11 +532,26 @@ function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent
         AsyncComponent.prototype.render = function () {
             var Component = this.state.Component;
             var LoadingComponent = this.LoadingComponent;
-            return Component ? React.createElement(Component, __assign({}, this.props)) : React.createElement(LoadingComponent, __assign({}, this.props));
+            if (Component) {
+                if (Component === this.ErrorComponent) {
+                    return React.createElement(Component, __assign({ message: this.errorMessage }, this.props));
+                }
+                else {
+                    return React.createElement(Component, __assign({}, this.props));
+                }
+            }
+            else {
+                return React.createElement(LoadingComponent, __assign({}, this.props));
+            }
         };
         return AsyncComponent;
     }(React.Component));
-    return AsyncComponent;
+    var mapDispatchToProps = function (dispatch) {
+        return {
+            dispatch: dispatch
+        };
+    };
+    return reactRedux.connect(null, mapDispatchToProps)(AsyncComponent);
 }
 
 // export function assignObject<T, U>(target: T, source: U): T & U {
@@ -598,6 +617,7 @@ function injectActions(namespace, actions) {
 var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
+var _history;
 function buildModule(namespace) {
     var actions = actionsProxy;
     // if (window["Proxy"]) {
@@ -702,11 +722,15 @@ function buildViews(namespace, views, model) {
     }
     return views;
 }
-function createApp(view, container, storeMiddlewares, storeEnhancers) {
+function getHistory() {
+    return _history;
+}
+function createApp(view, container, storeMiddlewares, storeEnhancers, storeHistory) {
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
     if (storeEnhancers === void 0) { storeEnhancers = []; }
-    var store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
-    buildApp(view, container, storeMiddlewares, storeEnhancers, store);
+    _history = storeHistory || createHistory();
+    var store = buildStore(_history, storeMiddlewares, storeEnhancers, injectedModules);
+    buildApp(view, container, storeMiddlewares, storeEnhancers, store, _history);
 }
 
 exports.buildModule = buildModule;
@@ -716,8 +740,8 @@ exports.buildLoading = buildLoading;
 exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;
 exports.buildViews = buildViews;
+exports.getHistory = getHistory;
 exports.createApp = createApp;
-exports.storeHistory = storeHistory;
 exports.getStore = getStore;
 exports.asyncComponent = asyncComponent;
 exports.setLoadingDepthTime = setLoadingDepthTime;

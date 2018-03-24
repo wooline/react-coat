@@ -1,3 +1,5 @@
+import { History } from "history";
+import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
 import { Middleware } from "redux";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
@@ -5,14 +7,14 @@ import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions } from "./inject";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
-import { buildStore, getStore, storeHistory } from "./storeProxy";
+import { buildStore, getStore } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
 const actionsProxy: { [action: string]: Function } = {};
-
+let _history: History;
 export function buildModule<T>(namespace: string) {
   const actions: T = actionsProxy as any;
   // if (window["Proxy"]) {
@@ -143,9 +145,13 @@ export interface StoreState<P> {
   project: P;
 }
 
-export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = []) {
-  const store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
-  buildApp(view, container, storeMiddlewares, storeEnhancers, store);
+export function getHistory() {
+  return _history;
 }
-export { storeHistory, getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
+export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = [], storeHistory?: History) {
+  _history = storeHistory || createHistory();
+  const store = buildStore(_history, storeMiddlewares, storeEnhancers, injectedModules);
+  buildApp(view, container, storeMiddlewares, storeEnhancers, store, _history);
+}
+export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
