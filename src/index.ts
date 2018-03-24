@@ -1,42 +1,36 @@
 import { ComponentType } from "react";
 import { Middleware } from "redux";
-import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, initModuleAction, LOCATION_CHANGE_ACTION_NAME } from "./actions";
+import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
-import { injectActions, injectHandlers } from "./inject";
-import { LoadingState, setLoading } from "./loading";
+import { injectActions } from "./inject";
+import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
 import { buildStore, getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: { type: string }[] = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
-const actionsProxy: { [moduleName: string]: { [action: string]: Function } } = {};
+const actionsProxy: { [action: string]: Function } = {};
 
 export function buildModule<T>(namespace: string) {
-  let actions: T;
-  if (window["Proxy"]) {
-    actions = new window["Proxy"](
-      {},
-      {
-        get: (target: {}, key: string) => {
-          return (data: any) => ({ type: namespace + "/" + key, data });
-        }
-      }
-    );
-  } else {
-    actions = getModuleActions(namespace) as any;
-  }
+  const actions: T = actionsProxy as any;
+  // if (window["Proxy"]) {
+  //   actions = new window["Proxy"](
+  //     {},
+  //     {
+  //       get: (target: {}, key: string) => {
+  //         return (data: any) => ({ type: key, data });
+  //       }
+  //     }
+  //   );
+  // } else {
+  //   actions = actionsProxy as any;
+  // }
   return {
     namespace,
     actions
   };
-}
-
-function getModuleActions(namespace: string) {
-  const actions = actionsProxy[namespace] || {};
-  actionsProxy[namespace] = actions;
-  return actions;
 }
 
 export interface BaseModuleState {
@@ -100,32 +94,30 @@ function translateMap(cls: any) {
   return map as any;
 }
 export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
-  const map = translateMap(actionClass);
-  map.INIT = buildActionByReducer(function(data: S, moduleState: S, rootState: any): S {
-    return data;
-  });
-  map.LOADING = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: S, rootState: any): S {
-    return {
-      ...(moduleState as any),
-      loading: { ...(moduleState as any).loading, ...loading }
-    };
-  });
-  const actions: A = map;
+  const actions: A = translateMap(actionClass);
   const handlers: H = translateMap(handlerClass);
   return { state, actions, handlers };
 }
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
+    model.actions[namespace + NSP + INIT_MODULE_ACTION_NAME] = buildActionByReducer(function(data: any, moduleState: any, rootState: any) {
+      return data;
+    });
+    model.actions[namespace + NSP + LOADING_ACTION_NAME] = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: any, rootState: any) {
+      return {
+        ...moduleState,
+        loading: { ...moduleState.loading, ...loading }
+      };
+    });
     const locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
     if (locationChangeHandler) {
-      model.handlers[namespace + "/" + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
+      model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
     }
     injectActions(namespace, model.actions);
-    injectHandlers(namespace, model.handlers);
-    const actions = getModuleActions(namespace);
+    injectActions(namespace, model.handlers);
     Object.keys(model.actions).forEach(key => {
-      actions[key] = (data: any) => ({ type: namespace + "/" + key, data });
+      actionsProxy[key] = (data: any) => ({ type: key, data });
     });
     hasInjected[namespace] = true;
     const action = initModuleAction(namespace, model.state);
@@ -155,5 +147,5 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store);
 }
-export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, delayPromise };
+export { storeHistory, getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

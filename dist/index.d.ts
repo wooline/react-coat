@@ -4,7 +4,7 @@ import { ComponentType } from "react";
 import { Middleware } from "redux";
 import { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
-import { LoadingState, setLoading } from "./loading";
+import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
 import { getStore, storeHistory } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise } from "./utils";
@@ -45,5 +45,5 @@ export interface StoreState<P> {
     project: P;
 }
 export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[]): void;
-export { storeHistory, getStore, asyncComponent, setLoading, LoadingState, delayPromise };
+export { storeHistory, getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

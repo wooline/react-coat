@@ -3,6 +3,7 @@ export const LOADING_ACTION_NAME = "LOADING";
 export const INIT_MODULE_ACTION_NAME = "INIT";
 export const INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
 export const LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
+export const NSP = "_";
 
 export function errorAction(error: any) {
   return {
@@ -13,21 +14,21 @@ export function errorAction(error: any) {
 
 export function loadingAction(namespace: string, group: string, status: string) {
   return {
-    type: namespace + "/" + LOADING_ACTION_NAME,
+    type: namespace + NSP + LOADING_ACTION_NAME,
     data: { [group]: status }
   };
 }
 
 export function initModuleAction(namespace: string, data: any) {
   return {
-    type: namespace + "/" + INIT_MODULE_ACTION_NAME,
+    type: namespace + NSP + INIT_MODULE_ACTION_NAME,
     data
   };
 }
 
 export function initLocationAction(namespace: string, data: any) {
   return {
-    type: namespace + "/" + INIT_LOCATION_ACTION_NAME,
+    type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
     data
   };
 }

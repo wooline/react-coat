@@ -73,7 +73,7 @@ src
 │       │     │     └── index.ts  \\导出该模块对外的视图
 │       │     ├── model.ts  \\该模块的数据模型定义和操作
 │       │     ├── index.ts  \\导出该模块对外的操作
-│       │     └── namespace.ts \\该模块的命名空间和常量输出
+│       │     └── actionNames.ts \\该模块的ActionName定义
 │       └── app  \\一个名叫app的业务模块
 │             ├── views
 │             │     ├── Other.tsX
@@ -81,15 +81,20 @@ src
 │             │     └── index.ts
 │             ├── model.ts
 │             ├── index.ts
-│             └── namespace.ts
+│             └── actionNames.ts
 └── index.tsx  \\入口文件
 ```
 
 ```JS
-// src/index.tsx
-import { createApp } from "react-coat";
+// src/index.tsx 入口文件
 import appViews from "modules/app/views";
+import { createApp } from "react-coat";
 
+/*
+createApp()还可以传两个参数以自定义扩展Store：
+storeMiddlewares?: Middleware[]
+storeEnhancers?: Function[]
+*/
 createApp(appViews.Main, "root");
 ```
 
@@ -97,7 +102,8 @@ createApp(appViews.Main, "root");
 
 > react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发测试，可以独立打包、可以同步或异步加载。**一个基本的业务 Module 由 model、namespace、以及一组 view 组成，放在 modules 目录下**。
 
-* namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突
+* namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突，建议与目录同名
+* 模块的 ActionName 不能重复或冲突，建议使用 namespace 和\_开头
 * view 为普通的 React Component 文件，一个 Module 可以有多个 view，我们建议从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于抽象的交互逻辑，它们多为公共的交互控件，一般不会直接关联到全局 Store。
 * model 集中编写模块的数据定义和操作
 
@@ -112,7 +118,7 @@ createApp(appViews.Main, "root");
 
 2. 模块 views 目录下的 index.ts，该文件将输出：views
 
-3. 模块根目录下的 namespace.ts 该文件将输出该模块定义的常量
+3. 模块根目录下的 actionNames.ts 该文件将输出该模块所有 Action 名称以供外界监听
 
 > 例如，模块 A 可以 dispatch 模块 B 的 action：
 
@@ -121,7 +127,7 @@ createApp(appViews.Main, "root");
 import B from "modules/B";
 
 export default function(){
-  return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
+  return <button onClick={e => {dispatch(B.actions.b_login())}}>click me</button>
 }
 ```
 
@@ -177,7 +183,7 @@ const state: State = {
 class ModuleActions {
 
   // 定义一个名为updateCurUser的Action
-  updateCurUser = buildActionByReducer(
+  [UPDATE_CUR_USER] = buildActionByReducer(
     function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
       // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
       return { ...moduleState, curUser };
@@ -186,10 +192,10 @@ class ModuleActions {
 
   // 定义一个名为login的Action
   @buildLoading(NAMESPACE) //注入加载状态
-  login = buildActionByEffect(
+  [LOGIN] = buildActionByEffect(
     function*({ username, password }: { username: string; password: string }): any {
       const curUser: userService.LoginResponse = yield call(userService.login, username, password);
-      yield put(thisModule.actions.updateCurUser(curUser));
+      yield put(thisModule.actions.app_updateCurUser(curUser));
     }
   );
 
@@ -198,8 +204,8 @@ class ModuleActions {
 // 以观察者模式对action监听
 class ModuleHandlers {
 
-  // 监听"app/Init"这个action
-  @buildlogger( //注入跟踪勾子，打印该Action的执行时间
+  // 监听"app_Init"这个action
+  @buildlogger( //可选，注入跟踪勾子，打印该Action的执行时间
     (actionName: string, moduleName: string) => {
       const startTime = new Date().getTime();
       console.log(moduleName,actionName,"start at",time)
@@ -211,15 +217,15 @@ class ModuleHandlers {
     }
   )
   @buildLoading() //注入加载状态
-  "app/Init" = buildActionByEffect(
+  [INIT] = buildActionByEffect(
     function*(){
       const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-      yield put(thisModule.actions.updateCurUser(curUser));
+      yield put(thisModule.actions.app_updateCurUser(curUser));
     }
   ),
 
   // 监听"@framework/ERROR"这个action
-  "@@framework/ERROR" = buildActionByReducer(
+  [ERROR_ACTION_NAME] = buildActionByReducer(
     function({ message }, moduleState: State, rootState: any): State {
       alert(message);
       return moduleState;
@@ -232,6 +238,7 @@ class ModuleHandlers {
 
 > Action 用于调用 Reducer 或 saga-effect 来加载和更新模块的 State。原则上每个模块的 Action 只能更新自已的 State。
 
+* 定义 ActionName，模块 Action 的名称可供自已或外界监听与调用，通常使用常量定义在模块根目录下的 actionName.ts 中
 * 定义 Action，使用 `buildActionByReducer` 和 `buildActionByEffect` 在 Model 中集中集中编写整个模块的 Action
 * 执行 Action，使用 redux 的 `dispatch` 或 saga 的 `put` 方法
 * 监听 Action，模块可以监听所有 Action 来修改本模块的 State
@@ -242,9 +249,9 @@ class ModuleHandlers {
 
   * `ERROR_ACTION_NAME` = "@@framework/ERROR" 当出现错误时触发
   * `LOCATION_CHANGE_ACTION_NAME` = "@@router/LOCATION_CHANGE" 当路由切换时触发
-  * `moduleName + "INIT"` 当模块初始化时触发，每个模块只会触发一次
-  * `moduleName + "LOADING"` 当出现 loading 状态时触发
-  * `moduleName + "@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
+  * `moduleName + "_INIT"` 当模块初始化时触发，每个模块只会触发一次
+  * `moduleName + "_LOADING"` 当出现 loading 状态时触发
+  * `moduleName + "_@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
 
 ### Loading 机制
 

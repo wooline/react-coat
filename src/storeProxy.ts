@@ -1,6 +1,6 @@
 import { combineReducers, Middleware, Store } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, INIT_MODULE_ACTION_NAME, initLocationAction, LOCATION_CHANGE_ACTION_NAME } from "./actions";
+import { errorAction, INIT_MODULE_ACTION_NAME, initLocationAction, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import { initStore, storeHistory } from "./store";
 import { ActionsMap } from "./types";
 
@@ -40,7 +40,7 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
         });
       }
       newState[namespace] = fun(getActionData(action), state[namespace], rootState);
-      if (lastLocationAction && action.type === namespace + "/" + INIT_MODULE_ACTION_NAME) {
+      if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
         // 对异步模块补发一次locationChange
         setTimeout(() => {
           _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));

@@ -93,6 +93,7 @@ var LOADING_ACTION_NAME = "LOADING";
 var INIT_MODULE_ACTION_NAME = "INIT";
 var INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
 var LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
+var NSP = "_";
 function errorAction(error) {
     return {
         type: ERROR_ACTION_NAME,
@@ -101,20 +102,20 @@ function errorAction(error) {
 }
 function loadingAction(namespace, group, status) {
     return {
-        type: namespace + "/" + LOADING_ACTION_NAME,
+        type: namespace + NSP + LOADING_ACTION_NAME,
         data: (_a = {}, _a[group] = status, _a)
     };
     var _a;
 }
 function initModuleAction(namespace, data) {
     return {
-        type: namespace + "/" + INIT_MODULE_ACTION_NAME,
+        type: namespace + NSP + INIT_MODULE_ACTION_NAME,
         data: data
     };
 }
 function initLocationAction(namespace, data) {
     return {
-        type: namespace + "/" + INIT_LOCATION_ACTION_NAME,
+        type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
         data: data
     };
 }
@@ -203,7 +204,7 @@ function reducer(state, action) {
                 });
             }
             newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
-            if (lastLocationAction && action.type === namespace + "/" + INIT_MODULE_ACTION_NAME) {
+            if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
                     _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
@@ -468,12 +469,16 @@ var TaskCounter = /** @class */ (function (_super) {
 }(PDispatcher));
 
 var loadings = {};
+var depthTime = 2;
+function setLoadingDepthTime(second) {
+    depthTime = second;
+}
 function setLoading(item, namespace, group) {
     if (namespace === void 0) { namespace = "app"; }
     if (group === void 0) { group = "global"; }
     var key = namespace + "/" + group;
     if (!loadings[key]) {
-        loadings[key] = new TaskCounter(2);
+        loadings[key] = new TaskCounter(depthTime);
         loadings[key].addListener(TaskCountEvent, function (e) {
             var store = getStore();
             store && store.dispatch(loadingAction(namespace, group, e.data));
@@ -483,16 +488,18 @@ function setLoading(item, namespace, group) {
     return item;
 }
 
-var defaultLoadingComponent = function () { return React.createElement("div", null, "Loading..."); };
-var defaultErrorComponent = function () { return React.createElement("div", null, "Error..."); };
-function asyncComponent(resolve, componentName, LoadingComponent) {
+var defaultLoadingComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-loading" }, "Loading..."); };
+var defaultErrorComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-error" }, "Error..."); };
+function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent) {
     if (componentName === void 0) { componentName = "Main"; }
     if (LoadingComponent === void 0) { LoadingComponent = defaultLoadingComponent; }
+    if (ErrorComponent === void 0) { ErrorComponent = defaultErrorComponent; }
     var AsyncComponent = /** @class */ (function (_super) {
         __extends(AsyncComponent, _super);
         function AsyncComponent(props, context) {
             var _this = _super.call(this, props, context) || this;
             _this.LoadingComponent = LoadingComponent;
+            _this.ErrorComponent = ErrorComponent;
             _this.state = {
                 Component: null
             };
@@ -511,7 +518,7 @@ function asyncComponent(resolve, componentName, LoadingComponent) {
                 });
             })
                 .catch(function (errorData) {
-                var Component = defaultErrorComponent;
+                var Component = _this.ErrorComponent;
                 _this.setState({
                     Component: Component
                 });
@@ -584,12 +591,7 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
 }
 function injectActions(namespace, actions) {
     Object.keys(actions).forEach(function (actionName) {
-        transformAction(namespace + "/" + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
-    });
-}
-function injectHandlers(listenerModule, handlers) {
-    Object.keys(handlers).forEach(function (handlerName) {
-        transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
+        transformAction(actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
     });
 }
 
@@ -597,26 +599,23 @@ var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
 function buildModule(namespace) {
-    var actions;
-    if (window["Proxy"]) {
-        actions = new window["Proxy"]({}, {
-            get: function (target, key) {
-                return function (data) { return ({ type: namespace + "/" + key, data: data }); };
-            }
-        });
-    }
-    else {
-        actions = getModuleActions(namespace);
-    }
+    var actions = actionsProxy;
+    // if (window["Proxy"]) {
+    //   actions = new window["Proxy"](
+    //     {},
+    //     {
+    //       get: (target: {}, key: string) => {
+    //         return (data: any) => ({ type: key, data });
+    //       }
+    //     }
+    //   );
+    // } else {
+    //   actions = actionsProxy as any;
+    // }
     return {
         namespace: namespace,
         actions: actions
     };
-}
-function getModuleActions(namespace) {
-    var actions = actionsProxy[namespace] || {};
-    actionsProxy[namespace] = actions;
-    return actions;
 }
 function buildActionByReducer(reducer) {
     var fun = reducer;
@@ -670,28 +669,26 @@ function translateMap(cls) {
     return map;
 }
 function buildModel(state, actionClass, handlerClass) {
-    var map = translateMap(actionClass);
-    map.INIT = buildActionByReducer(function (data, moduleState, rootState) {
-        return data;
-    });
-    map.LOADING = buildActionByReducer(function (loading, moduleState, rootState) {
-        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
-    });
-    var actions = map;
+    var actions = translateMap(actionClass);
     var handlers = translateMap(handlerClass);
     return { state: state, actions: actions, handlers: handlers };
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
+        model.actions[namespace + NSP + INIT_MODULE_ACTION_NAME] = buildActionByReducer(function (data, moduleState, rootState) {
+            return data;
+        });
+        model.actions[namespace + NSP + LOADING_ACTION_NAME] = buildActionByReducer(function (loading, moduleState, rootState) {
+            return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
+        });
         var locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
         if (locationChangeHandler) {
-            model.handlers[namespace + "/" + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
+            model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
         }
         injectActions(namespace, model.actions);
-        injectHandlers(namespace, model.handlers);
-        var actions_1 = getModuleActions(namespace);
+        injectActions(namespace, model.handlers);
         Object.keys(model.actions).forEach(function (key) {
-            actions_1[key] = function (data) { return ({ type: namespace + "/" + key, data: data }); };
+            actionsProxy[key] = function (data) { return ({ type: key, data: data }); };
         });
         hasInjected[namespace] = true;
         var action = initModuleAction(namespace, model.state);
@@ -723,6 +720,7 @@ exports.createApp = createApp;
 exports.storeHistory = storeHistory;
 exports.getStore = getStore;
 exports.asyncComponent = asyncComponent;
+exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
 exports.LoadingState = TaskCounterState;
 exports.delayPromise = delayPromise;

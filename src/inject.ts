@@ -26,13 +26,7 @@ function transformAction(actionName: string, action: Function, listenerModule: s
 
 export function injectActions(namespace: string, actions: Actions) {
   Object.keys(actions).forEach(actionName => {
-    transformAction(namespace + "/" + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
-  });
-}
-
-export function injectHandlers(listenerModule: string, handlers: Actions) {
-  Object.keys(handlers).forEach(handlerName => {
-    transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
+    transformAction(actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
   });
 }
 
