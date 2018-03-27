@@ -29,27 +29,30 @@ dispatch(moduleA.actions.query([10]))
 
     $ yarn add react-coat
 
-本框架依赖于以下包，请自行安装：
+本框架依赖于以下同伴，请自行安装或选择性升级：
 
 ```
-"glbDependencies": {
+"peerDependencies": {
+    "@types/history": "^4.6.2",
+    "@types/react": "^16.0.38",
+    "@types/react-dom": "^16.0.4",
+    "@types/react-redux": "^5.0.15",
+    "@types/react-router-dom": "^4.2.4",
+    "@types/react-router-redux": "^5.0.12",
+    "history": "^4.7.2",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
-    "redux": "^3.7.2"
-  }
-```
-
-本框架会安装以下依赖，请避免重复安装：
-
-```
-"dependencies": {
-    "history": "^4.7.2",
+    "redux": "^3.7.2",
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
     "redux-saga": "^0.16.0"
-  }
+  },
 ```
+
+如果你想省心，你也可以直接安装"all in 1"的 react-coat-pkg，
+
+    $ yarn add react-coat-pkg
 
 ## 兼容性：
 
@@ -323,6 +326,9 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 * `使用本框架必须使用typescript吗？`
 
   答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
+
+* `框架能用于生产环境吗，会一直维护吗？`
+  答：本人会持续升级维护。区别于某些强侵入型框架，本微框架原理简单，核心代码也就百多行，担心的话你也可以自我维护和改造。前端生态更新迭代快速，组件松散，各版本之间容易冲突，如果想省事还是不要去做第一个趟坑的人。目前来说，本框架采用的都是各组件的最新版本，比如`react-router`已经用到 v5.0 了（可惜还是 alpha 版），应当可以撑段时期了>\_<。
 
 ### 后记
 
