@@ -29,7 +29,7 @@ dispatch(moduleA.actions.query([10]))
 
     $ yarn add react-coat
 
-本框架依赖于以下同伴，请自行安装或选择性升级：
+本框架依赖于以下小伙伴，请自行安装。开发时在以下版本环境下编译通过，但不限于以下版本，你可以对某些版本选择性的升降级：
 
 ```
 "peerDependencies": {
@@ -50,11 +50,11 @@ dispatch(moduleA.actions.query([10]))
   },
 ```
 
-如果你想省心，你也可以直接安装"all in 1"的 react-coat-pkg，
+如果你想省心，你也可以直接安装"all in 1"的 react-coat-pkg，它将自动包含以上组件，并保证各组件版本不会冲突：
 
     $ yarn add react-coat-pkg
 
-## 兼容性：
+### 兼容性：
 
 IE9 或 IE9 以上
 
