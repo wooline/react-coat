@@ -6,7 +6,7 @@ import tslint from "rollup-plugin-tslint";
 
 const env = process.env.NODE_ENV;
 const pkg = require("./package.json");
-const externals = Object.keys(Object.assign({}, pkg.dependencies, pkg.glbDependencies));
+const externals = Object.keys(Object.assign({}, pkg.dependencies, pkg.peerDependencies));
 
 const config = {
   input: "src/index.ts",
