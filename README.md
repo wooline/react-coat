@@ -4,7 +4,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 * 兼容最新版本的 react@16.3、redux@4.0 等
 * LoadingState 由原来的"枚举类型"改为"直接量类型"：Start" | "Stop" | "Depth"
-* 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”做出以下优化
+* 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”做出以下优化。**如果你使用 typescript，请升级至 2.8.0 以上**
 
 ```
 export declare function buildActionByEffect<T, S>
