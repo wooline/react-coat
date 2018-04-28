@@ -1,5 +1,43 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
+## 1.2.0 发布：
+
+* 兼容最新版本的 react@16.3、redux@4.0 等
+* LoadingState 由原来的"枚举类型"改为"直接量类型"：Start" | "Stop" | "Depth"
+* 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”做出以下优化
+
+```
+export declare function buildActionByEffect<T, S>
+(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>)
+: T extends null | undefined ? () => {
+    type: string;
+    payload: T;
+} : (payload: T) => {
+    type: string;
+    payload: T;
+};
+```
+
+在定义一个 effect 时，如果它不需要任何参数，但在 buildActionByEffect 时，还是需要参数占位符的，比如：
+
+```
+// 参数data为一个参数占位符，并没有被用到
+getNotices : buildActionByEffect(function*(data: null) {
+  const notices: Notices = yield call(ajax.api.getNotices);
+  yield put(thisModule.actions.admin_updateNotices(notices));
+})
+```
+
+在调用以上这个 effect 时，ts 会自动判断出不需要传参数：
+
+```
+// 最新的调用：
+dispatch(thisModule.actions.getNotices())
+
+// 原来的调用：
+dispatch(thisModule.actions.getNotices(null))
+```
+
 ## react-coat 特点：
 
 * 集成"history", "react-router-redux", "react-router-dom", "redux-saga"
@@ -29,23 +67,23 @@ dispatch(moduleA.actions.query([10]))
 
     $ yarn add react-coat
 
-本框架依赖于以下小伙伴，请自行安装。开发时在以下版本环境下编译通过，但不限于以下版本，你可以对某些版本选择性的升降级：
+兼容 react 周边生态版本：
 
 ```
 "peerDependencies": {
-    "@types/history": "^4.6.2",
-    "@types/react": "^16.0.38",
-    "@types/react-dom": "^16.0.4",
-    "@types/react-redux": "^5.0.15",
-    "@types/react-router-dom": "^4.2.4",
-    "@types/react-router-redux": "^5.0.12",
-    "history": "^4.7.2",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
-    "react-redux": "^5.0.6",
-    "redux": "^3.7.2",
-    "react-router-dom": "^4.2.2",
-    "react-router-redux": "^5.0.0-alpha.9",
+    "@types/history": "^4.0.0",
+    "@types/react": "^16.0.0",
+    "@types/react-dom": "^16.0.0",
+    "@types/react-redux": "^5.0.0",
+    "@types/react-router-dom": "^4.0.0",
+    "@types/react-router-redux": "^5.0.0",
+    "history": "^4.0.0",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "react-redux": "^5.0.0",
+    "react-router-dom": "^4.0.0",
+    "react-router-redux": "^5.0.0",
+    "redux": "^3.0.0 || ^4.0.0",
     "redux-saga": "^0.16.0"
   },
 ```
@@ -117,14 +155,14 @@ createApp(appViews.Main, "root");
 
 > Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**NAMESPACE、actions、State、views**
 
-1. 模块根目录下的 index.ts，该文件将输出：actions、State
+1.  模块根目录下的 index.ts，该文件将输出：actions、State
 
-   * State 为一个 Type 类型，是该模块的 State 数据结构
-   * actions 包含了该模块所有可以被外界调用的操作
+    * State 为一个 Type 类型，是该模块的 State 数据结构
+    * actions 包含了该模块所有可以被外界调用的操作
 
-2. 模块 views 目录下的 index.ts，该文件将输出：views
+2.  模块 views 目录下的 index.ts，该文件将输出：views
 
-3. 模块根目录下的 actionNames.ts 该文件将输出该模块所有 Action 名称以供外界监听
+3.  模块根目录下的 actionNames.ts 该文件将输出该模块所有 Action 名称以供外界监听
 
 > 例如，模块 A 可以 dispatch 模块 B 的 action：
 
@@ -224,7 +262,7 @@ class ModuleHandlers {
   )
   @buildLoading() //注入加载状态
   [INIT] = buildActionByEffect(
-    function*(){
+    function*(data:null){
       const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
       yield put(thisModule.actions.app_updateCurUser(curUser));
     }
@@ -332,6 +370,6 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 
 ### 后记
 
-> 欢迎各位高人批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈或 Email：wooline@qq.com
+> 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈或 Email：wooline@qq.com
 
-> 有问题也可以去：[知乎留言](https://zhuanlan.zhihu.com/p/34964264)
+> [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
