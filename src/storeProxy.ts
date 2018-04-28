@@ -1,11 +1,11 @@
 import { History } from "history";
-import { combineReducers, Middleware, Store } from "redux";
+import { Action, Middleware, Store, combineReducers } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, INIT_MODULE_ACTION_NAME, initLocationAction, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
+import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
 import { initStore } from "./store";
 import { ActionsMap } from "./types";
 
-let _store: Store<any> | undefined = undefined;
+let singleStore: Store<any, Action> | undefined;
 let lastLocationAction: any;
 const sagasMap: ActionsMap = {};
 const reducersMap: ActionsMap = {};
@@ -29,28 +29,30 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
     lastLocationAction = getActionData(action);
   }
   const item = reducersMap[action.type];
-  if (item && _store) {
-    const rootState = _store.getState();
+  if (item && singleStore) {
+    const rootState = singleStore.getState();
     const newState = { ...state };
     Object.keys(item).forEach(namespace => {
       const fun = item[namespace];
-      const decorators: [(actionName: string, moduleName: string) => any, (data: any, state: any) => void, any][] | null = fun["__decorators__"];
+      const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, state: any) => void, any]> | null = fun["__decorators__"];
       if (decorators) {
-        decorators.forEach(item => {
-          item[2] = item[0](action.type, namespace);
+        decorators.forEach(decorator => {
+          decorator[2] = decorator[0](action.type, namespace);
         });
       }
       newState[namespace] = fun(getActionData(action), state[namespace], rootState);
       if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
         // 对异步模块补发一次locationChange
         setTimeout(() => {
-          _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
+          if (singleStore) {
+            singleStore.dispatch(initLocationAction(namespace, lastLocationAction));
+          }
         }, 0);
       }
       if (decorators) {
-        decorators.forEach(item => {
-          item[1](item[2], newState[namespace]);
-          item[2] = null;
+        decorators.forEach(decorator => {
+          decorator[1](decorator[2], newState[namespace]);
+          decorator[2] = null;
         });
       }
     });
@@ -61,17 +63,17 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
 
 function* sagaHandler(action: { type: string; data: any }) {
   const item = sagasMap[action.type];
-  if (item && _store) {
-    const rootState = _store.getState();
+  if (item && singleStore) {
+    const rootState = singleStore.getState();
     const arr = Object.keys(item);
     for (const moduleName of arr) {
       const fun = item[moduleName];
       const state = rootState.project[moduleName];
-      const decorators: [(actionName: string, moduleName: string) => any, (data: any, error?: Error) => void, any][] | null = fun["__decorators__"];
-      let err: Error | undefined = undefined;
+      const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, error?: Error) => void, any]> | null = fun["__decorators__"];
+      let err: Error | undefined;
       if (decorators) {
-        decorators.forEach(item => {
-          item[2] = item[0](action.type, moduleName);
+        decorators.forEach(decorator => {
+          decorator[2] = decorator[0](action.type, moduleName);
         });
       }
       try {
@@ -83,9 +85,9 @@ function* sagaHandler(action: { type: string; data: any }) {
         yield put(errorAction(err));
       }
       if (decorators) {
-        decorators.forEach(item => {
-          item[1](item[2], err);
-          item[2] = null;
+        decorators.forEach(decorator => {
+          decorator[1](decorator[2], err);
+          decorator[2] = null;
         });
       }
     }
@@ -96,9 +98,9 @@ function* saga() {
   yield takeEvery(sagaNames, sagaHandler);
 }
 
-export function buildStore(storeHistory: History, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: { type: string }[]) {
+export function buildStore(storeHistory: History, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: Array<{ type: string }>) {
   const { store, reducers, sagaMiddleware } = initStore(storeMiddlewares, storeEnhancers, storeHistory);
-  _store = store;
+  singleStore = store;
   reducers.project = reducer;
   store.replaceReducer(combineReducers(reducers));
 
@@ -115,6 +117,6 @@ export function buildStore(storeHistory: History, storeMiddlewares: Middleware[]
   return store;
 }
 export function getStore() {
-  return _store;
+  return singleStore;
 }
 export { sagasMap, reducersMap, sagaNames };

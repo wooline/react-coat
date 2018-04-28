@@ -1,17 +1,23 @@
 {
-  "extends": ["tslint-config-standard", "tslint-react"],
+  "extends": ["tslint:recommended", "tslint-react"],
   "rules": {
-    "no-unused-variable": true,
-    "semicolon": [true, "always", "ignore-bound-class-methods"],
-    "one-variable-per-declaration": false,
-    "jsx-boolean-value": false,
+    "interface-name": [true, "never-prefix"],
+    "object-literal-sort-keys": false,
+    "ordered-imports": false,
+    "max-line-length": [true, 300],
+    "member-access": false,
+    "only-arrow-functions": false,
+    "max-classes-per-file": false,
+    "no-empty-interface": false,
     "jsx-no-multiline-js": false,
-    "jsx-no-lambda": false,
-    "prefer-const": true,
-    "ordered-imports": true,
-    "space-before-function-paren": false,
-    "quotemark": [true, "double"],
-    "ter-indent": false,
-    "no-floating-promises": false
+    "arrow-parens": [true, "ban-single-arg-parens"],
+    "no-var-requires": false,
+    "jsx-boolean-value": false,
+    "no-console": false,
+    "no-namespace": false,
+    "member-ordering": false,
+    "ban-types": false,
+    "no-string-literal": false,
+    "semicolon": [true, "always", "ignore-bound-class-methods"]
   }
 }

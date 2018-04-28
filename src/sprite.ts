@@ -20,21 +20,13 @@ function findIndexInArray<T>(arr: T[], fun: (item: T) => boolean): number {
 }
 export const TaskCountEvent = "TaskCountEvent";
 
-export const TaskCounterState = {
-  Start: "Start",
-  Stop: "Stop",
-  Depth: "Depth"
-};
+export type TaskCounterState = "Start" | "Stop" | "Depth";
 
 export class PEvent {
   public readonly target: PDispatcher;
   public readonly currentTarget: PDispatcher;
 
-  constructor(
-    public readonly name: string,
-    public readonly data?: any,
-    public bubbling: boolean = false
-  ) {}
+  constructor(public readonly name: string, public readonly data?: any, public bubbling: boolean = false) {}
 
   public setTarget(target: PDispatcher) {
     (this as any).target = target;
@@ -46,16 +38,16 @@ export class PEvent {
 }
 
 export class PDispatcher {
-  protected readonly _handlers: {
+  protected readonly storeHandlers: {
     [key: string]: Array<(e: PEvent) => void>;
   } = {};
 
   constructor(public readonly parent?: PDispatcher | undefined) {}
 
   public addListener(ename: string, handler: (e: PEvent) => void): this {
-    let dictionary = this._handlers[ename];
+    let dictionary = this.storeHandlers[ename];
     if (!dictionary) {
-      this._handlers[ename] = dictionary = [];
+      this.storeHandlers[ename] = dictionary = [];
     }
     dictionary.push(handler);
     return this;
@@ -63,9 +55,9 @@ export class PDispatcher {
 
   public removeListener(ename?: string, handler?: (e: PEvent) => void): this {
     if (!ename) {
-      emptyObject(this._handlers);
+      emptyObject(this.storeHandlers);
     } else {
-      const handlers = this._handlers;
+      const handlers = this.storeHandlers;
       if (handlers.propertyIsEnumerable(ename)) {
         const dictionary = handlers[ename];
         if (!handler) {
@@ -89,7 +81,7 @@ export class PDispatcher {
       evt.setTarget(this);
     }
     evt.setCurrentTarget(this);
-    const dictionary = this._handlers[evt.name];
+    const dictionary = this.storeHandlers[evt.name];
     if (dictionary) {
       for (let i = 0, k = dictionary.length; i < k; i++) {
         dictionary[i](evt);
@@ -107,24 +99,21 @@ export class PDispatcher {
 }
 
 export class TaskCounter extends PDispatcher {
-  public readonly list: { promise: Promise<any>; note: string }[] = [];
-  private _timer: number;
+  public readonly list: Array<{ promise: Promise<any>; note: string }> = [];
+  private ctimer: number;
   constructor(public deferSecond: number) {
     super();
   }
   public addItem(promise: Promise<any>, note: string = ""): Promise<any> {
     if (!this.list.some(item => item.promise === promise)) {
       this.list.push({ promise, note });
-      promise.then(
-        value => this.completeItem(promise),
-        reason => this.completeItem(promise)
-      );
+      promise.then(value => this.completeItem(promise), reason => this.completeItem(promise));
       if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Start));
-        this._timer = window.setTimeout(() => {
-          this._timer = 0;
+        this.dispatch(new PEvent(TaskCountEvent, "Start"));
+        this.ctimer = window.setTimeout(() => {
+          this.ctimer = 0;
           if (this.list.length > 0) {
-            this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Depth));
+            this.dispatch(new PEvent(TaskCountEvent, "Depth"));
           }
         }, this.deferSecond * 1000);
       }
@@ -136,12 +125,12 @@ export class TaskCounter extends PDispatcher {
     if (i > -1) {
       this.list.splice(i, 1);
       if (this.list.length === 0) {
-        if (this._timer) {
-          clearTimeout(this._timer);
-          this._timer = 0;
+        if (this.ctimer) {
+          clearTimeout(this.ctimer);
+          this.ctimer = 0;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Stop));
+        this.dispatch(new PEvent(TaskCountEvent, "Stop"));
       }
     }
     return this;

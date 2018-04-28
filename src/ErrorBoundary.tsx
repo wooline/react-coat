@@ -12,7 +12,7 @@ export interface State {
 
 class Component extends React.PureComponent<Props, State> {
   public state = {
-    message: ""
+    message: "",
   };
   public render() {
     if (this.state.message) {
@@ -26,9 +26,9 @@ class Component extends React.PureComponent<Props, State> {
   }
 }
 
-const mapDispatchToProps = (dispatch: Dispatch<string>) => {
+const mapDispatchToProps = (dispatch: Dispatch) => {
   return {
-    dispatch
+    dispatch,
   };
 };
 

@@ -16,7 +16,9 @@ export function setLoading<T>(item: T, namespace: string = "app", group: string 
     loadings[key] = new TaskCounter(depthTime);
     loadings[key].addListener(TaskCountEvent, e => {
       const store = getStore();
-      store && store.dispatch(loadingAction(namespace, group, e.data));
+      if (store) {
+        store.dispatch(loadingAction(namespace, group, e.data));
+      }
     });
   }
   loadings[key].addItem(item as any);

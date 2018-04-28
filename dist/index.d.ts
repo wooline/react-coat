@@ -15,16 +15,19 @@ export declare function buildModule<T>(namespace: string): {
 };
 export interface BaseModuleState {
     loading: {
-        global: string;
+        global: LoadingState;
     };
 }
-export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): (data: T) => {
+export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): (payload: T) => {
     type: string;
-    data: T;
+    payload: T;
 };
-export declare function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>): (data: T) => {
+export declare function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>): T extends null | undefined ? () => {
     type: string;
-    data: T;
+    payload: T;
+} : (payload: T) => {
+    type: string;
+    payload: T;
 };
 export declare function buildLoading(moduleName?: string, group?: string): (target: any, key: string) => void;
 export declare function buildlogger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string) => void;

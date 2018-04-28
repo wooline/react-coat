@@ -14,7 +14,7 @@ export interface Props {
   dispatch: any;
 }
 
-export function asyncComponent(resolve: () => Promise<ModuleViews>, componentName: string = "Main", LoadingComponent: React.ComponentType<any> = defaultLoadingComponent, ErrorComponent: React.ComponentType<any> = defaultErrorComponent) {
+export function asyncComponent(resolve: () => Promise<ModuleViews>, componentName: string = "Main", defLoadingComponent: React.ComponentType<any> = defaultLoadingComponent, ErrorComponent: React.ComponentType<any> = defaultErrorComponent) {
   class AsyncComponent extends React.Component<Props> {
     public state: {
       Component: React.ComponentType<any> | null;
@@ -24,10 +24,10 @@ export function asyncComponent(resolve: () => Promise<ModuleViews>, componentNam
     private errorMessage: string;
     constructor(props: { dispatch: any }, context?: any) {
       super(props, context);
-      this.LoadingComponent = LoadingComponent;
+      this.LoadingComponent = defLoadingComponent;
       this.ErrorComponent = ErrorComponent;
       this.state = {
-        Component: null
+        Component: null,
       };
     }
     public shouldComponentUpdate(nextProps: any, nextState: any) {
@@ -38,7 +38,7 @@ export function asyncComponent(resolve: () => Promise<ModuleViews>, componentNam
         .then(module => {
           const Component = module.default[componentName];
           this.setState({
-            Component
+            Component,
           });
         })
         .catch(errorData => {
@@ -46,7 +46,7 @@ export function asyncComponent(resolve: () => Promise<ModuleViews>, componentNam
           const Component = this.ErrorComponent;
           this.props.dispatch(errorAction(errorData));
           this.setState({
-            Component
+            Component,
           });
         });
       setLoading(promise);
@@ -66,9 +66,9 @@ export function asyncComponent(resolve: () => Promise<ModuleViews>, componentNam
       }
     }
   }
-  const mapDispatchToProps = (dispatch: Dispatch<string>) => {
+  const mapDispatchToProps = (dispatch: Dispatch) => {
     return {
-      dispatch
+      dispatch,
     };
   };
   return connect(null, mapDispatchToProps)(AsyncComponent);

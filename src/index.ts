@@ -11,10 +11,10 @@ import { buildStore, getStore } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
-const injectedModules: { type: string }[] = [];
+const injectedModules: Array<{ type: string }> = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
 const actionsProxy: { [action: string]: Function } = {};
-let _history: History;
+let prvHistory: History;
 export function buildModule<T>(namespace: string) {
   const actions: T = actionsProxy as any;
   // if (window["Proxy"]) {
@@ -31,23 +31,23 @@ export function buildModule<T>(namespace: string) {
   // }
   return {
     namespace,
-    actions
+    actions,
   };
 }
 
 export interface BaseModuleState {
   loading: {
-    global: string;
+    global: LoadingState;
   };
 }
 
 export function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S) {
   const fun = reducer as any;
-  return fun as (data: T) => { type: string; data: T };
+  return fun as (payload: T) => { type: string; payload: T };
 }
 export function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
   const fun = setGenerator(effect);
-  return fun as (data: T) => { type: string; data: T };
+  return fun as T extends null | undefined ? () => { type: string; payload: T } : (payload: T) => { type: string; payload: T };
 }
 
 export function buildLoading(moduleName: string = "app", group: string = "global") {
@@ -59,7 +59,7 @@ export function buildLoading(moduleName: string = "app", group: string = "global
           loadingCallback = resolve;
         }),
         moduleName,
-        group
+        group,
       );
       return loadingCallback;
     };
@@ -109,7 +109,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
     model.actions[namespace + NSP + LOADING_ACTION_NAME] = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: any, rootState: any) {
       return {
         ...moduleState,
-        loading: { ...moduleState.loading, ...loading }
+        loading: { ...moduleState.loading, ...loading },
       };
     });
     const locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
@@ -119,7 +119,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
     injectActions(namespace, model.actions);
     injectActions(namespace, model.handlers);
     Object.keys(model.actions).forEach(key => {
-      actionsProxy[key] = (data: any) => ({ type: key, data });
+      actionsProxy[key] = (payload: any) => ({ type: key, payload });
     });
     hasInjected[namespace] = true;
     const action = initModuleAction(namespace, model.state);
@@ -146,12 +146,12 @@ export interface StoreState<P> {
 }
 
 export function getHistory() {
-  return _history;
+  return prvHistory;
 }
 export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = [], storeHistory?: History) {
-  _history = storeHistory || createHistory();
-  const store = buildStore(_history, storeMiddlewares, storeEnhancers, injectedModules);
-  buildApp(view, container, storeMiddlewares, storeEnhancers, store, _history);
+  prvHistory = storeHistory || createHistory();
+  const store = buildStore(prvHistory, storeMiddlewares, storeEnhancers, injectedModules);
+  buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
 export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

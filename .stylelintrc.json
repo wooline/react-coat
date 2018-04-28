@@ -1,4 +1,6 @@
 {
   "extends": "stylelint-config-standard",
-  "rules": {}
+  "rules": {
+    "no-missing-end-of-source-newline": true
+  }
 }

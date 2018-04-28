@@ -96,26 +96,26 @@ var NSP = "_";
 function errorAction(error) {
     return {
         type: ERROR_ACTION_NAME,
-        error: error
+        error: error,
     };
 }
 function loadingAction(namespace, group, status) {
     return {
         type: namespace + NSP + LOADING_ACTION_NAME,
-        data: (_a = {}, _a[group] = status, _a)
+        data: (_a = {}, _a[group] = status, _a),
     };
     var _a;
 }
 function initModuleAction(namespace, data) {
     return {
         type: namespace + NSP + INIT_MODULE_ACTION_NAME,
-        data: data
+        data: data,
     };
 }
 function initLocationAction(namespace, data) {
     return {
         type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
-        data: data
+        data: data,
     };
 }
 
@@ -124,7 +124,7 @@ var Component = /** @class */ (function (_super) {
     function Component() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.state = {
-            message: ""
+            message: "",
         };
         return _this;
     }
@@ -144,7 +144,7 @@ var Component = /** @class */ (function (_super) {
 }(React.PureComponent));
 var mapDispatchToProps = function (dispatch) {
     return {
-        dispatch: dispatch
+        dispatch: dispatch,
     };
 };
 var ErrorBoundary = reactRedux.connect(null, mapDispatchToProps)(Component);
@@ -178,11 +178,6 @@ function findIndexInArray(arr, fun) {
     return -1;
 }
 var TaskCountEvent = "TaskCountEvent";
-var TaskCounterState = {
-    Start: "Start",
-    Stop: "Stop",
-    Depth: "Depth"
-};
 var PEvent = /** @class */ (function () {
     function PEvent(name, data, bubbling) {
         if (bubbling === void 0) { bubbling = false; }
@@ -201,22 +196,22 @@ var PEvent = /** @class */ (function () {
 var PDispatcher = /** @class */ (function () {
     function PDispatcher(parent) {
         this.parent = parent;
-        this._handlers = {};
+        this.storeHandlers = {};
     }
     PDispatcher.prototype.addListener = function (ename, handler) {
-        var dictionary = this._handlers[ename];
+        var dictionary = this.storeHandlers[ename];
         if (!dictionary) {
-            this._handlers[ename] = dictionary = [];
+            this.storeHandlers[ename] = dictionary = [];
         }
         dictionary.push(handler);
         return this;
     };
     PDispatcher.prototype.removeListener = function (ename, handler) {
         if (!ename) {
-            emptyObject(this._handlers);
+            emptyObject(this.storeHandlers);
         }
         else {
-            var handlers = this._handlers;
+            var handlers = this.storeHandlers;
             if (handlers.propertyIsEnumerable(ename)) {
                 var dictionary = handlers[ename];
                 if (!handler) {
@@ -240,7 +235,7 @@ var PDispatcher = /** @class */ (function () {
             evt.setTarget(this);
         }
         evt.setCurrentTarget(this);
-        var dictionary = this._handlers[evt.name];
+        var dictionary = this.storeHandlers[evt.name];
         if (dictionary) {
             for (var i = 0, k = dictionary.length; i < k; i++) {
                 dictionary[i](evt);
@@ -272,11 +267,11 @@ var TaskCounter = /** @class */ (function (_super) {
             this.list.push({ promise: promise, note: note });
             promise.then(function (value) { return _this.completeItem(promise); }, function (reason) { return _this.completeItem(promise); });
             if (this.list.length === 1) {
-                this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Start));
-                this._timer = window.setTimeout(function () {
-                    _this._timer = 0;
+                this.dispatch(new PEvent(TaskCountEvent, "Start"));
+                this.ctimer = window.setTimeout(function () {
+                    _this.ctimer = 0;
                     if (_this.list.length > 0) {
-                        _this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Depth));
+                        _this.dispatch(new PEvent(TaskCountEvent, "Depth"));
                     }
                 }, this.deferSecond * 1000);
             }
@@ -288,11 +283,11 @@ var TaskCounter = /** @class */ (function (_super) {
         if (i > -1) {
             this.list.splice(i, 1);
             if (this.list.length === 0) {
-                if (this._timer) {
-                    clearTimeout(this._timer);
-                    this._timer = 0;
+                if (this.ctimer) {
+                    clearTimeout(this.ctimer);
+                    this.ctimer = 0;
                 }
-                this.dispatch(new PEvent(TaskCountEvent, TaskCounterState.Stop));
+                this.dispatch(new PEvent(TaskCountEvent, "Stop"));
             }
         }
         return this;
@@ -301,7 +296,7 @@ var TaskCounter = /** @class */ (function (_super) {
 }(PDispatcher));
 
 var reducers = {
-    router: reactRouterRedux.routerReducer
+    router: reactRouterRedux.routerReducer,
 };
 var sagaMiddleware = createSagaMiddleware();
 var devtools = function (options) { return function (noop) { return noop; }; };
@@ -316,7 +311,7 @@ function initStore(storeMiddlewares, storeEnhancers, storeHistory) {
     return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
 }
 
-var _store = undefined;
+var singleStore;
 var lastLocationAction;
 var sagasMap = {};
 var reducersMap = {};
@@ -341,28 +336,30 @@ function reducer(state, action) {
         lastLocationAction = getActionData(action);
     }
     var item = reducersMap[action.type];
-    if (item && _store) {
-        var rootState_1 = _store.getState();
+    if (item && singleStore) {
+        var rootState_1 = singleStore.getState();
         var newState_1 = __assign({}, state);
         Object.keys(item).forEach(function (namespace) {
             var fun = item[namespace];
             var decorators = fun["__decorators__"];
             if (decorators) {
-                decorators.forEach(function (item) {
-                    item[2] = item[0](action.type, namespace);
+                decorators.forEach(function (decorator) {
+                    decorator[2] = decorator[0](action.type, namespace);
                 });
             }
             newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
             if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
-                    _store && _store.dispatch(initLocationAction(namespace, lastLocationAction));
+                    if (singleStore) {
+                        singleStore.dispatch(initLocationAction(namespace, lastLocationAction));
+                    }
                 }, 0);
             }
             if (decorators) {
-                decorators.forEach(function (item) {
-                    item[1](item[2], newState_1[namespace]);
-                    item[2] = null;
+                decorators.forEach(function (decorator) {
+                    decorator[1](decorator[2], newState_1[namespace]);
+                    decorator[2] = null;
                 });
             }
         });
@@ -376,8 +373,8 @@ function sagaHandler(action) {
         switch (_a.label) {
             case 0:
                 item = sagasMap[action.type];
-                if (!(item && _store)) return [3 /*break*/, 4];
-                rootState = _store.getState();
+                if (!(item && singleStore)) return [3 /*break*/, 4];
+                rootState = singleStore.getState();
                 arr = Object.keys(item);
                 _loop_1 = function (moduleName) {
                     var fun, state, decorators, err, error_1;
@@ -387,10 +384,9 @@ function sagaHandler(action) {
                                 fun = item[moduleName];
                                 state = rootState.project[moduleName];
                                 decorators = fun["__decorators__"];
-                                err = undefined;
                                 if (decorators) {
-                                    decorators.forEach(function (item) {
-                                        item[2] = item[0](action.type, moduleName);
+                                    decorators.forEach(function (decorator) {
+                                        decorator[2] = decorator[0](action.type, moduleName);
                                     });
                                 }
                                 _a.label = 1;
@@ -412,9 +408,9 @@ function sagaHandler(action) {
                                 _a.label = 6;
                             case 6:
                                 if (decorators) {
-                                    decorators.forEach(function (item) {
-                                        item[1](item[2], err);
-                                        item[2] = null;
+                                    decorators.forEach(function (decorator) {
+                                        decorator[1](decorator[2], err);
+                                        decorator[2] = null;
                                     });
                                 }
                                 return [2 /*return*/];
@@ -449,7 +445,7 @@ function saga() {
 }
 function buildStore(storeHistory, storeMiddlewares, storeEnhancers, injectedModules) {
     var _a = initStore(storeMiddlewares, storeEnhancers, storeHistory), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
-    _store = store;
+    singleStore = store;
     reducers.project = reducer;
     store.replaceReducer(redux.combineReducers(reducers));
     sagaMiddleware.run(saga);
@@ -463,7 +459,7 @@ function buildStore(storeHistory, storeMiddlewares, storeEnhancers, injectedModu
     return store;
 }
 function getStore() {
-    return _store;
+    return singleStore;
 }
 
 var loadings = {};
@@ -479,7 +475,9 @@ function setLoading(item, namespace, group) {
         loadings[key] = new TaskCounter(depthTime);
         loadings[key].addListener(TaskCountEvent, function (e) {
             var store = getStore();
-            store && store.dispatch(loadingAction(namespace, group, e.data));
+            if (store) {
+                store.dispatch(loadingAction(namespace, group, e.data));
+            }
         });
     }
     loadings[key].addItem(item);
@@ -492,18 +490,18 @@ var defaultErrorComponent = function (props) {
         "Error: ",
         props.message);
 };
-function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent) {
+function asyncComponent(resolve, componentName, defLoadingComponent, ErrorComponent) {
     if (componentName === void 0) { componentName = "Main"; }
-    if (LoadingComponent === void 0) { LoadingComponent = defaultLoadingComponent; }
+    if (defLoadingComponent === void 0) { defLoadingComponent = defaultLoadingComponent; }
     if (ErrorComponent === void 0) { ErrorComponent = defaultErrorComponent; }
     var AsyncComponent = /** @class */ (function (_super) {
         __extends(AsyncComponent, _super);
         function AsyncComponent(props, context) {
             var _this = _super.call(this, props, context) || this;
-            _this.LoadingComponent = LoadingComponent;
+            _this.LoadingComponent = defLoadingComponent;
             _this.ErrorComponent = ErrorComponent;
             _this.state = {
-                Component: null
+                Component: null,
             };
             return _this;
         }
@@ -516,7 +514,7 @@ function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent
                 .then(function (module) {
                 var Component = module.default[componentName];
                 _this.setState({
-                    Component: Component
+                    Component: Component,
                 });
             })
                 .catch(function (errorData) {
@@ -524,7 +522,7 @@ function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent
                 var Component = _this.ErrorComponent;
                 _this.props.dispatch(errorAction(errorData));
                 _this.setState({
-                    Component: Component
+                    Component: Component,
                 });
             });
             setLoading(promise);
@@ -548,7 +546,7 @@ function asyncComponent(resolve, componentName, LoadingComponent, ErrorComponent
     }(React.Component));
     var mapDispatchToProps = function (dispatch) {
         return {
-            dispatch: dispatch
+            dispatch: dispatch,
         };
     };
     return reactRedux.connect(null, mapDispatchToProps)(AsyncComponent);
@@ -617,7 +615,7 @@ function injectActions(namespace, actions) {
 var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
-var _history;
+var prvHistory;
 function buildModule(namespace) {
     var actions = actionsProxy;
     // if (window["Proxy"]) {
@@ -634,7 +632,7 @@ function buildModule(namespace) {
     // }
     return {
         namespace: namespace,
-        actions: actions
+        actions: actions,
     };
 }
 function buildActionByReducer(reducer) {
@@ -708,7 +706,7 @@ function buildViews(namespace, views, model) {
         injectActions(namespace, model.actions);
         injectActions(namespace, model.handlers);
         Object.keys(model.actions).forEach(function (key) {
-            actionsProxy[key] = function (data) { return ({ type: key, data: data }); };
+            actionsProxy[key] = function (payload) { return ({ type: key, payload: payload }); };
         });
         hasInjected[namespace] = true;
         var action = initModuleAction(namespace, model.state);
@@ -723,14 +721,14 @@ function buildViews(namespace, views, model) {
     return views;
 }
 function getHistory() {
-    return _history;
+    return prvHistory;
 }
 function createApp(view, container, storeMiddlewares, storeEnhancers, storeHistory) {
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
     if (storeEnhancers === void 0) { storeEnhancers = []; }
-    _history = storeHistory || createHistory();
-    var store = buildStore(_history, storeMiddlewares, storeEnhancers, injectedModules);
-    buildApp(view, container, storeMiddlewares, storeEnhancers, store, _history);
+    prvHistory = storeHistory || createHistory();
+    var store = buildStore(prvHistory, storeMiddlewares, storeEnhancers, injectedModules);
+    buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
 
 exports.buildModule = buildModule;
@@ -746,7 +744,6 @@ exports.getStore = getStore;
 exports.asyncComponent = asyncComponent;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
-exports.LoadingState = TaskCounterState;
 exports.delayPromise = delayPromise;
 exports.ERROR_ACTION_NAME = ERROR_ACTION_NAME;
 exports.LOCATION_CHANGE_ACTION_NAME = LOCATION_CHANGE_ACTION_NAME;

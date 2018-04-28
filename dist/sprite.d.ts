@@ -1,9 +1,5 @@
 export declare const TaskCountEvent = "TaskCountEvent";
-export declare const TaskCounterState: {
-    Start: string;
-    Stop: string;
-    Depth: string;
-};
+export declare type TaskCounterState = "Start" | "Stop" | "Depth";
 export declare class PEvent {
     readonly name: string;
     readonly data: any;
@@ -16,7 +12,7 @@ export declare class PEvent {
 }
 export declare class PDispatcher {
     readonly parent: PDispatcher | undefined;
-    protected readonly _handlers: {
+    protected readonly storeHandlers: {
         [key: string]: Array<(e: PEvent) => void>;
     };
     constructor(parent?: PDispatcher | undefined);
@@ -27,11 +23,11 @@ export declare class PDispatcher {
 }
 export declare class TaskCounter extends PDispatcher {
     deferSecond: number;
-    readonly list: {
+    readonly list: Array<{
         promise: Promise<any>;
         note: string;
-    }[];
-    private _timer;
+    }>;
+    private ctimer;
     constructor(deferSecond: number);
     addItem(promise: Promise<any>, note?: string): Promise<any>;
     private completeItem(promise);

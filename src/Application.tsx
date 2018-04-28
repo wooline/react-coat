@@ -17,6 +17,6 @@ export default function buildApp(view: ComponentType<any>, container: string, st
         </ConnectedRouter>
       </ErrorBoundary>
     </Provider>,
-    document.getElementById(container)
+    document.getElementById(container),
   );
 }
