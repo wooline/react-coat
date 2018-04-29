@@ -311,6 +311,7 @@ function initStore(storeMiddlewares, storeEnhancers, storeHistory) {
     return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
 }
 
+var prevRootState = {};
 var singleStore;
 var lastLocationAction;
 var sagasMap = {};
@@ -337,7 +338,7 @@ function reducer(state, action) {
     }
     var item = reducersMap[action.type];
     if (item && singleStore) {
-        var rootState_1 = singleStore.getState();
+        var rootState_1 = prevRootState;
         var newState_1 = __assign({}, state);
         Object.keys(item).forEach(function (namespace) {
             var fun = item[namespace];
@@ -374,7 +375,7 @@ function sagaHandler(action) {
             case 0:
                 item = sagasMap[action.type];
                 if (!(item && singleStore)) return [3 /*break*/, 4];
-                rootState = singleStore.getState();
+                rootState = prevRootState;
                 arr = Object.keys(item);
                 _loop_1 = function (moduleName) {
                     var fun, state, decorators, err, error_1;
@@ -443,11 +444,18 @@ function saga() {
         }
     });
 }
+function rootReducer(combineReducer) {
+    return function (state, action) {
+        prevRootState = state || {};
+        return combineReducer(state, action);
+    };
+}
 function buildStore(storeHistory, storeMiddlewares, storeEnhancers, injectedModules) {
     var _a = initStore(storeMiddlewares, storeEnhancers, storeHistory), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
     singleStore = store;
     reducers.project = reducer;
-    store.replaceReducer(redux.combineReducers(reducers));
+    // redux4.0不允许在reducer中使用store.getState(),得从顶层reducer中取
+    store.replaceReducer(rootReducer(redux.combineReducers(reducers)));
     sagaMiddleware.run(saga);
     window.onerror = function (message, filename, lineno, colno, error) {
         store.dispatch(errorAction(error || { message: message }));

@@ -1,10 +1,11 @@
 import { History } from "history";
-import { Action, Middleware, Store, combineReducers } from "redux";
+import { Action, Reducer, Middleware, Store, combineReducers } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
 import { initStore } from "./store";
 import { ActionsMap } from "./types";
 
+let prevRootState: any = {};
 let singleStore: Store<any, Action> | undefined;
 let lastLocationAction: any;
 const sagasMap: ActionsMap = {};
@@ -30,7 +31,7 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
   }
   const item = reducersMap[action.type];
   if (item && singleStore) {
-    const rootState = singleStore.getState();
+    const rootState = prevRootState;
     const newState = { ...state };
     Object.keys(item).forEach(namespace => {
       const fun = item[namespace];
@@ -64,7 +65,7 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
 function* sagaHandler(action: { type: string; data: any }) {
   const item = sagasMap[action.type];
   if (item && singleStore) {
-    const rootState = singleStore.getState();
+    const rootState = prevRootState;
     const arr = Object.keys(item);
     for (const moduleName of arr) {
       const fun = item[moduleName];
@@ -98,11 +99,19 @@ function* saga() {
   yield takeEvery(sagaNames, sagaHandler);
 }
 
+function rootReducer(combineReducer: Reducer) {
+  return (state: any | undefined, action: Action) => {
+    prevRootState = state || {};
+    return combineReducer(state, action);
+  };
+}
 export function buildStore(storeHistory: History, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: Array<{ type: string }>) {
   const { store, reducers, sagaMiddleware } = initStore(storeMiddlewares, storeEnhancers, storeHistory);
   singleStore = store;
   reducers.project = reducer;
-  store.replaceReducer(combineReducers(reducers));
+  // redux4.0不允许在reducer中使用store.getState(),得从顶层reducer中取
+
+  store.replaceReducer(rootReducer(combineReducers(reducers)));
 
   sagaMiddleware.run(saga as any);
 
