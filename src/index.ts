@@ -7,7 +7,7 @@ import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions } from "./inject";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
-import { buildStore, getStore } from "./storeProxy";
+import { buildStore, getSingleStore } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
@@ -123,7 +123,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
     });
     hasInjected[namespace] = true;
     const action = initModuleAction(namespace, model.state);
-    const store = getStore();
+    const store = getSingleStore();
     if (store) {
       store.dispatch(action);
     } else {
@@ -144,7 +144,10 @@ export interface StoreState<P> {
   };
   project: P;
 }
-
+export function getStore() {
+  // redux3中Store泛型有一个参数，redux4中变为2个，为兼容此处设为any
+  return getSingleStore() as any;
+}
 export function getHistory() {
   return prvHistory;
 }
@@ -153,5 +156,5 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
-export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
+export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

@@ -1,13 +1,13 @@
 import { History } from "history";
-import { Action, applyMiddleware, createStore, compose, Reducer, Middleware, Store, combineReducers, ReducersMapObject } from "redux";
+import { Action, applyMiddleware, createStore, compose, Reducer, Middleware, combineReducers, ReducersMapObject } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { routerMiddleware, routerReducer } from "react-router-redux";
 import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
-import { ActionsMap } from "./types";
+import { ActionsMap, SingleStore } from "./types";
 
 let prevRootState: any = {};
-let singleStore: Store<any, Action> | undefined;
+let singleStore: SingleStore | undefined;
 let lastLocationAction: any;
 const sagasMap: ActionsMap = {};
 const reducersMap: ActionsMap = {};
@@ -120,7 +120,7 @@ export function buildStore(storeHistory: History, reducers: ReducersMapObject, s
   const sagaMiddleware: SagaMiddleware<any> = createSagaMiddleware();
   const middlewares = [...storeMiddlewares, routingMiddleware, sagaMiddleware];
   const enhancers = [...storeEnhancers, applyMiddleware(...middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])];
-  const store: Store<any, Action> = createStore(rootReducer(combineReducers(reducers)), {}, compose(...enhancers));
+  const store: SingleStore = createStore(rootReducer(combineReducers(reducers)), {}, compose(...enhancers));
   singleStore = store;
   sagaMiddleware.run(saga as any);
   window.onerror = (message: string, filename?: string, lineno?: number, colno?: number, error?: Error) => {
@@ -133,7 +133,7 @@ export function buildStore(storeHistory: History, reducers: ReducersMapObject, s
   injectedModules.length = 0;
   return store;
 }
-export function getStore() {
+export function getSingleStore() {
   return singleStore;
 }
 export { sagasMap, reducersMap, sagaNames };

@@ -1,6 +1,6 @@
 import { loadingAction } from "./actions";
 import { TaskCounter, TaskCounterState, TaskCountEvent } from "./sprite";
-import { getStore } from "./storeProxy";
+import { getSingleStore } from "./storeProxy";
 
 const loadings: { [namespace: string]: TaskCounter } = {};
 
@@ -15,7 +15,7 @@ export function setLoading<T>(item: T, namespace: string = "app", group: string 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
     loadings[key].addListener(TaskCountEvent, e => {
-      const store = getStore();
+      const store = getSingleStore();
       if (store) {
         store.dispatch(loadingAction(namespace, group, e.data));
       }

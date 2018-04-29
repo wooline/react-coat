@@ -1,5 +1,9 @@
 import { ComponentType } from "react";
 
+export interface SingleStore {
+  dispatch: (action: { type: string }) => void;
+}
+
 export interface ActionsMap {
   [action: string]: { [module: string]: Function };
 }

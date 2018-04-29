@@ -460,7 +460,7 @@ function buildStore(storeHistory, reducers, storeMiddlewares, storeEnhancers, in
     injectedModules.length = 0;
     return store;
 }
-function getStore() {
+function getSingleStore() {
     return singleStore;
 }
 
@@ -476,7 +476,7 @@ function setLoading(item, namespace, group) {
     if (!loadings[key]) {
         loadings[key] = new TaskCounter(depthTime);
         loadings[key].addListener(TaskCountEvent, function (e) {
-            var store = getStore();
+            var store = getSingleStore();
             if (store) {
                 store.dispatch(loadingAction(namespace, group, e.data));
             }
@@ -712,7 +712,7 @@ function buildViews(namespace, views, model) {
         });
         hasInjected[namespace] = true;
         var action = initModuleAction(namespace, model.state);
-        var store = getStore();
+        var store = getSingleStore();
         if (store) {
             store.dispatch(action);
         }
@@ -721,6 +721,10 @@ function buildViews(namespace, views, model) {
         }
     }
     return views;
+}
+function getStore() {
+    // redux3中Store泛型有一个参数，redux4中变为2个，为兼容此处设为any
+    return getSingleStore();
 }
 function getHistory() {
     return prvHistory;
@@ -741,9 +745,9 @@ exports.buildLoading = buildLoading;
 exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;
 exports.buildViews = buildViews;
+exports.getStore = getStore;
 exports.getHistory = getHistory;
 exports.createApp = createApp;
-exports.getStore = getStore;
 exports.asyncComponent = asyncComponent;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
