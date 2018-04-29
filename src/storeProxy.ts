@@ -1,5 +1,5 @@
 import { History } from "history";
-import { Action, applyMiddleware, createStore, compose, Reducer, Middleware, combineReducers, ReducersMapObject } from "redux";
+import { Action, applyMiddleware, createStore, compose, Middleware, combineReducers, ReducersMapObject } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { routerMiddleware, routerReducer } from "react-router-redux";
@@ -100,7 +100,7 @@ function* saga() {
   yield takeEvery(sagaNames, sagaHandler);
 }
 
-function rootReducer(combineReducer: Reducer) {
+function rootReducer(combineReducer: Function) {
   return (state: any | undefined, action: Action) => {
     prevRootState = state || {};
     return combineReducer(state, action);
