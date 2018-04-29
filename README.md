@@ -88,7 +88,7 @@ dispatch(moduleA.actions.query([10]))
   },
 ```
 
-如果你想省心，你也可以直接安装"all in 1"的 react-coat-pkg，它将自动包含以上组件，并保证各组件版本不会冲突：
+如果你想省心，你也可以直接安装"all in 1"的 [react-coat-pkg](https://github.com/wooline/react-coat-pkg)，它将自动包含以上组件，并保证各组件版本不会冲突：
 
     $ yarn add react-coat-pkg
 
