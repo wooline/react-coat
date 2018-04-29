@@ -2,7 +2,7 @@
 /// <reference types="react" />
 import { History } from "history";
 import { ComponentType } from "react";
-import { Middleware } from "redux";
+import { Middleware, ReducersMapObject } from "redux";
 import { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
@@ -49,6 +49,6 @@ export interface StoreState<P> {
     project: P;
 }
 export declare function getHistory(): History;
-export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[], storeHistory?: History): void;
+export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[], reducers?: ReducersMapObject, storeHistory?: History): void;
 export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };

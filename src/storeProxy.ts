@@ -1,8 +1,9 @@
 import { History } from "history";
-import { Action, Reducer, Middleware, Store, combineReducers } from "redux";
+import { Action, applyMiddleware, createStore, compose, Reducer, Middleware, Store, combineReducers, ReducersMapObject } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
+import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
+import { routerMiddleware, routerReducer } from "react-router-redux";
 import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
-import { initStore } from "./store";
 import { ActionsMap } from "./types";
 
 let prevRootState: any = {};
@@ -105,16 +106,23 @@ function rootReducer(combineReducer: Reducer) {
     return combineReducer(state, action);
   };
 }
-export function buildStore(storeHistory: History, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: Array<{ type: string }>) {
-  const { store, reducers, sagaMiddleware } = initStore(storeMiddlewares, storeEnhancers, storeHistory);
-  singleStore = store;
+export function buildStore(storeHistory: History, reducers: ReducersMapObject, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: Array<{ type: string }>) {
+  let devtools = (options: any) => (noop: any) => noop;
+  if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
+  }
+  if (reducers.router || reducers.project) {
+    throw new Error("the reducer name 'router' 'project' is not allowed");
+  }
+  reducers.router = routerReducer;
   reducers.project = reducer;
-  // redux4.0不允许在reducer中使用store.getState(),得从顶层reducer中取
-
-  store.replaceReducer(rootReducer(combineReducers(reducers)));
-
+  const routingMiddleware = routerMiddleware(storeHistory);
+  const sagaMiddleware: SagaMiddleware<any> = createSagaMiddleware();
+  const middlewares = [...storeMiddlewares, routingMiddleware, sagaMiddleware];
+  const enhancers = [...storeEnhancers, applyMiddleware(...middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])];
+  const store: Store<any, Action> = createStore(rootReducer(combineReducers(reducers)), {}, compose(...enhancers));
+  singleStore = store;
   sagaMiddleware.run(saga as any);
-
   window.onerror = (message: string, filename?: string, lineno?: number, colno?: number, error?: Error) => {
     store.dispatch(errorAction(error || { message }));
   };

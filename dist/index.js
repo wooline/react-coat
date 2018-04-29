@@ -10,8 +10,8 @@ var ReactDOM = _interopDefault(require('react-dom'));
 var reactRouterDom = require('react-router-dom');
 var reactRouterRedux = require('react-router-redux');
 var redux = require('redux');
-var createSagaMiddleware = _interopDefault(require('redux-saga'));
 var effects = require('redux-saga/effects');
+var createSagaMiddleware = _interopDefault(require('redux-saga'));
 var createHistory = _interopDefault(require('history/createBrowserHistory'));
 
 /*! *****************************************************************************
@@ -295,22 +295,6 @@ var TaskCounter = /** @class */ (function (_super) {
     return TaskCounter;
 }(PDispatcher));
 
-var reducers = {
-    router: reactRouterRedux.routerReducer,
-};
-var sagaMiddleware = createSagaMiddleware();
-var devtools = function (options) { return function (noop) { return noop; }; };
-if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
-    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
-}
-function initStore(storeMiddlewares, storeEnhancers, storeHistory) {
-    var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
-    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
-    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
-    var store = redux.createStore(redux.combineReducers(reducers), {}, redux.compose.apply(void 0, enhancers));
-    return { store: store, reducers: reducers, sagaMiddleware: sagaMiddleware };
-}
-
 var prevRootState = {};
 var singleStore;
 var lastLocationAction;
@@ -450,12 +434,22 @@ function rootReducer(combineReducer) {
         return combineReducer(state, action);
     };
 }
-function buildStore(storeHistory, storeMiddlewares, storeEnhancers, injectedModules) {
-    var _a = initStore(storeMiddlewares, storeEnhancers, storeHistory), store = _a.store, reducers = _a.reducers, sagaMiddleware = _a.sagaMiddleware;
-    singleStore = store;
+function buildStore(storeHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules) {
+    var devtools = function (options) { return function (noop) { return noop; }; };
+    if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+        devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
+    }
+    if (reducers.router || reducers.project) {
+        throw new Error("the reducer name 'router' 'project' is not allowed");
+    }
+    reducers.router = reactRouterRedux.routerReducer;
     reducers.project = reducer;
-    // redux4.0不允许在reducer中使用store.getState(),得从顶层reducer中取
-    store.replaceReducer(rootReducer(redux.combineReducers(reducers)));
+    var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
+    var sagaMiddleware = createSagaMiddleware();
+    var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
+    var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
+    var store = redux.createStore(rootReducer(redux.combineReducers(reducers)), {}, redux.compose.apply(void 0, enhancers));
+    singleStore = store;
     sagaMiddleware.run(saga);
     window.onerror = function (message, filename, lineno, colno, error) {
         store.dispatch(errorAction(error || { message: message }));
@@ -731,11 +725,12 @@ function buildViews(namespace, views, model) {
 function getHistory() {
     return prvHistory;
 }
-function createApp(view, container, storeMiddlewares, storeEnhancers, storeHistory) {
+function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, storeHistory) {
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
     if (storeEnhancers === void 0) { storeEnhancers = []; }
+    if (reducers === void 0) { reducers = {}; }
     prvHistory = storeHistory || createHistory();
-    var store = buildStore(prvHistory, storeMiddlewares, storeEnhancers, injectedModules);
+    var store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
     buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
 

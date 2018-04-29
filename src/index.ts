@@ -1,7 +1,7 @@
 import { History } from "history";
 import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
-import { Middleware } from "redux";
+import { Middleware, ReducersMapObject } from "redux";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
@@ -148,9 +148,9 @@ export interface StoreState<P> {
 export function getHistory() {
   return prvHistory;
 }
-export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = [], storeHistory?: History) {
+export function createApp(view: ComponentType<any>, container: string, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = [], reducers: ReducersMapObject = {}, storeHistory?: History) {
   prvHistory = storeHistory || createHistory();
-  const store = buildStore(prvHistory, storeMiddlewares, storeEnhancers, injectedModules);
+  const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
 export { getStore, asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
