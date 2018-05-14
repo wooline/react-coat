@@ -24,7 +24,7 @@ export declare function buildActionByEffect<T, S>
 // 参数data为一个参数占位符，并没有被用到
 getNotices : buildActionByEffect(function*(data: null) {
   const notices: Notices = yield call(ajax.api.getNotices);
-  yield put(thisModule.actions.admin_updateNotices(notices));
+  yield put(thisModule.actions.updateNotices(notices));
 })
 ```
 
@@ -116,7 +116,7 @@ src
 │       │     │     └── index.ts  \\导出该模块对外的视图
 │       │     ├── model.ts  \\该模块的数据模型定义和操作
 │       │     ├── index.ts  \\导出该模块对外的操作
-│       │     └── actionNames.ts \\该模块的ActionName定义
+│       │     └── exportActionNames.ts \\定义该模块可被外界监听的ActionName
 │       └── app  \\一个名叫app的业务模块
 │             ├── views
 │             │     ├── Other.tsX
@@ -124,7 +124,7 @@ src
 │             │     └── index.ts
 │             ├── model.ts
 │             ├── index.ts
-│             └── actionNames.ts
+│             └── exportActionNames.ts
 └── index.tsx  \\入口文件
 ```
 
@@ -172,7 +172,7 @@ createApp(appViews.Main, "root");
 import B from "modules/B";
 
 export default function(){
-  return <button onClick={e => {dispatch(B.actions.b_login())}}>click me</button>
+  return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
 }
 ```
 
@@ -228,7 +228,7 @@ const state: State = {
 class ModuleActions {
 
   // 定义一个名为updateCurUser的Action
-  [UPDATE_CUR_USER] = buildActionByReducer(
+  updateCurUser = buildActionByReducer(
     function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
       // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
       return { ...moduleState, curUser };
@@ -237,10 +237,10 @@ class ModuleActions {
 
   // 定义一个名为login的Action
   @buildLoading(NAMESPACE) //注入加载状态
-  [LOGIN] = buildActionByEffect(
+  login = buildActionByEffect(
     function*({ username, password }: { username: string; password: string }): any {
       const curUser: userService.LoginResponse = yield call(userService.login, username, password);
-      yield put(thisModule.actions.app_updateCurUser(curUser));
+      yield put(thisModule.actions.updateCurUser(curUser));
     }
   );
 
@@ -265,7 +265,7 @@ class ModuleHandlers {
   [INIT] = buildActionByEffect(
     function*(data:null){
       const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-      yield put(thisModule.actions.app_updateCurUser(curUser));
+      yield put(thisModule.actions.updateCurUser(curUser));
     }
   ),
 

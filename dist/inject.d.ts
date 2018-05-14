@@ -1,5 +1,6 @@
 import { Actions } from "./types";
 export declare function injectActions(namespace: string, actions: Actions): void;
+export declare function injectHandlers(listenerModule: string, handlers: Actions): void;
 export interface BaseState {
     loading: {
         global: string;

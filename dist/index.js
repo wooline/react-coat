@@ -92,7 +92,7 @@ var LOADING_ACTION_NAME = "LOADING";
 var INIT_MODULE_ACTION_NAME = "INIT";
 var INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
 var LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
-var NSP = "_";
+var NSP = "/";
 function errorAction(error) {
     return {
         type: ERROR_ACTION_NAME,
@@ -610,7 +610,12 @@ function transformAction(actionName, action, listenerModule, actionsMap) {
 }
 function injectActions(namespace, actions) {
     Object.keys(actions).forEach(function (actionName) {
-        transformAction(actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
+        transformAction(namespace + NSP + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
+    });
+}
+function injectHandlers(listenerModule, handlers) {
+    Object.keys(handlers).forEach(function (handlerName) {
+        transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
     });
 }
 
@@ -619,23 +624,28 @@ var hasInjected = {};
 var actionsProxy = {};
 var prvHistory;
 function buildModule(namespace) {
-    var actions = actionsProxy;
+    var actions = getModuleActions(namespace);
     // if (window["Proxy"]) {
     //   actions = new window["Proxy"](
     //     {},
     //     {
     //       get: (target: {}, key: string) => {
-    //         return (data: any) => ({ type: key, data });
+    //         return (data: any) => ({ type: namespace + "/" + key, data });
     //       }
     //     }
     //   );
     // } else {
-    //   actions = actionsProxy as any;
+    //   actions = getModuleActions(namespace) as any;
     // }
     return {
         namespace: namespace,
         actions: actions,
     };
+}
+function getModuleActions(namespace) {
+    var actions = actionsProxy[namespace] || {};
+    actionsProxy[namespace] = actions;
+    return actions;
 }
 function buildActionByReducer(reducer) {
     var fun = reducer;
@@ -695,10 +705,10 @@ function buildModel(state, actionClass, handlerClass) {
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
-        model.actions[namespace + NSP + INIT_MODULE_ACTION_NAME] = buildActionByReducer(function (data, moduleState, rootState) {
+        model.actions[INIT_MODULE_ACTION_NAME] = buildActionByReducer(function (data, moduleState, rootState) {
             return data;
         });
-        model.actions[namespace + NSP + LOADING_ACTION_NAME] = buildActionByReducer(function (loading, moduleState, rootState) {
+        model.actions[LOADING_ACTION_NAME] = buildActionByReducer(function (loading, moduleState, rootState) {
             return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
         });
         var locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
@@ -706,9 +716,10 @@ function buildViews(namespace, views, model) {
             model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
         }
         injectActions(namespace, model.actions);
-        injectActions(namespace, model.handlers);
+        injectHandlers(namespace, model.handlers);
+        var actions_1 = getModuleActions(namespace);
         Object.keys(model.actions).forEach(function (key) {
-            actionsProxy[key] = function (payload) { return ({ type: key, payload: payload }); };
+            actions_1[key] = function (payload) { return ({ type: namespace + NSP + key, payload: payload }); };
         });
         hasInjected[namespace] = true;
         var action = initModuleAction(namespace, model.state);

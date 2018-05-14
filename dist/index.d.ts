@@ -17,7 +17,10 @@ export interface BaseModuleState {
         global: LoadingState;
     };
 }
-export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): (payload: T) => {
+export declare function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S): T extends null | undefined ? () => {
+    type: string;
+    payload: T;
+} : (payload: T) => {
     type: string;
     payload: T;
 };

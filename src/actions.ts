@@ -3,7 +3,7 @@ export const LOADING_ACTION_NAME = "LOADING";
 export const INIT_MODULE_ACTION_NAME = "INIT";
 export const INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
 export const LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
-export const NSP = "_";
+export const NSP = "/";
 
 export function errorAction(error: any) {
   return {

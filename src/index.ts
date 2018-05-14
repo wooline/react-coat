@@ -5,7 +5,7 @@ import { Middleware, ReducersMapObject } from "redux";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
-import { injectActions } from "./inject";
+import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
 import { buildStore, getSingleStore } from "./storeProxy";
 import { Model } from "./types";
@@ -13,26 +13,33 @@ import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: Array<{ type: string }> = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
-const actionsProxy: { [action: string]: Function } = {};
+const actionsProxy: { [moduleName: string]: { [action: string]: Function } } = {};
+
 let prvHistory: History;
 export function buildModule<T>(namespace: string) {
-  const actions: T = actionsProxy as any;
+  const actions: T = getModuleActions(namespace) as any;
   // if (window["Proxy"]) {
   //   actions = new window["Proxy"](
   //     {},
   //     {
   //       get: (target: {}, key: string) => {
-  //         return (data: any) => ({ type: key, data });
+  //         return (data: any) => ({ type: namespace + "/" + key, data });
   //       }
   //     }
   //   );
   // } else {
-  //   actions = actionsProxy as any;
+  //   actions = getModuleActions(namespace) as any;
   // }
   return {
     namespace,
     actions,
   };
+}
+
+function getModuleActions(namespace: string) {
+  const actions = actionsProxy[namespace] || {};
+  actionsProxy[namespace] = actions;
+  return actions;
 }
 
 export interface BaseModuleState {
@@ -43,7 +50,7 @@ export interface BaseModuleState {
 
 export function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S) {
   const fun = reducer as any;
-  return fun as (payload: T) => { type: string; payload: T };
+  return fun as T extends null | undefined ? () => { type: string; payload: T } : (payload: T) => { type: string; payload: T };
 }
 export function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
   const fun = setGenerator(effect);
@@ -103,10 +110,10 @@ export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerC
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
-    model.actions[namespace + NSP + INIT_MODULE_ACTION_NAME] = buildActionByReducer(function(data: any, moduleState: any, rootState: any) {
+    model.actions[INIT_MODULE_ACTION_NAME] = buildActionByReducer(function(data: any, moduleState: any, rootState: any) {
       return data;
     });
-    model.actions[namespace + NSP + LOADING_ACTION_NAME] = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: any, rootState: any) {
+    model.actions[LOADING_ACTION_NAME] = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: any, rootState: any) {
       return {
         ...moduleState,
         loading: { ...moduleState.loading, ...loading },
@@ -117,9 +124,10 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
       model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
     }
     injectActions(namespace, model.actions);
-    injectActions(namespace, model.handlers);
+    injectHandlers(namespace, model.handlers);
+    const actions = getModuleActions(namespace);
     Object.keys(model.actions).forEach(key => {
-      actionsProxy[key] = (payload: any) => ({ type: key, payload });
+      actions[key] = payload => ({ type: namespace + NSP + key, payload });
     });
     hasInjected[namespace] = true;
     const action = initModuleAction(namespace, model.state);

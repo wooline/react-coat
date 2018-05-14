@@ -1,4 +1,5 @@
 import { reducersMap, sagaNames, sagasMap } from "./storeProxy";
+import { NSP } from "./actions";
 import { Actions, ActionsMap } from "./types";
 import { isGenerator } from "./utils";
 
@@ -26,10 +27,14 @@ function transformAction(actionName: string, action: Function, listenerModule: s
 
 export function injectActions(namespace: string, actions: Actions) {
   Object.keys(actions).forEach(actionName => {
-    transformAction(actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
+    transformAction(namespace + NSP + actionName, actions[actionName], namespace, isGenerator(actions[actionName]) ? sagasMap : reducersMap);
   });
 }
-
+export function injectHandlers(listenerModule: string, handlers: Actions) {
+  Object.keys(handlers).forEach(handlerName => {
+    transformAction(handlerName, handlers[handlerName], listenerModule, isGenerator(handlers[handlerName]) ? sagasMap : reducersMap);
+  });
+}
 export interface BaseState {
   loading: {
     global: string;
