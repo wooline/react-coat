@@ -48,77 +48,91 @@ export interface BaseModuleState {
   };
 }
 
-export function buildActionByReducer<T, S>(reducer: (data: T, moduleState: S, rootState: any) => S) {
-  const fun = reducer as any;
-  return fun as T extends null | undefined ? () => { type: string; payload: T } : (payload: T) => { type: string; payload: T };
-}
-export function buildActionByEffect<T, S>(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>) {
-  const fun = setGenerator(effect);
-  return fun as T extends null | undefined ? () => { type: string; payload: T } : (payload: T) => { type: string; payload: T };
+export interface BaseModuleActions {
+  [INIT_MODULE_ACTION_NAME]: ActionCreator<"INIT", any>;
+  [LOADING_ACTION_NAME]: ActionCreator<"LOADING", { [group: string]: string }>;
 }
 
-export function buildLoading(moduleName: string = "app", group: string = "global") {
-  return (target: any, key: string) => {
-    const before = () => {
-      let loadingCallback: Function | null = null;
-      setLoading(
-        new Promise<any>((resolve, reject) => {
-          loadingCallback = resolve;
-        }),
-        moduleName,
-        group,
-      );
-      return loadingCallback;
-    };
-    const after = (resolve, error?) => {
-      resolve(error);
-    };
-    if (!target[key]) {
-      target[key] = [];
+export function effect(loadingForModuleName: string | null = "app", loadingForGroupName: string = "global") {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    const fun = descriptor.value as any;
+    setGenerator(fun);
+    if (loadingForModuleName !== null) {
+      const before = () => {
+        let loadingCallback: Function | null = null;
+        setLoading(
+          new Promise<any>((resolve, reject) => {
+            loadingCallback = resolve;
+          }),
+          loadingForModuleName,
+          loadingForGroupName,
+        );
+        return loadingCallback;
+      };
+      const after = (resolve, error?) => {
+        resolve(error);
+      };
+
+      if (!fun.__decorators__) {
+        fun.__decorators__ = [];
+      }
+      fun.__decorators__.push([before, after]);
     }
-    target[key].push([before, after]);
   };
 }
 export function buildlogger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void) {
-  return (target: any, key: string) => {
-    if (!target[key]) {
-      target[key] = [];
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    const fun = descriptor.value as any;
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
     }
-    target[key].push([before, after]);
+    fun.__decorators__.push([before, after]);
   };
 }
-function translateMap(cls: any) {
+
+export type ActionCreator<T, P> = (
+  payload: P,
+) => {
+  type: T;
+  payload: P;
+};
+function translateMap<T>(cls: new () => T) {
   const ins = new cls();
+  type Ins = typeof ins;
+  type Map = {
+    [K in keyof Ins]: Ins[K] extends (data: null | undefined, ...args) => any
+      ? () => {
+          type: K;
+          payload: null;
+        }
+      : Ins[K] extends (data: infer P, ...args) => any ? ActionCreator<K, P> : never
+  };
   const map = {};
-  Object.keys(ins).reduce((pre, key) => {
-    pre[key] = ins[key];
-    return pre;
-  }, map);
-  const poto = cls.prototype;
-  for (const key in poto) {
-    if (map[key]) {
-      map[key].__decorators__ = poto[key];
+  for (const key in ins as any) {
+    if (ins[key]) {
+      map[key] = ins[key];
     }
   }
-  return map as any;
+  return map as Map;
 }
 export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
-  const actions: A = translateMap(actionClass);
-  const handlers: H = translateMap(handlerClass);
-  return { state, actions, handlers };
+  const handlers = translateMap(handlerClass) as any;
+  const actions = translateMap(actionClass);
+  actions[INIT_MODULE_ACTION_NAME] = (data: any, moduleState: any, rootState: any) => {
+    return data;
+  };
+  actions[LOADING_ACTION_NAME] = (loading: { [group: string]: string }, moduleState: any, rootState: any) => {
+    return {
+      ...moduleState,
+      loading: { ...moduleState.loading, ...loading },
+    };
+  };
+  type Actions = typeof actions & BaseModuleActions;
+  return { state, actions, handlers } as { state: S; actions: Actions; handlers: H };
 }
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
   if (!hasInjected[namespace]) {
-    model.actions[INIT_MODULE_ACTION_NAME] = buildActionByReducer(function(data: any, moduleState: any, rootState: any) {
-      return data;
-    });
-    model.actions[LOADING_ACTION_NAME] = buildActionByReducer(function(loading: { [group: string]: string }, moduleState: any, rootState: any) {
-      return {
-        ...moduleState,
-        loading: { ...moduleState.loading, ...loading },
-      };
-    });
     const locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
     if (locationChangeHandler) {
       model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;

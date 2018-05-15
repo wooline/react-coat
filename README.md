@@ -1,41 +1,23 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 1.2.0 发布：
+## 2.0.0 发布：
 
 * 兼容最新版本的 react@16.3、redux@4.0 等
 * LoadingState 由原来的"枚举类型"改为"直接量类型"：Start" | "Stop" | "Depth"
-* 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”做出以下优化。**如果你使用 typescript，请升级至 2.8.0 以上**
+* 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”优化。**如果你使用 typescript，请升级至 2.8.0 以上**
 
-```
-export declare function buildActionByEffect<T, S>
-(effect: (data: T, moduleState: S, rootState: any) => IterableIterator<any>)
-: T extends null | undefined ? () => {
-    type: string;
-    payload: T;
-} : (payload: T) => {
-    type: string;
-    payload: T;
+特别注意：在 model 中定义异步 effect 时，有时会莫名奇妙的推导不出类型，显示编译错误，这种情况下，请将该 effect 返回值设置为 any，期待 typescript 的改进。例如：
+
+```JS
+class ModuleActions {
+  // 定义一个名为login的Effect，有时会莫名奇妙的推导不出类型，可将返回值设置为any
+  @effect()
+  *login({ username, password }: { username: string; password: string }): any {
+    const curUser: userService.LoginResponse = yield call(userService.login, username, password);
+    yield put(thisModule.actions.updateCurUser(curUser));
+  }
+
 };
-```
-
-在定义一个 effect 时，如果它不需要任何参数，但在 buildActionByEffect 时，还是需要参数占位符的，比如：
-
-```
-// 参数data为一个参数占位符，并没有被用到
-getNotices : buildActionByEffect(function*(data: null) {
-  const notices: Notices = yield call(ajax.api.getNotices);
-  yield put(thisModule.actions.updateNotices(notices));
-})
-```
-
-在调用以上这个 effect 时，ts 会自动判断出不需要传参数：
-
-```
-// 最新的调用：
-dispatch(thisModule.actions.getNotices())
-
-// 原来的调用：
-dispatch(thisModule.actions.getNotices(null))
 ```
 
 ## react-coat 特点：
@@ -163,7 +145,7 @@ createApp(appViews.Main, "root");
 
 2.  模块 views 目录下的 index.ts，该文件将输出：views
 
-3.  模块根目录下的 actionNames.ts 该文件将输出该模块所有 Action 名称以供外界监听
+3.  模块根目录下的 exportActionNames.ts 该文件将输出该模块可供外界监听的 ActionName，如果不需要被外界监听，可能为空
 
 > 例如，模块 A 可以 dispatch 模块 B 的 action：
 
@@ -228,21 +210,17 @@ const state: State = {
 class ModuleActions {
 
   // 定义一个名为updateCurUser的Action
-  updateCurUser = buildActionByReducer(
-    function(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
-      // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
-      return { ...moduleState, curUser };
-    }
-  );
+  updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
+    // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
+    return { ...moduleState, curUser };
+  }
 
-  // 定义一个名为login的Action
-  @buildLoading(NAMESPACE) //注入加载状态
-  login = buildActionByEffect(
-    function*({ username, password }: { username: string; password: string }): any {
-      const curUser: userService.LoginResponse = yield call(userService.login, username, password);
-      yield put(thisModule.actions.updateCurUser(curUser));
-    }
-  );
+  // 定义一个名为login的Effect
+  @effect(NAMESPACE) //@effect为装饰器，参数为注入loading的状态
+  *login({ username, password }: { username: string; password: string }): any {
+    const curUser: userService.LoginResponse = yield call(userService.login, username, password);
+    yield put(thisModule.actions.updateCurUser(curUser));
+  }
 
 };
 
@@ -261,21 +239,16 @@ class ModuleHandlers {
       console.log(moduleName,actionName,"spend",endTime-startTime)
     }
   )
-  @buildLoading() //注入加载状态
-  [INIT] = buildActionByEffect(
-    function*(data:null){
-      const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-      yield put(thisModule.actions.updateCurUser(curUser));
-    }
-  ),
-
-  // 监听"@framework/ERROR"这个action
-  [ERROR_ACTION_NAME] = buildActionByReducer(
-    function({ message }, moduleState: State, rootState: any): State {
-      alert(message);
-      return moduleState;
-    }
-  )
+  @effect() //@effect为装饰器，参数为空默认使用global loading
+  *[actionNames.INIT](){
+    const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
+    yield put(thisModule.actions.updateCurUser(curUser));
+  }
+  @effect(null)// 监听"@framework/ERROR"这个action，上报给服务器，参数null表示不注入loading
+  *[ERROR_ACTION_NAME](error:Error) {
+    console.log(error);
+    yield call(settingsService.api.reportError, error);
+  }
 };
 ```
 
@@ -284,19 +257,21 @@ class ModuleHandlers {
 > Action 用于调用 Reducer 或 saga-effect 来加载和更新模块的 State。原则上每个模块的 Action 只能更新自已的 State。
 
 * 定义 ActionName，模块 Action 的名称可供自已或外界监听与调用，通常使用常量定义在模块根目录下的 actionName.ts 中
-* 定义 Action，使用 `buildActionByReducer` 和 `buildActionByEffect` 在 Model 中集中集中编写整个模块的 Action
+* 在 Model 中集中集中编写整个模块的 Action
+* Action 主要分为 Reducer 和 Effect，即同步和异步，异步 Action 请使用`@effect`装饰器
 * 执行 Action，使用 redux 的 `dispatch` 或 saga 的 `put` 方法
-* 监听 Action，模块可以监听所有 Action 来修改本模块的 State
+* 监听 Action，一个模块可以另一个模块的 Action 来协同修改本模块的 State
 * Action 装饰器，框架提供两个 Decorator
-  * `@buildLoading(moduleName, group)` 为 Action 注入 loading 状态
-  * `@buildlogger(beforeFun, afterFun)` 为 Action 注入跟踪勾子
+  * `@effect(moduleNameForLoading="app", groupNameForLoading="global")`
+    申明该 Action 为异步 effect，同时注入 loading 状态，不需注入 loading 状态参数为 null
+  * `@buildlogger(beforeFun, afterFun)` 为 Action 注入跟踪勾子，比如监控 action 的执行时间
 * 框架内置 Action，在特定的生命周期，框架会自动触发以下特定的 Action，你可以监听它们，但不要覆盖或修改它们
 
   * `ERROR_ACTION_NAME` = "@@framework/ERROR" 当出现错误时触发
   * `LOCATION_CHANGE_ACTION_NAME` = "@@router/LOCATION_CHANGE" 当路由切换时触发
-  * `moduleName + "_INIT"` 当模块初始化时触发，每个模块只会触发一次
-  * `moduleName + "_LOADING"` 当出现 loading 状态时触发
-  * `moduleName + "_@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
+  * `moduleName + "/INIT"` 当模块初始化时触发，每个模块只会触发一次
+  * `moduleName + "/LOADING"` 当出现 loading 状态时触发
+  * `moduleName + "/@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
 
 ### Loading 机制
 
@@ -323,24 +298,22 @@ setLoading(promise2, "app", "login");
 
 * 每个 loading 状态有三种变化值：Start、Depth、Stop，Depth 表示深度加载，当超过一定时间，默认为 2 秒，还没有返回，则过渡为 Depth 状态
 
-* 设置 Loading 状态有两种方法：函数式、Decorator。Decorator 方便用于对 action 的注入
+* 设置 Loading 状态有两种方法：函数式、Decorator。Decorator 方便用于对异步 Action 的注入
 
 ```
 setLoading(item: Promise, moduleName?: string="app", group?: string="global")
-@buildLoading(moduleName:string, group:string)
+@effect("app","global")
 ```
 
 ### 框架 API
 
 * Model 相关：
 
-  * `StoreState<P>` 整个 Store 的 State 类型
+  * `type StoreState<P>` 整个 Store 的 State 类型
   * `BaseModuleState` 模块 State 需继承此 interface
-  * `buildState(initState)` 创建模块的 state
-  * `buildActionByReducer(reducer)` 使用 reducer 创建 action
-  * `buildActionByEffect(reducer)` 使用 effect 创建 action
   * `buildModel(state, actions, handlers)` 创建模块的 Model
-  * `@buildlogger(beforeFun, afterFun)` 提供一个 Action 的 Decorator，用来跟踪 Action 的执行情况
+  * `@effect()` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
+  * `@buildlogger(beforeFun, afterFun)` 装饰器，在该 Action 的执行前后各留下勾子
 
 * View 相关
 
@@ -352,10 +325,10 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
   * `buildModule(namespace)` 创建模块的对外调用接口
   * `getStore()` 获取全局的 Redux Store
   * `asyncComponent(ModuleViews, componentName, LoadingComponent, ErrorComponent)` 异步加载模块的视图
-  * `storeHistory` 全局的 history
+  * `getHistory()` 获取全局的 history
 
 * Loading 相关
-  * `@buildLoading(moduleName, group)` 以 Decorator 的方式设置 loading
+  * `@effect(moduleName, group)` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
   * `setLoading(promiseItem, moduleName, group)` 用函数的方式设置 loading
   * `LoadingState` loading 的三种状态
   * `setLoadingDepthTime(second)` 设置 Loading 等待多少秒后转 Depth 状态

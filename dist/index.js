@@ -332,7 +332,7 @@ function reducer(state, action) {
                     decorator[2] = decorator[0](action.type, namespace);
                 });
             }
-            newState_1[namespace] = fun(getActionData(action), state[namespace], rootState_1);
+            newState_1[namespace] = fun.call(item, getActionData(action), state[namespace], rootState_1);
             if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
@@ -377,7 +377,7 @@ function sagaHandler(action) {
                                 _a.label = 1;
                             case 1:
                                 _a.trys.push([1, 3, , 4]);
-                                return [5 /*yield**/, __values(fun(getActionData(action), state, rootState))];
+                                return [5 /*yield**/, __values(fun.call(item, getActionData(action), state, rootState))];
                             case 2:
                                 _a.sent();
                                 return [3 /*break*/, 4];
@@ -647,70 +647,62 @@ function getModuleActions(namespace) {
     actionsProxy[namespace] = actions;
     return actions;
 }
-function buildActionByReducer(reducer) {
-    var fun = reducer;
-    return fun;
-}
-function buildActionByEffect(effect) {
-    var fun = setGenerator(effect);
-    return fun;
-}
-function buildLoading(moduleName, group) {
-    if (moduleName === void 0) { moduleName = "app"; }
-    if (group === void 0) { group = "global"; }
-    return function (target, key) {
-        var before = function () {
-            var loadingCallback = null;
-            setLoading(new Promise(function (resolve, reject) {
-                loadingCallback = resolve;
-            }), moduleName, group);
-            return loadingCallback;
-        };
-        var after = function (resolve, error) {
-            resolve(error);
-        };
-        if (!target[key]) {
-            target[key] = [];
+function effect(loadingForModuleName, loadingForGroupName) {
+    if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
+    if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
+    return function (target, key, descriptor) {
+        var fun = descriptor.value;
+        setGenerator(fun);
+        if (loadingForModuleName !== null) {
+            var before = function () {
+                var loadingCallback = null;
+                setLoading(new Promise(function (resolve, reject) {
+                    loadingCallback = resolve;
+                }), loadingForModuleName, loadingForGroupName);
+                return loadingCallback;
+            };
+            var after = function (resolve, error) {
+                resolve(error);
+            };
+            if (!fun.__decorators__) {
+                fun.__decorators__ = [];
+            }
+            fun.__decorators__.push([before, after]);
         }
-        target[key].push([before, after]);
     };
 }
 function buildlogger(before, after) {
-    return function (target, key) {
-        if (!target[key]) {
-            target[key] = [];
+    return function (target, key, descriptor) {
+        var fun = descriptor.value;
+        if (!fun.__decorators__) {
+            fun.__decorators__ = [];
         }
-        target[key].push([before, after]);
+        fun.__decorators__.push([before, after]);
     };
 }
 function translateMap(cls) {
     var ins = new cls();
     var map = {};
-    Object.keys(ins).reduce(function (pre, key) {
-        pre[key] = ins[key];
-        return pre;
-    }, map);
-    var poto = cls.prototype;
-    for (var key in poto) {
-        if (map[key]) {
-            map[key].__decorators__ = poto[key];
+    for (var key in ins) {
+        if (ins[key]) {
+            map[key] = ins[key];
         }
     }
     return map;
 }
 function buildModel(state, actionClass, handlerClass) {
-    var actions = translateMap(actionClass);
     var handlers = translateMap(handlerClass);
+    var actions = translateMap(actionClass);
+    actions[INIT_MODULE_ACTION_NAME] = function (data, moduleState, rootState) {
+        return data;
+    };
+    actions[LOADING_ACTION_NAME] = function (loading, moduleState, rootState) {
+        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
+    };
     return { state: state, actions: actions, handlers: handlers };
 }
 function buildViews(namespace, views, model) {
     if (!hasInjected[namespace]) {
-        model.actions[INIT_MODULE_ACTION_NAME] = buildActionByReducer(function (data, moduleState, rootState) {
-            return data;
-        });
-        model.actions[LOADING_ACTION_NAME] = buildActionByReducer(function (loading, moduleState, rootState) {
-            return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
-        });
         var locationChangeHandler = model.handlers[LOCATION_CHANGE_ACTION_NAME];
         if (locationChangeHandler) {
             model.handlers[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
@@ -750,9 +742,7 @@ function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, 
 }
 
 exports.buildModule = buildModule;
-exports.buildActionByReducer = buildActionByReducer;
-exports.buildActionByEffect = buildActionByEffect;
-exports.buildLoading = buildLoading;
+exports.effect = effect;
 exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;
 exports.buildViews = buildViews;
