@@ -332,7 +332,7 @@ function reducer(state, action) {
                     decorator[2] = decorator[0](action.type, namespace);
                 });
             }
-            newState_1[namespace] = fun.call(item, getActionData(action), state[namespace], rootState_1);
+            newState_1[namespace] = fun.call(fun["__host__"], getActionData(action), state[namespace], rootState_1);
             if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
@@ -377,7 +377,7 @@ function sagaHandler(action) {
                                 _a.label = 1;
                             case 1:
                                 _a.trys.push([1, 3, , 4]);
-                                return [5 /*yield**/, __values(fun.call(item, getActionData(action), state, rootState))];
+                                return [5 /*yield**/, __values(fun.call(fun["__host__"], getActionData(action), state, rootState))];
                             case 2:
                                 _a.sent();
                                 return [3 /*break*/, 4];
@@ -647,6 +647,30 @@ function getModuleActions(namespace) {
     actionsProxy[namespace] = actions;
     return actions;
 }
+var BaseModuleActions = /** @class */ (function () {
+    function BaseModuleActions() {
+        this.fork = effects.fork;
+        this.cps = effects.cps;
+        this.call = effects.call;
+        this.put = effects.put;
+    }
+    BaseModuleActions.prototype[INIT_MODULE_ACTION_NAME] = function (data, moduleState, rootState) {
+        return data;
+    };
+    BaseModuleActions.prototype[LOADING_ACTION_NAME] = function (loading, moduleState, rootState) {
+        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
+    };
+    return BaseModuleActions;
+}());
+var BaseModuleHandlers = /** @class */ (function () {
+    function BaseModuleHandlers() {
+        this.fork = effects.fork;
+        this.cps = effects.cps;
+        this.call = effects.call;
+        this.put = effects.put;
+    }
+    return BaseModuleHandlers;
+}());
 function effect(loadingForModuleName, loadingForGroupName) {
     if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
     if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
@@ -686,6 +710,7 @@ function translateMap(cls) {
     for (var key in ins) {
         if (ins[key]) {
             map[key] = ins[key];
+            ins[key].__host__ = ins;
         }
     }
     return map;
@@ -741,7 +766,11 @@ function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, 
     buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
 
+exports.call = effects.call;
+exports.put = effects.put;
 exports.buildModule = buildModule;
+exports.BaseModuleActions = BaseModuleActions;
+exports.BaseModuleHandlers = BaseModuleHandlers;
 exports.effect = effect;
 exports.buildlogger = buildlogger;
 exports.buildModel = buildModel;

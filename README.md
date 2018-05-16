@@ -209,7 +209,9 @@ const state: State = {
 });
 
 // 定义该模块的操作
-class ModuleActions {
+// 继承BaseModuleActions，拥有了put、call等saga的方法
+// 该类的所有public方法均为Action，其它请定义为private或者protected
+class ModuleActions extends BaseModuleActions {
 
   // 定义一个名为updateCurUser的Action
   updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
@@ -220,14 +222,21 @@ class ModuleActions {
   // 定义一个名为login的Effect
   @effect(NAMESPACE) //@effect为装饰器，参数为注入loading的状态
   *login({ username, password }: { username: string; password: string }): any {
-    const curUser: userService.LoginResponse = yield call(userService.login, username, password);
-    yield put(thisModule.actions.updateCurUser(curUser));
+    const curUser: userService.LoginResponse = yield this.call(userService.login, username, password);
+    yield this.put(thisModule.actions.updateCurUser(curUser));
+    this.log(username);
   }
 
+  // 非Action请使用private或protected权限
+  private log(username: string){
+    console.log(`${username} 已登录！`)
+  }
 };
 
 // 以观察者模式对action监听
-class ModuleHandlers {
+// 继承BaseModuleHandlers，拥有了put、call等saga的方法
+// 该类的所有public方法均为Handler，其它请定义为private或者protected
+class ModuleHandlers extends BaseModuleHandlers {
 
   // 监听"app_Init"这个action
   @buildlogger( //可选，注入跟踪勾子，打印该Action的执行时间
@@ -244,12 +253,12 @@ class ModuleHandlers {
   @effect() //@effect为装饰器，参数为空默认使用global loading
   *[actionNames.INIT](){
     const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-    yield put(thisModule.actions.updateCurUser(curUser));
+    yield this.put(thisModule.actions.updateCurUser(curUser));
   }
   @effect(null)// 监听"@framework/ERROR"这个action，上报给服务器，参数null表示不注入loading
   *[ERROR_ACTION_NAME](error:Error) {
     console.log(error);
-    yield call(settingsService.api.reportError, error);
+    yield this.call(settingsService.api.reportError, error);
   }
 };
 ```
@@ -311,8 +320,10 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 
 * Model 相关：
 
-  * `type StoreState<P>` 整个 Store 的 State 类型
+  * `StoreState<P>` 整个 Store 的 State 类型
   * `BaseModuleState` 模块 State 需继承此 interface
+  * `BaseModuleActions` 模块 Actions 需继承此基类，该基类拥有 saga 的 put、call 等方法
+  * `BaseModuleHandlers` 模块 Handlers 需继承此基类，该基类拥有 saga 的 put、call 等方法
   * `buildModel(state, actions, handlers)` 创建模块的 Model
   * `@effect()` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
   * `@buildlogger(beforeFun, afterFun)` 装饰器，在该 Action 的执行前后各留下勾子

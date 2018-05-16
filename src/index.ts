@@ -2,6 +2,7 @@ import { History } from "history";
 import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
 import { Middleware, ReducersMapObject } from "redux";
+import { call, put, cps, fork } from "redux-saga/effects";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
@@ -48,9 +49,26 @@ export interface BaseModuleState {
   };
 }
 
-export interface BaseModuleActions {
-  [INIT_MODULE_ACTION_NAME]: ActionCreator<"INIT", any>;
-  [LOADING_ACTION_NAME]: ActionCreator<"LOADING", { [group: string]: string }>;
+export class BaseModuleActions {
+  protected fork: typeof fork = fork;
+  protected cps: typeof cps = cps;
+  protected call: typeof call = call;
+  protected put: typeof put = put;
+  [INIT_MODULE_ACTION_NAME](data: any, moduleState: any, rootState: any) {
+    return data;
+  }
+  [LOADING_ACTION_NAME](loading: { [group: string]: string }, moduleState: any, rootState: any) {
+    return {
+      ...moduleState,
+      loading: { ...moduleState.loading, ...loading },
+    };
+  }
+}
+export class BaseModuleHandlers {
+  protected fork: typeof fork = fork;
+  protected cps: typeof cps = cps;
+  protected call: typeof call = call;
+  protected put: typeof put = put;
 }
 
 export function effect(loadingForModuleName: string | null = "app", loadingForGroupName: string = "global") {
@@ -111,6 +129,7 @@ function translateMap<T>(cls: new () => T) {
   for (const key in ins as any) {
     if (ins[key]) {
       map[key] = ins[key];
+      ins[key].__host__ = ins;
     }
   }
   return map as Map;
@@ -127,8 +146,7 @@ export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerC
       loading: { ...moduleState.loading, ...loading },
     };
   };
-  type Actions = typeof actions & BaseModuleActions;
-  return { state, actions, handlers } as { state: S; actions: Actions; handlers: H };
+  return { state, actions, handlers };
 }
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
@@ -180,3 +198,4 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
 }
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
+export { call, put };
