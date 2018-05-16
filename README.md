@@ -26,7 +26,7 @@ class ModuleActions {
 * 精简而自然的 API 语法，几乎不用学习即可上手
 * 微框架，源码不到 500 行，编译成 ES5 并压缩后仅 11k 左右
 * 无强侵入性，仅为 redux 的糖衣外套，不改变其本身逻辑
-* 业务模块化，可独立打包和按需加载
+* 业务模块化，可整体加载也可按需加载
 * 使用 typescript，所有 state 和 action 都可以做类型推断
 
 > 感谢 [Dva](https://github.com/dvajs/dva)带来的灵感，本框架与 Dva 主要差异：
@@ -81,6 +81,8 @@ IE9 或 IE9 以上
 本框架依赖于浏览器 API "Promise"，低版本浏览器请自行安装 polyfill
 
 ## 使用 react-coat：
+
+### 简单四步：buildModel(), buildViews(), buildModule(), createApp()
 
 > 快速上手：[一个简单的 Hello Word](https://github.com/wooline/react-coat-demo-simple)
 
