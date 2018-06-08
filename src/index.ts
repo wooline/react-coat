@@ -2,7 +2,8 @@ import { History } from "history";
 import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
 import { Middleware, ReducersMapObject } from "redux";
-import { call, put, cps, fork } from "redux-saga/effects";
+import { delay } from "redux-saga";
+import { call, put, cps, fork, take } from "redux-saga/effects";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
@@ -50,6 +51,8 @@ export interface BaseModuleState {
 }
 
 export class BaseModuleActions {
+  protected delay: typeof delay = delay;
+  protected take: typeof take = take;
   protected fork: typeof fork = fork;
   protected cps: typeof cps = cps;
   protected call: typeof call = call;
@@ -69,6 +72,10 @@ export class BaseModuleHandlers {
   protected cps: typeof cps = cps;
   protected call: typeof call = call;
   protected put: typeof put = put;
+  protected take: typeof take = take;
+  protected dispatch(action: { type: string }) {
+    getStore().dispatch(action);
+  }
 }
 
 export function effect(loadingForModuleName: string | null = "app", loadingForGroupName: string = "global") {

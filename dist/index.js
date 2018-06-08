@@ -11,7 +11,8 @@ var reactRouterDom = require('react-router-dom');
 var reactRouterRedux = require('react-router-redux');
 var redux = require('redux');
 var effects = require('redux-saga/effects');
-var createSagaMiddleware = _interopDefault(require('redux-saga'));
+var createSagaMiddleware = require('redux-saga');
+var createSagaMiddleware__default = _interopDefault(createSagaMiddleware);
 var createHistory = _interopDefault(require('history/createBrowserHistory'));
 
 /*! *****************************************************************************
@@ -445,7 +446,7 @@ function buildStore(storeHistory, reducers, storeMiddlewares, storeEnhancers, in
     reducers.router = reactRouterRedux.routerReducer;
     reducers.project = reducer;
     var routingMiddleware = reactRouterRedux.routerMiddleware(storeHistory);
-    var sagaMiddleware = createSagaMiddleware();
+    var sagaMiddleware = createSagaMiddleware__default();
     var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
     var enhancers = storeEnhancers.concat([redux.applyMiddleware.apply(void 0, middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])]);
     var store = redux.createStore(rootReducer(redux.combineReducers(reducers)), {}, redux.compose.apply(void 0, enhancers));
@@ -649,6 +650,8 @@ function getModuleActions(namespace) {
 }
 var BaseModuleActions = /** @class */ (function () {
     function BaseModuleActions() {
+        this.delay = createSagaMiddleware.delay;
+        this.take = effects.take;
         this.fork = effects.fork;
         this.cps = effects.cps;
         this.call = effects.call;
@@ -668,7 +671,11 @@ var BaseModuleHandlers = /** @class */ (function () {
         this.cps = effects.cps;
         this.call = effects.call;
         this.put = effects.put;
+        this.take = effects.take;
     }
+    BaseModuleHandlers.prototype.dispatch = function (action) {
+        getStore().dispatch(action);
+    };
     return BaseModuleHandlers;
 }());
 function effect(loadingForModuleName, loadingForGroupName) {

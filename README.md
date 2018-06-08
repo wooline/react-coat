@@ -1,7 +1,8 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 2.0.0 发布：
+## 2.1.0 发布：
 
+* 2.1.0 为 actions 增加 this.dispatch 方法，等同于 store.dispatch，仅用于某些特殊场景，比如计时器回调，推荐用 saga 的 yeild this.put
 * 兼容最新版本的 react@16.3、redux@4.0 等
 * LoadingState 由原来的"枚举类型"改为"直接量类型"：Start" | "Stop" | "Depth"
 * 升级 typescript 到 2.8，并利用 ts2.8 新的“条件类型”优化。**如果你使用 typescript，请升级至 2.8.0 以上**
@@ -42,7 +43,7 @@ class ModuleActions {
 dispatch({ type: 'moduleA/query', payload:{args:[10]} })
 
 //本框架中可直接利用ts类型反射和检查:
-dispatch(moduleA.actions.query([10]))
+this.dispatch(moduleA.actions.query([10]))
 ```
 
 ## 安装 react-coat：
@@ -210,6 +211,7 @@ const state: State = {
 
 // 定义该模块的操作
 // 继承BaseModuleActions，拥有了put、call等saga的方法
+// 2.1.0增加dispatch方法，等同于 store.dispatch，仅用于某些特殊场景，比如计时器回调，推荐用 saga 的put
 // 该类的所有public方法均为Action，其它请定义为private或者protected
 class ModuleActions extends BaseModuleActions {
 
@@ -322,8 +324,8 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
 
   * `StoreState<P>` 整个 Store 的 State 类型
   * `BaseModuleState` 模块 State 需继承此 interface
-  * `BaseModuleActions` 模块 Actions 需继承此基类，该基类拥有 saga 的 put、call 等方法
-  * `BaseModuleHandlers` 模块 Handlers 需继承此基类，该基类拥有 saga 的 put、call 等方法
+  * `BaseModuleActions` 模块 Actions 需继承此基类，该基类拥有 saga 的 put、call 和 store 的 dispatch 等方法
+  * `BaseModuleHandlers` 模块 Handlers 需继承此基类，该基类拥有 saga 的 put、call 和 store 的 dispatch 等方法
   * `buildModel(state, actions, handlers)` 创建模块的 Model
   * `@effect()` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
   * `@buildlogger(beforeFun, afterFun)` 装饰器，在该 Action 的执行前后各留下勾子

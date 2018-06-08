@@ -2,7 +2,8 @@
 import { History } from "history";
 import { ComponentType } from "react";
 import { Middleware, ReducersMapObject } from "redux";
-import { call, put, cps, fork } from "redux-saga/effects";
+import { delay } from "redux-saga";
+import { call, put, cps, fork, take } from "redux-saga/effects";
 import { ERROR_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
@@ -18,6 +19,8 @@ export interface BaseModuleState {
     };
 }
 export declare class BaseModuleActions {
+    protected delay: typeof delay;
+    protected take: typeof take;
     protected fork: typeof fork;
     protected cps: typeof cps;
     protected call: typeof call;
@@ -32,6 +35,10 @@ export declare class BaseModuleHandlers {
     protected cps: typeof cps;
     protected call: typeof call;
     protected put: typeof put;
+    protected take: typeof take;
+    protected dispatch(action: {
+        type: string;
+    }): void;
 }
 export declare function effect(loadingForModuleName?: string | null, loadingForGroupName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function buildlogger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
