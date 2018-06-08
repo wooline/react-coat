@@ -3,7 +3,7 @@ import React, { ComponentType } from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { withRouter } from "react-router-dom";
-import { ConnectedRouter } from "react-router-redux";
+import { ConnectedRouter } from "connected-react-router";
 import { Middleware } from "redux";
 import { SingleStore } from "./types";
 import ErrorBoundary from "./ErrorBoundary";

@@ -32,4 +32,7 @@ const mapDispatchToProps = (dispatch: Dispatch) => {
   };
 };
 
-export default connect(null, mapDispatchToProps)(Component);
+export default connect(
+  null,
+  mapDispatchToProps,
+)(Component);

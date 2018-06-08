@@ -2,7 +2,7 @@ import { History } from "history";
 import { Action, applyMiddleware, createStore, compose, Middleware, combineReducers, ReducersMapObject } from "redux";
 import { put, takeEvery } from "redux-saga/effects";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
-import { routerMiddleware, routerReducer } from "react-router-redux";
+import { connectRouter, routerMiddleware } from "connected-react-router";
 import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
 import { ActionsMap, SingleStore } from "./types";
 
@@ -114,13 +114,12 @@ export function buildStore(storeHistory: History, reducers: ReducersMapObject, s
   if (reducers.router || reducers.project) {
     throw new Error("the reducer name 'router' 'project' is not allowed");
   }
-  reducers.router = routerReducer;
   reducers.project = reducer;
   const routingMiddleware = routerMiddleware(storeHistory);
   const sagaMiddleware: SagaMiddleware<any> = createSagaMiddleware();
   const middlewares = [...storeMiddlewares, routingMiddleware, sagaMiddleware];
   const enhancers = [...storeEnhancers, applyMiddleware(...middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])];
-  const store: SingleStore = createStore(rootReducer(combineReducers(reducers)), {}, compose(...enhancers));
+  const store: SingleStore = createStore(rootReducer(connectRouter(storeHistory)(combineReducers(reducers))), {}, compose(...enhancers));
   singleStore = store;
   sagaMiddleware.run(saga as any);
   window.onerror = (message: string, filename?: string, lineno?: number, colno?: number, error?: Error) => {
