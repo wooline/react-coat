@@ -1,9 +1,10 @@
-import { History } from "history";
+import { History, LocationDescriptorObject } from "history";
 import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
-import { Middleware, ReducersMapObject } from "redux";
+import { Middleware, ReducersMapObject, Action } from "redux";
 import { delay } from "redux-saga";
 import { call, put, cps, fork, take } from "redux-saga/effects";
+import { RouterState, routerActions } from "connected-react-router";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
@@ -57,6 +58,7 @@ export class BaseModuleActions {
   protected cps: typeof cps = cps;
   protected call: typeof call = call;
   protected put: typeof put = put;
+  protected routerActions = routerActions;
   [INIT_MODULE_ACTION_NAME](data: any, moduleState: any, rootState: any) {
     return data;
   }
@@ -68,6 +70,7 @@ export class BaseModuleActions {
   }
 }
 export class BaseModuleHandlers {
+  protected routerActions = routerActions;
   protected fork: typeof fork = fork;
   protected cps: typeof cps = cps;
   protected call: typeof call = call;
@@ -181,14 +184,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
 }
 
 export interface StoreState<P> {
-  router: {
-    location: {
-      pathname: string;
-      search: {};
-      hash: string;
-      key: string;
-    };
-  };
+  router: RouterState;
   project: P;
 }
 export function getStore() {
@@ -203,6 +199,7 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
+export { Action, LocationDescriptorObject };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };

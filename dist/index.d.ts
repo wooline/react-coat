@@ -1,9 +1,10 @@
 /// <reference types="react" />
-import { History } from "history";
+import { History, LocationDescriptorObject } from "history";
 import { ComponentType } from "react";
-import { Middleware, ReducersMapObject } from "redux";
+import { Middleware, ReducersMapObject, Action } from "redux";
 import { delay } from "redux-saga";
 import { call, put, cps, fork, take } from "redux-saga/effects";
+import { RouterState } from "connected-react-router";
 import { ERROR_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
@@ -25,12 +26,38 @@ export declare class BaseModuleActions {
     protected cps: typeof cps;
     protected call: typeof call;
     protected put: typeof put;
+    protected routerActions: {
+        push: {
+            (path: string, state?: any): Action<any>;
+            (location: LocationDescriptorObject): Action<any>;
+        };
+        replace: {
+            (path: string, state?: any): Action<any>;
+            (location: LocationDescriptorObject): Action<any>;
+        };
+        go: (n: number) => Action<any>;
+        goBack: () => Action<any>;
+        goForward: () => Action<any>;
+    };
     [INIT_MODULE_ACTION_NAME](data: any, moduleState: any, rootState: any): any;
     [LOADING_ACTION_NAME](loading: {
         [group: string]: string;
     }, moduleState: any, rootState: any): any;
 }
 export declare class BaseModuleHandlers {
+    protected routerActions: {
+        push: {
+            (path: string, state?: any): Action<any>;
+            (location: LocationDescriptorObject): Action<any>;
+        };
+        replace: {
+            (path: string, state?: any): Action<any>;
+            (location: LocationDescriptorObject): Action<any>;
+        };
+        go: (n: number) => Action<any>;
+        goBack: () => Action<any>;
+        goForward: () => Action<any>;
+    };
     protected fork: typeof fork;
     protected cps: typeof cps;
     protected call: typeof call;
@@ -56,19 +83,13 @@ export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, 
 };
 export declare function buildViews<T>(namespace: string, views: T, model: Model): T;
 export interface StoreState<P> {
-    router: {
-        location: {
-            pathname: string;
-            search: {};
-            hash: string;
-            key: string;
-        };
-    };
+    router: RouterState;
     project: P;
 }
 export declare function getStore(): any;
 export declare function getHistory(): History;
 export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[], reducers?: ReducersMapObject, storeHistory?: History): void;
+export { Action, LocationDescriptorObject };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };
