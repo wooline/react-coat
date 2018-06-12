@@ -56,8 +56,8 @@ function __generator(thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -98,19 +98,6 @@ function errorAction(error) {
     return {
         type: ERROR_ACTION_NAME,
         error: error,
-    };
-}
-function loadingAction(namespace, group, status) {
-    return {
-        type: namespace + NSP + LOADING_ACTION_NAME,
-        data: (_a = {}, _a[group] = status, _a),
-    };
-    var _a;
-}
-function initModuleAction(namespace, data) {
-    return {
-        type: namespace + NSP + INIT_MODULE_ACTION_NAME,
-        data: data,
     };
 }
 function initLocationAction(namespace, data) {
@@ -333,7 +320,7 @@ function reducer(state, action) {
                     decorator[2] = decorator[0](action.type, namespace);
                 });
             }
-            newState_1[namespace] = fun.call(fun["__host__"], getActionData(action), state[namespace], rootState_1);
+            newState_1[namespace] = fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state[namespace], rootState: rootState_1 });
             if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
                 // 对异步模块补发一次locationChange
                 setTimeout(function () {
@@ -378,7 +365,7 @@ function sagaHandler(action) {
                                 _a.label = 1;
                             case 1:
                                 _a.trys.push([1, 3, , 4]);
-                                return [5 /*yield**/, __values(fun.call(fun["__host__"], getActionData(action), state, rootState))];
+                                return [5 /*yield**/, __values(fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state, rootState: rootState }))];
                             case 2:
                                 _a.sent();
                                 return [3 /*break*/, 4];
@@ -465,9 +452,13 @@ function getSingleStore() {
 }
 
 var loadings = {};
+var actions;
 var depthTime = 2;
 function setLoadingDepthTime(second) {
     depthTime = second;
+}
+function setActions(moduleActions) {
+    actions = moduleActions;
 }
 function setLoading(item, namespace, group) {
     if (namespace === void 0) { namespace = "app"; }
@@ -478,8 +469,9 @@ function setLoading(item, namespace, group) {
         loadings[key].addListener(TaskCountEvent, function (e) {
             var store = getSingleStore();
             if (store) {
-                store.dispatch(loadingAction(namespace, group, e.data));
+                store.dispatch(actions[namespace][LOADING_ACTION_NAME]((_a = {}, _a[group] = e.data, _a)));
             }
+            var _a;
         });
     }
     loadings[key].addItem(item);
@@ -622,6 +614,7 @@ function injectHandlers(listenerModule, handlers) {
 var injectedModules = [];
 var hasInjected = {};
 var actionsProxy = {};
+setActions(actionsProxy);
 var prvHistory;
 function buildModule(namespace) {
     var actions = getModuleActions(namespace);
@@ -657,11 +650,13 @@ var BaseModuleActions = /** @class */ (function () {
         this.put = effects.put;
         this.routerActions = connectedReactRouter.routerActions;
     }
-    BaseModuleActions.prototype[INIT_MODULE_ACTION_NAME] = function (data, moduleState, rootState) {
-        return data;
+    BaseModuleActions.prototype[INIT_MODULE_ACTION_NAME] = function (_a) {
+        var payload = _a.payload;
+        return payload;
     };
-    BaseModuleActions.prototype[LOADING_ACTION_NAME] = function (loading, moduleState, rootState) {
-        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
+    BaseModuleActions.prototype[LOADING_ACTION_NAME] = function (_a) {
+        var payload = _a.payload, moduleState = _a.moduleState;
+        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, payload) });
     };
     return BaseModuleActions;
 }());
@@ -726,12 +721,6 @@ function translateMap(cls) {
 function buildModel(state, actionClass, handlerClass) {
     var handlers = translateMap(handlerClass);
     var actions = translateMap(actionClass);
-    actions[INIT_MODULE_ACTION_NAME] = function (data, moduleState, rootState) {
-        return data;
-    };
-    actions[LOADING_ACTION_NAME] = function (loading, moduleState, rootState) {
-        return __assign({}, moduleState, { loading: __assign({}, moduleState.loading, loading) });
-    };
     return { state: state, actions: actions, handlers: handlers };
 }
 function buildViews(namespace, views, model) {
@@ -747,7 +736,7 @@ function buildViews(namespace, views, model) {
             actions_1[key] = function (payload) { return ({ type: namespace + NSP + key, payload: payload }); };
         });
         hasInjected[namespace] = true;
-        var action = initModuleAction(namespace, model.state);
+        var action = actions_1[INIT_MODULE_ACTION_NAME](model.state);
         var store = getSingleStore();
         if (store) {
             store.dispatch(action);

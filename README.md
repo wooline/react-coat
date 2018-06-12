@@ -1,8 +1,14 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 2.1.1 发布：
+## 2.2.0 发布：
 
-- 用 connected-react-router 替代 react-router-redux，并更新其 routerState 和 routerActions
+- 将原来 Action 中的三个参数合并为一个参数，该参数有三个固定的 key：payload、moduleState、rootState，
+
+```JS
+原：updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State
+
+新：updateCurUser({payload, moduleState, rootState} : {payload: State["curUser"], moduleState: State, rootState: RootState}): State
+```
 
 特别注意：在 model 中定义异步 effect 时，有时会莫名奇妙的推导不出类型，显示编译错误，这种情况下，请将该 effect 返回值设置为 any，期待 typescript 的改进。例如：
 
@@ -10,8 +16,8 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 class ModuleActions {
   // 定义一个名为login的Effect，有时会莫名奇妙的推导不出类型，可将返回值设置为any
   @effect()
-  *login({ username, password }: { username: string; password: string }): any {
-    const curUser: userService.LoginResponse = yield call(userService.login, username, password);
+  *login({payload}: {payload: { username: string; password: string }}): any {
+    const curUser: userService.LoginResponse = yield call(userService.login, payload.username, payload.password);
     yield put(thisModule.actions.updateCurUser(curUser));
   }
 
@@ -56,12 +62,12 @@ this.dispatch(moduleA.actions.query([10]))
     "@types/react-dom": "^16.0.0",
     "@types/react-redux": "^5.0.0",
     "@types/react-router-dom": "^4.0.0",
+    "connected-react-router": "^4.0.0",
     "history": "^4.0.0",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
     "react-redux": "^5.0.0",
     "react-router-dom": "^4.0.0",
-    "connected-react-router": "^4.0.0",
     "redux": "^3.0.0 || ^4.0.0",
     "redux-saga": "^0.16.0"
   },
@@ -212,15 +218,15 @@ const state: State = {
 class ModuleActions extends BaseModuleActions {
 
   // 定义一个名为updateCurUser的Action
-  updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State {
+  updateCurUser({payload, moduleState}: {payload: State["curUser"], moduleState: State}): State {
     // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
-    return { ...moduleState, curUser };
+    return { ...moduleState, curUser:payload };
   }
 
   // 定义一个名为login的Effect
   @effect(NAMESPACE) //@effect为装饰器，参数为注入loading的状态
-  *login({ username, password }: { username: string; password: string }): any {
-    const curUser: userService.LoginResponse = yield this.call(userService.login, username, password);
+  *login({payload}: {payload: { username: string; password: string }}): any {
+    const curUser: userService.LoginResponse = yield this.call(userService.login, payload.username, payload.password);
     yield this.put(thisModule.actions.updateCurUser(curUser));
     this.log(username);
     //集成routerActions，包括history方法push,replace,go,goBack,goForward

@@ -1,6 +1,6 @@
 {
   "name": "react-coat",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "A Micro-Framework for React + Redux + Redux-Saga + React-Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,7 +40,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/history": "4.6.2",
-    "@types/react": "16.3.13",
+    "@types/react": "16.3.17",
     "@types/react-dom": "16.0.6",
     "@types/react-redux": "6.0.2",
     "@types/react-router-dom": "4.2.7",
@@ -50,7 +50,7 @@
     "react": "16.4.0",
     "react-dom": "16.4.0",
     "react-redux": "5.0.7",
-    "react-router-dom": "4.2.2",
+    "react-router-dom": "4.3.1",
     "redux": "4.0.0",
     "redux-saga": "0.16.0",
     "rollup": "^0.58.2",
@@ -63,6 +63,6 @@
     "stylelint-config-standard": "^18.2.0",
     "tslint": "^5.9.1",
     "tslint-react": "^3.5.1",
-    "typescript": "^2.8.3"
+    "typescript": "2.8.3"
   }
 }

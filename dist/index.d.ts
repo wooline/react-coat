@@ -39,10 +39,15 @@ export declare class BaseModuleActions {
         goBack: () => Action<any>;
         goForward: () => Action<any>;
     };
-    [INIT_MODULE_ACTION_NAME](data: any, moduleState: any, rootState: any): any;
-    [LOADING_ACTION_NAME](loading: {
-        [group: string]: string;
-    }, moduleState: any, rootState: any): any;
+    [INIT_MODULE_ACTION_NAME]({payload}: {
+        payload: any;
+    }): any;
+    [LOADING_ACTION_NAME]({payload, moduleState}: {
+        payload: {
+            [group: string]: string;
+        };
+        moduleState: any;
+    }): any;
 }
 export declare class BaseModuleHandlers {
     protected routerActions: {
@@ -73,12 +78,14 @@ export declare type ActionCreator<T, P> = (payload: P) => {
     type: T;
     payload: P;
 };
+export declare type EmptyActionCreator<T> = () => {
+    type: T;
+};
 export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H): {
     state: S;
-    actions: { [K in keyof A]: A[K] extends (data: null | undefined, ...args: any[]) => any ? () => {
-        type: K;
-        payload: null;
-    } : A[K] extends (data: infer P, ...args: any[]) => any ? ActionCreator<K, P> : never; };
+    actions: { [K in keyof A]: A[K] extends () => any ? EmptyActionCreator<K> : A[K] extends (data: {
+        payload: infer P;
+    }) => any ? ActionCreator<K, P> : EmptyActionCreator<K>; };
     handlers: any;
 };
 export declare function buildViews<T>(namespace: string, views: T, model: Model): T;

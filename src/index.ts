@@ -5,11 +5,11 @@ import { Middleware, ReducersMapObject, Action } from "redux";
 import { delay } from "redux-saga";
 import { call, put, cps, fork, take } from "redux-saga/effects";
 import { RouterState, routerActions } from "connected-react-router";
-import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, initModuleAction, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
+import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
-import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
+import { LoadingState, setLoading, setLoadingDepthTime, setActions } from "./loading";
 import { buildStore, getSingleStore } from "./storeProxy";
 import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
@@ -17,6 +17,8 @@ import { delayPromise, setGenerator } from "./utils";
 const injectedModules: Array<{ type: string }> = [];
 const hasInjected: { [moduleName: string]: boolean } = {};
 const actionsProxy: { [moduleName: string]: { [action: string]: Function } } = {};
+
+setActions(actionsProxy);
 
 let prvHistory: History;
 export function buildModule<T>(namespace: string) {
@@ -59,13 +61,13 @@ export class BaseModuleActions {
   protected call: typeof call = call;
   protected put: typeof put = put;
   protected routerActions = routerActions;
-  [INIT_MODULE_ACTION_NAME](data: any, moduleState: any, rootState: any) {
-    return data;
+  [INIT_MODULE_ACTION_NAME]({ payload }) {
+    return payload;
   }
-  [LOADING_ACTION_NAME](loading: { [group: string]: string }, moduleState: any, rootState: any) {
+  [LOADING_ACTION_NAME]({ payload, moduleState }: { payload: { [group: string]: string }; moduleState: any }) {
     return {
       ...moduleState,
-      loading: { ...moduleState.loading, ...loading },
+      loading: { ...moduleState.loading, ...payload },
     };
   }
 }
@@ -124,17 +126,13 @@ export type ActionCreator<T, P> = (
   type: T;
   payload: P;
 };
+export type EmptyActionCreator<T> = () => {
+  type: T;
+};
 function translateMap<T>(cls: new () => T) {
   const ins = new cls();
   type Ins = typeof ins;
-  type Map = {
-    [K in keyof Ins]: Ins[K] extends (data: null | undefined, ...args) => any
-      ? () => {
-          type: K;
-          payload: null;
-        }
-      : Ins[K] extends (data: infer P, ...args) => any ? ActionCreator<K, P> : never
-  };
+  type Map = { [K in keyof Ins]: Ins[K] extends () => any ? EmptyActionCreator<K> : Ins[K] extends (data: { payload: infer P }) => any ? ActionCreator<K, P> : EmptyActionCreator<K> };
   const map = {};
   for (const key in ins as any) {
     if (ins[key]) {
@@ -147,15 +145,6 @@ function translateMap<T>(cls: new () => T) {
 export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
   const handlers = translateMap(handlerClass) as any;
   const actions = translateMap(actionClass);
-  actions[INIT_MODULE_ACTION_NAME] = (data: any, moduleState: any, rootState: any) => {
-    return data;
-  };
-  actions[LOADING_ACTION_NAME] = (loading: { [group: string]: string }, moduleState: any, rootState: any) => {
-    return {
-      ...moduleState,
-      loading: { ...moduleState.loading, ...loading },
-    };
-  };
   return { state, actions, handlers };
 }
 
@@ -172,7 +161,7 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
       actions[key] = payload => ({ type: namespace + NSP + key, payload });
     });
     hasInjected[namespace] = true;
-    const action = initModuleAction(namespace, model.state);
+    const action = actions[INIT_MODULE_ACTION_NAME](model.state);
     const store = getSingleStore();
     if (store) {
       store.dispatch(action);
