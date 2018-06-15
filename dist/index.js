@@ -707,8 +707,7 @@ function buildlogger(before, after) {
         fun.__decorators__.push([before, after]);
     };
 }
-function translateMap(cls) {
-    var ins = new cls();
+function translateMap(ins) {
     var map = {};
     for (var key in ins) {
         if (ins[key]) {
@@ -718,9 +717,9 @@ function translateMap(cls) {
     }
     return map;
 }
-function buildModel(state, actionClass, handlerClass) {
-    var handlers = translateMap(handlerClass);
-    var actions = translateMap(actionClass);
+function buildModel(state, actionsIns, handlersIns) {
+    var handlers = translateMap(handlersIns);
+    var actions = translateMap(actionsIns);
     return { state: state, actions: actions, handlers: handlers };
 }
 function buildViews(namespace, views, model) {

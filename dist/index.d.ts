@@ -74,18 +74,18 @@ export declare class BaseModuleHandlers {
 }
 export declare function effect(loadingForModuleName?: string | null, loadingForGroupName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function buildlogger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare type ActionCreator<T, P> = (payload: P) => {
-    type: T;
+export declare type ActionCreator<P> = (payload: P) => {
+    type: string;
     payload: P;
 };
-export declare type EmptyActionCreator<T> = () => {
-    type: T;
+export declare type EmptyActionCreator = () => {
+    type: string;
 };
-export declare function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H): {
+export declare function buildModel<S, A, H>(state: S, actionsIns: A, handlersIns: H): {
     state: S;
-    actions: { [K in keyof A]: A[K] extends () => any ? EmptyActionCreator<K> : A[K] extends (data: {
+    actions: { [K in keyof A]: A[K] extends () => any ? EmptyActionCreator : A[K] extends (data: {
         payload: infer P;
-    }) => any ? ActionCreator<K, P> : EmptyActionCreator<K>; };
+    }) => any ? ActionCreator<P> : EmptyActionCreator; };
     handlers: any;
 };
 export declare function buildViews<T>(namespace: string, views: T, model: Model): T;

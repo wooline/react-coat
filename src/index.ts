@@ -120,19 +120,18 @@ export function buildlogger(before: (actionName: string, moduleName: string) => 
   };
 }
 
-export type ActionCreator<T, P> = (
+export type ActionCreator<P> = (
   payload: P,
 ) => {
-  type: T;
+  type: string;
   payload: P;
 };
-export type EmptyActionCreator<T> = () => {
-  type: T;
+export type EmptyActionCreator = () => {
+  type: string;
 };
-function translateMap<T>(cls: new () => T) {
-  const ins = new cls();
+function translateMap<T>(ins: T) {
   type Ins = typeof ins;
-  type Map = { [K in keyof Ins]: Ins[K] extends () => any ? EmptyActionCreator<K> : Ins[K] extends (data: { payload: infer P }) => any ? ActionCreator<K, P> : EmptyActionCreator<K> };
+  type Map = { [K in keyof Ins]: Ins[K] extends () => any ? EmptyActionCreator : Ins[K] extends (data: { payload: infer P }) => any ? ActionCreator<P> : EmptyActionCreator };
   const map = {};
   for (const key in ins as any) {
     if (ins[key]) {
@@ -142,9 +141,9 @@ function translateMap<T>(cls: new () => T) {
   }
   return map as Map;
 }
-export function buildModel<S, A, H>(state: S, actionClass: new () => A, handlerClass: new () => H) {
-  const handlers = translateMap(handlerClass) as any;
-  const actions = translateMap(actionClass);
+export function buildModel<S, A, H>(state: S, actionsIns: A, handlersIns: H) {
+  const handlers = translateMap(handlersIns) as any;
+  const actions = translateMap(actionsIns);
   return { state, actions, handlers };
 }
 
