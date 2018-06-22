@@ -1,13 +1,28 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 2.2.0 发布：
+## 2.3.0 发布：
 
-- 将原来 Action 中的三个参数合并为一个参数，该参数有三个固定的 key：payload、moduleState、rootState，
+- buildModel 方法接收 ModuleActions 和 ModuleHandlers 的参数由原来的 class 改为 instance
 
 ```JS
-原：updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State
+原：const model = buildModel(state, ModuleActions, ModuleHandlers);
 
-新：updateCurUser({payload, moduleState, rootState} : {payload: State["curUser"], moduleState: State, rootState: RootState}): State
+2.3.0：const model = buildModel(state, new ModuleActions(), new ModuleHandlers());
+```
+
+- 增加泛型 ActionData 来描述 Action 方法参数的三个固定 key：payload、moduleState、rootState
+
+```JS
+export interface ActionData<P = any, M = any, R = any> {
+  payload: P;
+  moduleState: M;
+  rootState: R;
+}
+如：原Action：updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State
+
+2.2.0：updateCurUser({payload, moduleState, rootState} : {payload: State["curUser"], moduleState: State, rootState: RootState}): State
+
+2.3.0：updateCurUser({payload, moduleState, rootState} : ActionData<State["curUser"], State, RootState>): State
 ```
 
 特别注意：在 model 中定义异步 effect 时，有时会莫名奇妙的推导不出类型，显示编译错误，这种情况下，请将该 effect 返回值设置为 any，期待 typescript 的改进。例如：
@@ -16,7 +31,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 class ModuleActions {
   // 定义一个名为login的Effect，有时会莫名奇妙的推导不出类型，可将返回值设置为any
   @effect()
-  *login({payload}: {payload: { username: string; password: string }}): any {
+  *login({payload}: ActionData<{ username: string; password: string }>): any {
     const curUser: userService.LoginResponse = yield call(userService.login, payload.username, payload.password);
     yield put(thisModule.actions.updateCurUser(curUser));
   }
@@ -72,6 +87,8 @@ this.dispatch(moduleA.actions.query([10]))
     "redux-saga": "^0.16.0"
   },
 ```
+
+#### react-coat-pkg
 
 如果你想省心，你也可以直接安装"all in 1"的 [react-coat-pkg](https://github.com/wooline/react-coat-pkg)，它将自动包含以上组件，并保证各组件版本不会冲突：
 
@@ -218,14 +235,14 @@ const state: State = {
 class ModuleActions extends BaseModuleActions {
 
   // 定义一个名为updateCurUser的Action
-  updateCurUser({payload, moduleState}: {payload: State["curUser"], moduleState: State}): State {
+  updateCurUser({payload, moduleState}: ActionData<State["curUser"],State>): State {
     // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
     return { ...moduleState, curUser:payload };
   }
 
   // 定义一个名为login的Effect
   @effect(NAMESPACE) //@effect为装饰器，参数为注入loading的状态
-  *login({payload}: {payload: { username: string; password: string }}): any {
+  *login({payload}: ActionData<{ username: string; password: string }>): any {
     const curUser: userService.LoginResponse = yield this.call(userService.login, payload.username, payload.password);
     yield this.put(thisModule.actions.updateCurUser(curUser));
     this.log(username);
@@ -262,9 +279,9 @@ class ModuleHandlers extends BaseModuleHandlers {
     yield this.put(thisModule.actions.updateCurUser(curUser));
   }
   @effect(null)// 监听"@framework/ERROR"这个action，上报给服务器，参数null表示不注入loading
-  *[ERROR_ACTION_NAME](error:Error) {
-    console.log(error);
-    yield this.call(settingsService.api.reportError, error);
+  *[ERROR_ACTION_NAME]({ payload }: ActionData<Error>) {
+    console.log(payload);
+    yield this.call(settingsService.api.reportError, payload);
   }
 };
 ```
@@ -359,7 +376,7 @@ setLoading(item: Promise, moduleName?: string="app", group?: string="global")
   答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
 
 - `框架能用于生产环境吗，会一直维护吗？`
-  答：本人会持续升级维护。区别于某些强侵入型框架，本微框架原理简单，核心代码也就百多行，担心的话你也可以自我维护和改造。前端生态更新迭代快速，组件松散，各版本之间容易冲突，如果想省事还是不要去做第一个趟坑的人。目前来说，本框架采用的都是各组件的最新版本，比如`react-router`已经用到 v5.0 了（可惜还是 alpha 版），应当可以撑段时期了>\_<。
+  答：本人会持续升级维护。区别于某些强侵入型框架，本微框架原理简单，核心代码也就百多行，无过多封装。
 
 ### 后记
 

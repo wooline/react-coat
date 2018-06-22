@@ -11,7 +11,7 @@ import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading, setLoadingDepthTime, setActions } from "./loading";
 import { buildStore, getSingleStore } from "./storeProxy";
-import { Model } from "./types";
+import { Model, ActionData } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: Array<{ type: string }> = [];
@@ -61,10 +61,10 @@ export class BaseModuleActions {
   protected call: typeof call = call;
   protected put: typeof put = put;
   protected routerActions = routerActions;
-  [INIT_MODULE_ACTION_NAME]({ payload }) {
+  [INIT_MODULE_ACTION_NAME]({ payload }: ActionData) {
     return payload;
   }
-  [LOADING_ACTION_NAME]({ payload, moduleState }: { payload: { [group: string]: string }; moduleState: any }) {
+  [LOADING_ACTION_NAME]({ payload, moduleState }: ActionData<{ [group: string]: string }>) {
     return {
       ...moduleState,
       loading: { ...moduleState.loading, ...payload },
@@ -187,7 +187,7 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
-export { Action, LocationDescriptorObject };
+export { Action, ActionData, LocationDescriptorObject };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };

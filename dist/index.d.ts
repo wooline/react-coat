@@ -8,7 +8,7 @@ import { RouterState } from "connected-react-router";
 import { ERROR_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
 import { LoadingState, setLoading, setLoadingDepthTime } from "./loading";
-import { Model } from "./types";
+import { Model, ActionData } from "./types";
 import { delayPromise } from "./utils";
 export declare function buildModule<T>(namespace: string): {
     namespace: string;
@@ -39,15 +39,10 @@ export declare class BaseModuleActions {
         goBack: () => Action<any>;
         goForward: () => Action<any>;
     };
-    [INIT_MODULE_ACTION_NAME]({payload}: {
-        payload: any;
-    }): any;
-    [LOADING_ACTION_NAME]({payload, moduleState}: {
-        payload: {
-            [group: string]: string;
-        };
-        moduleState: any;
-    }): any;
+    [INIT_MODULE_ACTION_NAME]({payload}: ActionData): any;
+    [LOADING_ACTION_NAME]({payload, moduleState}: ActionData<{
+        [group: string]: string;
+    }>): any;
 }
 export declare class BaseModuleHandlers {
     protected routerActions: {
@@ -96,7 +91,7 @@ export interface StoreState<P> {
 export declare function getStore(): any;
 export declare function getHistory(): History;
 export declare function createApp(view: ComponentType<any>, container: string, storeMiddlewares?: Middleware[], storeEnhancers?: Function[], reducers?: ReducersMapObject, storeHistory?: History): void;
-export { Action, LocationDescriptorObject };
+export { Action, ActionData, LocationDescriptorObject };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };
