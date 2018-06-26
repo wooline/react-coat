@@ -8,7 +8,7 @@ export declare function errorAction(error: any): {
     type: string;
     error: any;
 };
-export declare function initLocationAction(namespace: string, data: any): {
+export declare function initLocationAction(namespace: string, payload: any): {
     type: string;
-    data: any;
+    payload: any;
 };

@@ -100,10 +100,10 @@ function errorAction(error) {
         error: error,
     };
 }
-function initLocationAction(namespace, data) {
+function initLocationAction(namespace, payload) {
     return {
         type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
-        data: data,
+        payload: payload,
     };
 }
 
@@ -285,7 +285,6 @@ var TaskCounter = /** @class */ (function (_super) {
 
 var prevRootState = {};
 var singleStore;
-var lastLocationAction;
 var sagasMap = {};
 var reducersMap = {};
 var sagaNames = [];
@@ -305,9 +304,9 @@ function getActionData(action) {
 }
 function reducer(state, action) {
     if (state === void 0) { state = {}; }
-    if (action.type === LOCATION_CHANGE_ACTION_NAME) {
-        lastLocationAction = getActionData(action);
-    }
+    // if (action.type === LOCATION_CHANGE_ACTION_NAME) {
+    //   lastLocationAction = getActionData(action);
+    // }
     var item = reducersMap[action.type];
     if (item && singleStore) {
         var rootState_1 = prevRootState;
@@ -321,11 +320,11 @@ function reducer(state, action) {
                 });
             }
             newState_1[namespace] = fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state[namespace], rootState: rootState_1 });
-            if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
-                // 对异步模块补发一次locationChange
+            if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
+                // 对模块补发一次locationChange
                 setTimeout(function () {
                     if (singleStore) {
-                        singleStore.dispatch(initLocationAction(namespace, lastLocationAction));
+                        singleStore.dispatch(initLocationAction(namespace, rootState_1.router));
                     }
                 }, 0);
             }

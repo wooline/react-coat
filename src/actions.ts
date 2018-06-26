@@ -12,9 +12,9 @@ export function errorAction(error: any) {
   };
 }
 
-export function initLocationAction(namespace: string, data: any) {
+export function initLocationAction(namespace: string, payload: any) {
   return {
     type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
-    data,
+    payload,
   };
 }

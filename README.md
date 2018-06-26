@@ -1,5 +1,9 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
+## 2.3.1 发布：
+
+- Fix bug: connected-react-router 在页面初始化时不会自动 dispatch，导致第一次加载的 module 无法监听 LOCATION_CHANGE_ACTION_NAME
+
 ## 2.3.0 发布：
 
 - buildModel 方法接收 ModuleActions 和 ModuleHandlers 的参数由原来的 class 改为 instance
@@ -20,9 +24,8 @@ export interface ActionData<P = any, M = any, R = any> {
 }
 如：原Action：updateCurUser(curUser: State["curUser"], moduleState: State, rootState: RootState): State
 
-2.2.0：updateCurUser({payload, moduleState, rootState} : {payload: State["curUser"], moduleState: State, rootState: RootState}): State
-
 2.3.0：updateCurUser({payload, moduleState, rootState} : ActionData<State["curUser"], State, RootState>): State
+或     updateCurUser({payload, moduleState, rootState} : {payload: State["curUser"], moduleState: State, rootState: RootState}): State
 ```
 
 特别注意：在 model 中定义异步 effect 时，有时会莫名奇妙的推导不出类型，显示编译错误，这种情况下，请将该 effect 返回值设置为 any，期待 typescript 的改进。例如：

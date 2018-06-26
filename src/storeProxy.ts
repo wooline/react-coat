@@ -3,12 +3,11 @@ import { Action, applyMiddleware, createStore, compose, Middleware, combineReduc
 import { put, takeEvery } from "redux-saga/effects";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { connectRouter, routerMiddleware } from "connected-react-router";
-import { INIT_MODULE_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
+import { INIT_MODULE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
 import { ActionsMap, SingleStore } from "./types";
 
 let prevRootState: any = {};
 let singleStore: SingleStore | undefined;
-let lastLocationAction: any;
 const sagasMap: ActionsMap = {};
 const reducersMap: ActionsMap = {};
 const sagaNames: string[] = [];
@@ -27,9 +26,9 @@ function getActionData(action: {}) {
 }
 
 function reducer(state: any = {}, action: { type: string; data?: any }) {
-  if (action.type === LOCATION_CHANGE_ACTION_NAME) {
-    lastLocationAction = getActionData(action);
-  }
+  // if (action.type === LOCATION_CHANGE_ACTION_NAME) {
+  //   lastLocationAction = getActionData(action);
+  // }
   const item = reducersMap[action.type];
   if (item && singleStore) {
     const rootState = prevRootState;
@@ -43,11 +42,11 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
         });
       }
       newState[namespace] = fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state[namespace], rootState });
-      if (lastLocationAction && action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
-        // 对异步模块补发一次locationChange
+      if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
+        // 对模块补发一次locationChange
         setTimeout(() => {
           if (singleStore) {
-            singleStore.dispatch(initLocationAction(namespace, lastLocationAction));
+            singleStore.dispatch(initLocationAction(namespace, rootState.router));
           }
         }, 0);
       }
