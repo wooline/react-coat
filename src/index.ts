@@ -3,7 +3,7 @@ import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
 import { Middleware, ReducersMapObject, Action } from "redux";
 import { delay } from "redux-saga";
-import { call, put, cps, fork, take } from "redux-saga/effects";
+import { call, put, cps, fork, take, CallEffect } from "redux-saga/effects";
 import { RouterState, routerActions } from "connected-react-router";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
@@ -52,14 +52,47 @@ export interface BaseModuleState {
     global: LoadingState;
   };
 }
+export interface CallProxy<T> extends CallEffect {
+  getResponse: () => T;
+}
 
+export interface CallPromise {
+  <T>(fn: () => Promise<T>): CallProxy<T>;
+  <T, R1, A1 extends R1>(fn: (req1: R1) => Promise<T>, arg1: A1): CallProxy<T>;
+  <T, R1, R2, A1 extends R1, A2 extends R2>(fn: (req1: R1, req2: R2) => Promise<T>, arg1: A1, arg2: A2): CallProxy<T>;
+  <T, R1, R2, R3, A1 extends R1, A2 extends R2, A3 extends R3>(fn: (req1: R1, req2: R2, req3: R3) => Promise<T>, arg1: A1, arg2: A2, arg3: A3): CallProxy<T>;
+  <T, R1, R2, R3, R4, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4>(fn: (req1: R1, req2: R2, req3: R3, req4: R4) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4): CallProxy<T>;
+  <T, R1, R2, R3, R4, R5, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5): CallProxy<T>;
+  <T, R1, R2, R3, R4, R5, R6, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5, A6 extends R6>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5, req6: R6) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5, arg6: A6): CallProxy<T>;
+}
+export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
+  let response: any;
+  const proxy = (...args) => {
+    return fn(...args).then(
+      res => {
+        response = res;
+        return response;
+      },
+      rej => {
+        response = rej;
+        throw rej;
+      },
+    );
+  };
+  const callEffect = (call as any)(proxy, ...rest);
+  (callEffect as any).getResponse = () => {
+    return response;
+  };
+  return callEffect;
+};
 export class BaseModuleActions {
   protected delay: typeof delay = delay;
   protected take: typeof take = take;
   protected fork: typeof fork = fork;
   protected cps: typeof cps = cps;
-  protected call: typeof call = call;
   protected put: typeof put = put;
+  protected call: typeof call = call;
+  protected callPromise: CallPromise = callPromise;
   protected routerActions = routerActions;
   [INIT_MODULE_ACTION_NAME]({ payload }: ActionData) {
     return payload;

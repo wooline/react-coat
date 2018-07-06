@@ -639,14 +639,40 @@ function getModuleActions(namespace) {
     actionsProxy[namespace] = actions;
     return actions;
 }
+var callPromise = function (fn) {
+    var rest = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        rest[_i - 1] = arguments[_i];
+    }
+    var response;
+    var proxy = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return fn.apply(void 0, args).then(function (res) {
+            response = res;
+            return response;
+        }, function (rej) {
+            response = rej;
+            throw rej;
+        });
+    };
+    var callEffect = effects.call.apply(void 0, [proxy].concat(rest));
+    callEffect.getResponse = function () {
+        return response;
+    };
+    return callEffect;
+};
 var BaseModuleActions = /** @class */ (function () {
     function BaseModuleActions() {
         this.delay = createSagaMiddleware.delay;
         this.take = effects.take;
         this.fork = effects.fork;
         this.cps = effects.cps;
-        this.call = effects.call;
         this.put = effects.put;
+        this.call = effects.call;
+        this.callPromise = callPromise;
         this.routerActions = connectedReactRouter.routerActions;
     }
     BaseModuleActions.prototype[INIT_MODULE_ACTION_NAME] = function (_a) {
@@ -764,6 +790,7 @@ function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, 
 exports.call = effects.call;
 exports.put = effects.put;
 exports.buildModule = buildModule;
+exports.callPromise = callPromise;
 exports.BaseModuleActions = BaseModuleActions;
 exports.BaseModuleHandlers = BaseModuleHandlers;
 exports.effect = effect;

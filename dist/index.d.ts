@@ -3,7 +3,7 @@ import { History, LocationDescriptorObject } from "history";
 import { ComponentType } from "react";
 import { Middleware, ReducersMapObject, Action } from "redux";
 import { delay } from "redux-saga";
-import { call, put, cps, fork, take } from "redux-saga/effects";
+import { call, put, cps, fork, take, CallEffect } from "redux-saga/effects";
 import { RouterState } from "connected-react-router";
 import { ERROR_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME } from "./actions";
 import { asyncComponent } from "./asyncImport";
@@ -19,13 +19,27 @@ export interface BaseModuleState {
         global: LoadingState;
     };
 }
+export interface CallProxy<T> extends CallEffect {
+    getResponse: () => T;
+}
+export interface CallPromise {
+    <T>(fn: () => Promise<T>): CallProxy<T>;
+    <T, R1, A1 extends R1>(fn: (req1: R1) => Promise<T>, arg1: A1): CallProxy<T>;
+    <T, R1, R2, A1 extends R1, A2 extends R2>(fn: (req1: R1, req2: R2) => Promise<T>, arg1: A1, arg2: A2): CallProxy<T>;
+    <T, R1, R2, R3, A1 extends R1, A2 extends R2, A3 extends R3>(fn: (req1: R1, req2: R2, req3: R3) => Promise<T>, arg1: A1, arg2: A2, arg3: A3): CallProxy<T>;
+    <T, R1, R2, R3, R4, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4>(fn: (req1: R1, req2: R2, req3: R3, req4: R4) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4): CallProxy<T>;
+    <T, R1, R2, R3, R4, R5, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5): CallProxy<T>;
+    <T, R1, R2, R3, R4, R5, R6, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5, A6 extends R6>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5, req6: R6) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5, arg6: A6): CallProxy<T>;
+}
+export declare const callPromise: CallPromise;
 export declare class BaseModuleActions {
     protected delay: typeof delay;
     protected take: typeof take;
     protected fork: typeof fork;
     protected cps: typeof cps;
-    protected call: typeof call;
     protected put: typeof put;
+    protected call: typeof call;
+    protected callPromise: CallPromise;
     protected routerActions: {
         push: {
             (path: string, state?: any): Action<any>;
