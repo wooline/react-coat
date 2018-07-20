@@ -19,17 +19,10 @@ export interface Views {
 }
 
 export interface Model {
-  state: {};
   actions: Actions;
   handlers: Actions;
 }
 
 export interface ModuleViews {
   default: Views;
-}
-
-export interface ActionData<P = any, M = any, R = any> {
-  payload: P;
-  moduleState: M;
-  rootState: R;
 }

@@ -11,7 +11,7 @@ import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
 import { LoadingState, setLoading, setLoadingDepthTime, setActions } from "./loading";
 import { buildStore, getSingleStore } from "./storeProxy";
-import { Model, ActionData } from "./types";
+import { Model } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: Array<{ type: string }> = [];
@@ -63,7 +63,6 @@ export interface CallPromise {
   <T, R1, R2, R3, A1 extends R1, A2 extends R2, A3 extends R3>(fn: (req1: R1, req2: R2, req3: R3) => Promise<T>, arg1: A1, arg2: A2, arg3: A3): CallProxy<T>;
   <T, R1, R2, R3, R4, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4>(fn: (req1: R1, req2: R2, req3: R3, req4: R4) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4): CallProxy<T>;
   <T, R1, R2, R3, R4, R5, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5): CallProxy<T>;
-  <T, R1, R2, R3, R4, R5, R6, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5, A6 extends R6>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5, req6: R6) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5, arg6: A6): CallProxy<T>;
 }
 export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
   let response: any;
@@ -85,7 +84,8 @@ export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
   };
   return callEffect;
 };
-export class BaseModuleActions {
+export class BaseModuleActions<S extends BaseModuleState> {
+  protected readonly state: S;
   protected delay: typeof delay = delay;
   protected take: typeof take = take;
   protected fork: typeof fork = fork;
@@ -94,13 +94,14 @@ export class BaseModuleActions {
   protected call: typeof call = call;
   protected callPromise: CallPromise = callPromise;
   protected routerActions = routerActions;
-  [INIT_MODULE_ACTION_NAME]({ payload }: ActionData) {
-    return payload;
+  constructor(protected readonly initState: S) {}
+  [INIT_MODULE_ACTION_NAME](): S {
+    return this.initState;
   }
-  [LOADING_ACTION_NAME]({ payload, moduleState }: ActionData<{ [group: string]: string }>) {
+  [LOADING_ACTION_NAME](payload: { [group: string]: string }): S {
     return {
-      ...moduleState,
-      loading: { ...moduleState.loading, ...payload },
+      ...(this.state as any),
+      loading: { ...this.state.loading, ...payload },
     };
   }
 }
@@ -162,9 +163,8 @@ export type ActionCreator<P> = (
 export type EmptyActionCreator = () => {
   type: string;
 };
-function translateMap<T>(ins: T) {
-  type Ins = typeof ins;
-  type Map = { [K in keyof Ins]: Ins[K] extends () => any ? EmptyActionCreator : Ins[K] extends (data: { payload: infer P }) => any ? ActionCreator<P> : EmptyActionCreator };
+function translateMap<S, Ins>(ins: Ins) {
+  type Map = { [K in keyof Ins]: Ins[K] extends () => S | IterableIterator<any> ? EmptyActionCreator : Ins[K] extends (data: infer P) => S | IterableIterator<any> ? ActionCreator<P> : never };
   const map = {};
   for (const key in ins as any) {
     if (ins[key]) {
@@ -175,8 +175,8 @@ function translateMap<T>(ins: T) {
   return map as Map;
 }
 export function buildModel<S, A, H>(state: S, actionsIns: A, handlersIns: H) {
-  const handlers = translateMap(handlersIns) as any;
-  const actions = translateMap(actionsIns);
+  const handlers = translateMap<S, H>(handlersIns) as any;
+  const actions = translateMap<S, A>(actionsIns);
   return { state, actions, handlers };
 }
 
@@ -193,15 +193,17 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
       actions[key] = payload => ({ type: namespace + NSP + key, payload });
     });
     hasInjected[namespace] = true;
-    const action = actions[INIT_MODULE_ACTION_NAME](model.state);
+    const action = actions[INIT_MODULE_ACTION_NAME]();
     const store = getSingleStore();
     if (store) {
       store.dispatch(action);
     } else {
       injectedModules.push(action);
     }
+    return views;
+  } else {
+    throw new Error(`module: ${namespace} has exist!`);
   }
-  return views;
 }
 
 export interface StoreState<P> {
@@ -220,7 +222,7 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
-export { Action, ActionData, LocationDescriptorObject };
+export { Action, LocationDescriptorObject };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };

@@ -41,7 +41,10 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
           decorator[2] = decorator[0](action.type, namespace);
         });
       }
-      newState[namespace] = fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state[namespace], rootState });
+      const ins = fun["__host__"];
+      ins.state = state[namespace];
+      ins.rootState = rootState;
+      newState[namespace] = fun.call(ins, getActionData(action));
       if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
         // 对模块补发一次locationChange
         setTimeout(() => {
@@ -78,7 +81,10 @@ function* sagaHandler(action: { type: string; data: any }) {
         });
       }
       try {
-        yield* fun.call(fun["__host__"], { payload: getActionData(action), moduleState: state, rootState });
+        const ins = fun["__host__"];
+        ins.state = state;
+        ins.rootState = rootState;
+        yield* fun.call(ins, getActionData(action));
       } catch (error) {
         err = error;
       }
