@@ -4,14 +4,26 @@ import { put, takeEvery } from "redux-saga/effects";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { connectRouter, routerMiddleware } from "connected-react-router";
 import { INIT_MODULE_ACTION_NAME, NSP, errorAction, initLocationAction } from "./actions";
-import { ActionsMap, SingleStore } from "./types";
+import { ActionsMap, SingleStore, StoreState, BaseModuleState } from "./types";
 
-let prevRootState: any = {};
 let singleStore: SingleStore | undefined;
+let rootState: StoreState<{}> = null;
 const sagasMap: ActionsMap = {};
 const reducersMap: ActionsMap = {};
 const sagaNames: string[] = [];
 
+function setRootState(state: StoreState<{}>) {
+  rootState = state;
+}
+export function getRootState(): StoreState<{}> {
+  return rootState;
+}
+export function getModuleState(namespace: string): BaseModuleState {
+  return rootState.project[namespace];
+}
+export function getSingleStore() {
+  return singleStore;
+}
 function getActionData(action: {}) {
   const arr = Object.keys(action).filter(key => key !== "type");
   if (arr.length === 0) {
@@ -26,14 +38,19 @@ function getActionData(action: {}) {
 }
 
 function reducer(state: any = {}, action: { type: string; data?: any }) {
-  // if (action.type === LOCATION_CHANGE_ACTION_NAME) {
-  //   lastLocationAction = getActionData(action);
-  // }
   const item = reducersMap[action.type];
   if (item && singleStore) {
-    const rootState = prevRootState;
     const newState = { ...state };
+    const list: string[] = [];
     Object.keys(item).forEach(namespace => {
+      const fun = item[namespace];
+      if (fun["__handler__"]) {
+        list.push(namespace);
+      } else {
+        list.unshift(namespace);
+      }
+    });
+    list.forEach(namespace => {
       const fun = item[namespace];
       const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, state: any) => void, any]> | null = fun["__decorators__"];
       if (decorators) {
@@ -42,9 +59,9 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
         });
       }
       const ins = fun["__host__"];
-      ins.state = state[namespace];
-      ins.rootState = rootState;
-      newState[namespace] = fun.call(ins, getActionData(action));
+      const result = fun.call(ins, getActionData(action));
+      newState[namespace] = result;
+      setRootState({ ...rootState, project: { ...rootState.project, [namespace]: result } });
       if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
         // 对模块补发一次locationChange
         setTimeout(() => {
@@ -68,11 +85,9 @@ function reducer(state: any = {}, action: { type: string; data?: any }) {
 function* sagaHandler(action: { type: string; data: any }) {
   const item = sagasMap[action.type];
   if (item && singleStore) {
-    const rootState = prevRootState;
     const arr = Object.keys(item);
     for (const moduleName of arr) {
       const fun = item[moduleName];
-      const state = rootState.project[moduleName];
       const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, error?: Error) => void, any]> | null = fun["__decorators__"];
       let err: Error | undefined;
       if (decorators) {
@@ -82,8 +97,6 @@ function* sagaHandler(action: { type: string; data: any }) {
       }
       try {
         const ins = fun["__host__"];
-        ins.state = state;
-        ins.rootState = rootState;
         yield* fun.call(ins, getActionData(action));
       } catch (error) {
         err = error;
@@ -107,8 +120,9 @@ function* saga() {
 
 function rootReducer(combineReducer: Function) {
   return (state: any | undefined, action: Action) => {
-    prevRootState = state || {};
-    return combineReducer(state, action);
+    rootState = state || {};
+    rootState = combineReducer(state, action);
+    return rootState;
   };
 }
 export function buildStore(storeHistory: History, reducers: ReducersMapObject, storeMiddlewares: Middleware[], storeEnhancers: Function[], injectedModules: Array<{ type: string }>) {
@@ -137,7 +151,5 @@ export function buildStore(storeHistory: History, reducers: ReducersMapObject, s
   injectedModules.length = 0;
   return store;
 }
-export function getSingleStore() {
-  return singleStore;
-}
+
 export { sagasMap, reducersMap, sagaNames };

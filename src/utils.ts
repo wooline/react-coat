@@ -6,6 +6,7 @@
 //   }
 //   return target as T & U;
 // }
+
 export function isGenerator(fun: Function) {
   return Boolean(fun["__generator__"]);
 }
@@ -13,6 +14,7 @@ export function setGenerator(fun: Function) {
   fun["__generator__"] = true;
   return fun;
 }
+
 export function delayPromise(second: number) {
   return (target, propertyKey: string, descriptor: PropertyDescriptor) => {
     const fun = descriptor.value;

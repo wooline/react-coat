@@ -1,17 +1,17 @@
+import { routerActions, RouterState } from "connected-react-router";
 import { History, LocationDescriptorObject } from "history";
 import createHistory from "history/createBrowserHistory";
 import { ComponentType } from "react";
-import { Middleware, ReducersMapObject, Action } from "redux";
+import { Action, Middleware, ReducersMapObject } from "redux";
 import { delay } from "redux-saga";
-import { call, put, cps, fork, take, CallEffect } from "redux-saga/effects";
-import { RouterState, routerActions } from "connected-react-router";
+import { call, CallEffect, cps, fork, put, take } from "redux-saga/effects";
 import { ERROR_ACTION_NAME, INIT_LOCATION_ACTION_NAME, INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME, NSP } from "./actions";
 import buildApp from "./Application";
 import { asyncComponent } from "./asyncImport";
 import { injectActions, injectHandlers } from "./inject";
-import { LoadingState, setLoading, setLoadingDepthTime, setActions } from "./loading";
-import { buildStore, getSingleStore } from "./storeProxy";
-import { Model } from "./types";
+import { LoadingState, setActions, setLoading, setLoadingDepthTime } from "./loading";
+import { buildStore, getSingleStore, getRootState, getModuleState } from "./storeProxy";
+import { BaseModuleState, Model, StoreState } from "./types";
 import { delayPromise, setGenerator } from "./utils";
 
 const injectedModules: Array<{ type: string }> = [];
@@ -47,11 +47,6 @@ function getModuleActions(namespace: string) {
   return actions;
 }
 
-export interface BaseModuleState {
-  loading: {
-    global: LoadingState;
-  };
-}
 export interface CallProxy<T> extends CallEffect {
   getResponse: () => T;
 }
@@ -84,8 +79,7 @@ export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
   };
   return callEffect;
 };
-export class BaseModuleActions<S extends BaseModuleState> {
-  protected readonly state: S;
+export class BaseModuleActions<State extends BaseModuleState, RootState> {
   protected delay: typeof delay = delay;
   protected take: typeof take = take;
   protected fork: typeof fork = fork;
@@ -94,14 +88,22 @@ export class BaseModuleActions<S extends BaseModuleState> {
   protected call: typeof call = call;
   protected callPromise: CallPromise = callPromise;
   protected routerActions = routerActions;
-  constructor(protected readonly initState: S) {}
-  [INIT_MODULE_ACTION_NAME](): S {
+  constructor(protected readonly namespace: string, protected readonly initState: State) {}
+
+  protected getState(): State {
+    return getModuleState(this.namespace) as any;
+  }
+  protected getRootState(): RootState {
+    return getRootState() as any;
+  }
+  [INIT_MODULE_ACTION_NAME](): State {
     return this.initState;
   }
-  [LOADING_ACTION_NAME](payload: { [group: string]: string }): S {
+  [LOADING_ACTION_NAME](payload: { [group: string]: string }): State {
+    const state = this.getState() as any;
     return {
-      ...(this.state as any),
-      loading: { ...this.state.loading, ...payload },
+      ...state,
+      loading: { ...state.loading, ...payload },
     };
   }
 }
@@ -163,21 +165,24 @@ export type ActionCreator<P> = (
 export type EmptyActionCreator = () => {
   type: string;
 };
-function translateMap<S, Ins>(ins: Ins) {
-  type Map = { [K in keyof Ins]: Ins[K] extends () => S | IterableIterator<any> ? EmptyActionCreator : Ins[K] extends (data: infer P) => S | IterableIterator<any> ? ActionCreator<P> : never };
-  const map = {};
-  for (const key in ins as any) {
-    if (ins[key]) {
-      map[key] = ins[key];
-      ins[key].__host__ = ins;
-    }
-  }
-  return map as Map;
-}
-export function buildModel<S, A, H>(state: S, actionsIns: A, handlersIns: H) {
-  const handlers = translateMap<S, H>(handlersIns) as any;
-  const actions = translateMap<S, A>(actionsIns);
-  return { state, actions, handlers };
+type ActionsIns<S, Ins> = { [K in keyof Ins]: Ins[K] extends () => S | IterableIterator<any> ? EmptyActionCreator : Ins[K] extends (data: infer P) => S | IterableIterator<any> ? ActionCreator<P> : never };
+// function translateMap<S, Ins>(ins: Ins, isHandler: boolean = false) {
+//   type Map = { [K in keyof Ins]: Ins[K] extends () => S | IterableIterator<any> ? EmptyActionCreator : Ins[K] extends (data: infer P) => S | IterableIterator<any> ? ActionCreator<P> : never };
+//   const map = {};
+//   for (const key in ins as any) {
+//     if (ins[key]) {
+//       map[key] = ins[key];
+//       ins[key].__host__ = ins;
+//       ins[key].__handler__ = isHandler;
+//     }
+//   }
+//   return map as Map;
+// }
+type ActionReducer<State> = { [method: string]: (() => State | IterableIterator<any>)|((payload:any) => State | IterableIterator<any>) }
+export function buildModel<S, A extends , H>(initState: S, actions: A, handlers: H): { actions: A extends { getState(): infer S } ? ActionsIns<A, S> : never; handlers: {} } {
+  // const handlers = translateMap<S, H>(handlersIns, true) as any;
+  // const actions = translateMap<S, A>(actionsIns);
+  return { actions, handlers } as any;
 }
 
 export function buildViews<T>(namespace: string, views: T, model: Model) {
@@ -206,10 +211,6 @@ export function buildViews<T>(namespace: string, views: T, model: Model) {
   }
 }
 
-export interface StoreState<P> {
-  router: RouterState;
-  project: P;
-}
 export function getStore() {
   // redux3中Store泛型有一个参数，redux4中变为2个，为兼容此处设为any
   return getSingleStore() as any;
@@ -222,7 +223,7 @@ export function createApp(view: ComponentType<any>, container: string, storeMidd
   const store = buildStore(prvHistory, reducers, storeMiddlewares, storeEnhancers, injectedModules);
   buildApp(view, container, storeMiddlewares, storeEnhancers, store, prvHistory);
 }
-export { Action, LocationDescriptorObject };
+export { Action, LocationDescriptorObject, StoreState, BaseModuleState, RouterState };
 export { asyncComponent, setLoadingDepthTime, setLoading, LoadingState, delayPromise };
 export { ERROR_ACTION_NAME, LOCATION_CHANGE_ACTION_NAME };
 export { call, put };
