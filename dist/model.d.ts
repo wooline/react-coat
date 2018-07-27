@@ -11,12 +11,7 @@ export declare type ActionsIns<S, Ins> = {
 };
 export declare function exportModel<S, A extends {
     [K in keyof A]: (payload?) => S | SagaIterator;
-}, H extends {
-    [K in keyof H]: (payload?) => S | SagaIterator;
-}>(namespace: string, initState: S, actions: A, listeners: H): {
+}>(namespace: string, initState: S, actions: A): {
     namespace: string;
     actions: ActionsIns<S, A>;
-    listeners: {
-        [K in keyof H]: (payload?) => any;
-    };
 };

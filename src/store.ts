@@ -3,7 +3,7 @@ import { History } from "history";
 import { Action, AnyAction, Middleware, ReducersMapObject, Store, applyMiddleware, combineReducers, compose, createStore } from "redux";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { put, takeEvery } from "redux-saga/effects";
-import { INIT_MODULE_ACTION_NAME, MetaData, NSP, errorAction, initLocationAction } from "./global";
+import { INIT, MetaData, NSP, errorAction, initLocationAction } from "./global";
 
 function getActionData(action: {}) {
   const arr = Object.keys(action).filter(key => key !== "type");
@@ -48,7 +48,7 @@ function reducer(state: any = {}, action: Action) {
       const result = fun.call(fun.__host__, getActionData(action));
       newState[namespace] = result;
       MetaData.rootState = { ...MetaData.rootState, project: { ...MetaData.rootState.project, [namespace]: result } };
-      if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
+      if (action.type === namespace + NSP + INIT) {
         // 对模块补发一次locationChange
         setTimeout(() => {
           if (MetaData.singleStore) {

@@ -87,11 +87,12 @@ function __values(o) {
     };
 }
 
-var ERROR_ACTION_NAME = "@@framework/ERROR";
-var LOADING_ACTION_NAME = "LOADING";
-var INIT_MODULE_ACTION_NAME = "INIT";
-var INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
-var LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
+var ERROR = "@@framework/ERROR";
+var LOADING = "LOADING";
+var SET_INIT_DATA = "SET_INIT_DATA";
+var INIT = "INIT";
+var INIT_LOCATION = "@@router/LOCATION_CHANGE";
+var LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 var NSP = "/";
 var MetaData = {
     history: null,
@@ -99,18 +100,18 @@ var MetaData = {
     effectMap: {},
     injectedModules: [],
     actionCreatorMap: {},
-    rootState: null,
+    rootState: { project: {}, router: null },
     singleStore: null,
 };
 function errorAction(error) {
     return {
-        type: ERROR_ACTION_NAME,
+        type: ERROR,
         error: error,
     };
 }
 function initLocationAction(namespace, payload) {
     return {
-        type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
+        type: namespace + NSP + INIT_LOCATION,
         payload: payload,
     };
 }
@@ -292,7 +293,7 @@ function setLoading(item, namespace, group) {
         loadings[key].addListener(TaskCountEvent, function (e) {
             var store = MetaData.singleStore;
             if (store) {
-                var action = MetaData.actionCreatorMap[namespace][LOADING_ACTION_NAME]((_a = {}, _a[group] = e.data, _a));
+                var action = MetaData.actionCreatorMap[namespace][LOADING]((_a = {}, _a[group] = e.data, _a));
                 store.dispatch(action);
             }
             var _a;
@@ -445,7 +446,7 @@ function reducer(state, action) {
             var result = fun.call(fun.__host__, getActionData(action));
             newState_1[namespace] = result;
             MetaData.rootState = __assign({}, MetaData.rootState, { project: __assign({}, MetaData.rootState.project, (_a = {}, _a[namespace] = result, _a)) });
-            if (action.type === namespace + NSP + INIT_MODULE_ACTION_NAME) {
+            if (action.type === namespace + NSP + INIT) {
                 // 对模块补发一次locationChange
                 setTimeout(function () {
                     if (MetaData.singleStore) {
@@ -587,18 +588,14 @@ var hasInjected = {};
 function exportViews(views, model) {
     var namespace = model.namespace;
     if (!hasInjected[namespace]) {
-        var locationChangeHandler = model.listeners[LOCATION_CHANGE_ACTION_NAME];
+        var locationChangeHandler = model.actions[LOCATION_CHANGE];
         if (locationChangeHandler) {
-            model.listeners[namespace + NSP + INIT_LOCATION_ACTION_NAME] = locationChangeHandler;
+            model.actions[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
         }
-        var actionHandlerList = injectActions(namespace, model.actions);
-        injectHandlers(namespace, model.listeners);
-        var actions_1 = getModuleActionCreatorList(namespace);
-        Object.keys(actionHandlerList).forEach(function (key) {
-            actions_1[key] = function (payload) { return ({ type: namespace + NSP + key, payload: payload }); };
-        });
+        var actions = getModuleActionCreatorList(namespace);
+        injectActions(namespace, model.actions, actions);
         hasInjected[namespace] = true;
-        var action = actions_1[INIT_MODULE_ACTION_NAME]();
+        var action = actions[INIT]();
         var store = MetaData.singleStore;
         if (store) {
             store.dispatch(action);
@@ -641,31 +638,29 @@ function getModuleActionCreatorList(namespace) {
         return obj;
     }
 }
-function injectActions(namespace, actions) {
-    var list = {};
-    for (var actionName in actions) {
-        if (actions[actionName] && typeof actions[actionName] === "function") {
+function injectActions(namespace, actions, list) {
+    var _loop_1 = function (actionName) {
+        if (typeof actions[actionName] === "function") {
             var fun = actions[actionName];
-            fun.__host__ = actions;
-            fun.__isHandler__ = false;
-            list[actionName] = fun;
-            transformAction(namespace + NSP + actionName, fun, namespace, fun.__isGenerator__ ? MetaData.effectMap : MetaData.reducerMap);
+            if (fun.__isReducer__ || fun.__isEffect__) {
+                fun.__host__ = actions;
+                var arr = actionName.split(NSP);
+                if (arr[1]) {
+                    fun.__isHandler__ = true;
+                    transformAction(actionName, fun, namespace, fun.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
+                }
+                else {
+                    fun.__isHandler__ = false;
+                    transformAction(namespace + NSP + actionName, fun, namespace, fun.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
+                    list[actionName] = function (payload) { return ({ type: namespace + NSP + actionName, payload: payload }); };
+                    actions[actionName] = list[actionName];
+                }
+            }
         }
+    };
+    for (var actionName in actions) {
+        _loop_1(actionName);
     }
-    return list;
-}
-function injectHandlers(listenerModule, handlers) {
-    var list = {};
-    for (var handlerName in handlers) {
-        if (handlers[handlerName] && typeof handlers[handlerName] === "function") {
-            var fun = handlers[handlerName];
-            fun.__host__ = handlers;
-            fun.__isHandler__ = true;
-            list[handlerName] = fun;
-            transformAction(handlerName, fun, listenerModule, fun.__isGenerator__ ? MetaData.effectMap : MetaData.reducerMap);
-        }
-    }
-    return list;
 }
 function transformAction(actionName, action, listenerModule, actionHandlerMap) {
     if (!actionHandlerMap[actionName]) {
@@ -680,65 +675,67 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
     //   }
 }
 
-function exportModel(namespace, initState, actions, listeners) {
+function exportModel(namespace, initState, actions) {
     actions.namespace = namespace;
     actions.initState = initState;
-    listeners.namespace = namespace;
-    listeners.initState = initState;
-    return { namespace: namespace, actions: actions, listeners: listeners };
+    return { namespace: namespace, actions: actions };
 }
 
-var BaseModuleListeners = /** @class */ (function () {
-    function BaseModuleListeners() {
-        this.put = effects.put;
+var BaseModuleActions = /** @class */ (function () {
+    function BaseModuleActions() {
         this.call = effects.call;
         this.callPromise = callPromise;
     }
-    Object.defineProperty(BaseModuleListeners.prototype, "state", {
+    Object.defineProperty(BaseModuleActions.prototype, "state", {
         get: function () {
             return MetaData.rootState.project[this.namespace];
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(BaseModuleListeners.prototype, "rootState", {
+    Object.defineProperty(BaseModuleActions.prototype, "rootState", {
         get: function () {
             return MetaData.rootState;
         },
         enumerable: true,
         configurable: true
     });
-    return BaseModuleListeners;
-}());
-var BaseModuleActions = /** @class */ (function (_super) {
-    __extends(BaseModuleActions, _super);
-    function BaseModuleActions() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    BaseModuleActions.prototype[INIT_MODULE_ACTION_NAME] = function () {
+    BaseModuleActions.prototype.put = function (action) {
+        return effects.put(action);
+    };
+    BaseModuleActions.prototype[SET_INIT_DATA] = function () {
         return this.initState;
     };
-    BaseModuleActions.prototype[LOADING_ACTION_NAME] = function (payload) {
+    BaseModuleActions.prototype[LOADING] = function (payload) {
         var state = this.state;
         return __assign({}, state, { loading: __assign({}, state.loading, payload) });
     };
+    BaseModuleActions.prototype[INIT] = function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, this.put(this.SET_INIT_DATA())];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    };
     return BaseModuleActions;
-}(BaseModuleListeners));
+}());
 function logger(before, after) {
     return function (target, key, descriptor) {
         var fun = descriptor.value;
         if (!fun.__decorators__) {
             fun.__decorators__ = [];
         }
-        fun.__decorators__.push([before, after]);
+        fun.__decorators__.push([before, after, null]);
     };
 }
-function effect$1(loadingForModuleName, loadingForGroupName) {
+function loading(loadingForModuleName, loadingForGroupName) {
     if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
     if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
     return function (target, key, descriptor) {
         var fun = descriptor.value;
-        fun["__isGenerator__"] = true;
         if (loadingForModuleName !== null) {
             var before = function () {
                 var loadingCallback = null;
@@ -753,9 +750,17 @@ function effect$1(loadingForModuleName, loadingForGroupName) {
             if (!fun.__decorators__) {
                 fun.__decorators__ = [];
             }
-            fun.__decorators__.push([before, after]);
+            fun.__decorators__.push([before, after, null]);
         }
     };
+}
+function reducer$1(target, key, descriptor) {
+    var fun = descriptor.value;
+    fun.__isReducer__ = true;
+}
+function effect$1(target, key, descriptor) {
+    var fun = descriptor.value;
+    fun.__isEffect__ = true;
 }
 var callPromise = function (fn) {
     var rest = [];
@@ -788,8 +793,8 @@ exports.createApp = createApp;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
 exports.delayPromise = delayPromise;
-exports.ERROR_ACTION_NAME = ERROR_ACTION_NAME;
-exports.LOCATION_CHANGE_ACTION_NAME = LOCATION_CHANGE_ACTION_NAME;
+exports.ERROR = ERROR;
+exports.LOCATION_CHANGE = LOCATION_CHANGE;
 exports.getStore = getStore;
 exports.getHistory = getHistory;
 exports.exportViews = exportViews;
@@ -797,6 +802,7 @@ exports.exportModule = exportModule;
 exports.exportModel = exportModel;
 exports.logger = logger;
 exports.effect = effect$1;
-exports.BaseModuleListeners = BaseModuleListeners;
+exports.reducer = reducer$1;
+exports.loading = loading;
 exports.BaseModuleActions = BaseModuleActions;
 //# sourceMappingURL=index.js.map

@@ -1,22 +1,26 @@
-import { INIT_MODULE_ACTION_NAME, LOADING_ACTION_NAME, ModuleState, RootState } from "./global";
-import { CallEffect, call, put } from "redux-saga/effects";
-export declare class BaseModuleListeners<S extends ModuleState, R extends RootState> {
+import { INIT, LOADING, ModuleState, RootState, SET_INIT_DATA } from "./global";
+import { CallEffect, call, PutEffect } from "redux-saga/effects";
+import { SagaIterator } from "redux-saga";
+import { Action } from "redux";
+export { PutEffect };
+export declare class BaseModuleActions<S extends ModuleState, R extends RootState> {
     protected readonly namespace: string;
     protected readonly initState: S;
-    protected put: typeof put;
     protected call: typeof call;
     protected callPromise: CallPromise;
     protected readonly state: S;
     protected readonly rootState: R;
-}
-export declare class BaseModuleActions<S extends ModuleState, R extends RootState> extends BaseModuleListeners<S, R> {
-    [INIT_MODULE_ACTION_NAME](): S;
-    [LOADING_ACTION_NAME](payload: {
+    protected put(action: Action | S | SagaIterator): PutEffect<any>;
+    [SET_INIT_DATA](): S;
+    [LOADING](payload: {
         [group: string]: string;
     }): S;
+    [INIT](): SagaIterator;
 }
 export declare function logger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare function effect(loadingForModuleName?: string | null, loadingForGroupName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare function loading(loadingForModuleName?: string, loadingForGroupName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): void;
+export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): void;
 export interface CallProxy<T> extends CallEffect {
     getResponse: () => T;
 }

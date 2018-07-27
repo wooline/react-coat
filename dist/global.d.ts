@@ -14,9 +14,7 @@ export interface ModuleState {
         global: LoadingState;
     };
 }
-export interface RootState<P extends {
-    [moduleName: string]: ModuleState;
-} = {}> {
+export interface RootState<P = {}> {
     router: RouterState;
     project: P;
 }
@@ -27,7 +25,8 @@ export interface ActionCreatorMap {
 }
 export interface ActionHandler {
     __host__: any;
-    __isGenerator__: boolean;
+    __isReducer__: boolean;
+    __isEffect__: boolean;
     __isHandler__: boolean;
     __decorators__: Array<[any, any, any]>;
     (payload?: any): any;
@@ -45,9 +44,6 @@ export interface Model {
     actions: {
         [actionName: string]: (payload?) => any;
     };
-    listeners: {
-        [actionName: string]: (payload?) => any;
-    };
 }
 export interface Views {
     [viewName: string]: ComponentType<any>;
@@ -55,11 +51,12 @@ export interface Views {
 export interface ModuleViews {
     default: Views;
 }
-export declare const ERROR_ACTION_NAME = "@@framework/ERROR";
-export declare const LOADING_ACTION_NAME = "LOADING";
-export declare const INIT_MODULE_ACTION_NAME = "INIT";
-export declare const INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
-export declare const LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
+export declare const ERROR = "@@framework/ERROR";
+export declare const LOADING = "LOADING";
+export declare const SET_INIT_DATA = "SET_INIT_DATA";
+export declare const INIT = "INIT";
+export declare const INIT_LOCATION = "@@router/LOCATION_CHANGE";
+export declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 export declare const NSP = "/";
 export declare const MetaData: {
     history: History;

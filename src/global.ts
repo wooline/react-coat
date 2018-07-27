@@ -11,7 +11,7 @@ export interface ModuleState {
     global: LoadingState;
   };
 }
-export interface RootState<P extends { [moduleName: string]: ModuleState } = {}> {
+export interface RootState<P = {}> {
   router: RouterState;
   project: P;
 }
@@ -22,7 +22,8 @@ export interface ActionCreatorMap {
 
 export interface ActionHandler {
   __host__: any;
-  __isGenerator__: boolean;
+  __isReducer__: boolean;
+  __isEffect__: boolean;
   __isHandler__: boolean;
   __decorators__: Array<[any, any, any]>;
   (payload?): any;
@@ -36,7 +37,6 @@ export interface ActionHandlerMap {
 export interface Model {
   namespace: string;
   actions: { [actionName: string]: (payload?) => any };
-  listeners: { [actionName: string]: (payload?) => any };
 }
 export interface Views {
   [viewName: string]: ComponentType<any>;
@@ -44,11 +44,12 @@ export interface Views {
 export interface ModuleViews {
   default: Views;
 }
-export const ERROR_ACTION_NAME = "@@framework/ERROR";
-export const LOADING_ACTION_NAME = "LOADING";
-export const INIT_MODULE_ACTION_NAME = "INIT";
-export const INIT_LOCATION_ACTION_NAME = "@@router/LOCATION_CHANGE";
-export const LOCATION_CHANGE_ACTION_NAME = "@@router/LOCATION_CHANGE";
+export const ERROR = "@@framework/ERROR";
+export const LOADING = "LOADING";
+export const SET_INIT_DATA = "SET_INIT_DATA";
+export const INIT = "INIT";
+export const INIT_LOCATION = "@@router/LOCATION_CHANGE";
+export const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 export const NSP = "/";
 
 export const MetaData: {
@@ -65,20 +66,20 @@ export const MetaData: {
   effectMap: {},
   injectedModules: [],
   actionCreatorMap: {},
-  rootState: null,
+  rootState: { project: {}, router: null },
   singleStore: null,
 };
 
 export function errorAction(error: any) {
   return {
-    type: ERROR_ACTION_NAME,
+    type: ERROR,
     error,
   };
 }
 
 export function initLocationAction(namespace: string, payload: any) {
   return {
-    type: namespace + NSP + INIT_LOCATION_ACTION_NAME,
+    type: namespace + NSP + INIT_LOCATION,
     payload,
   };
 }

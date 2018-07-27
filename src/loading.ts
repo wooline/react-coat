@@ -1,4 +1,4 @@
-import { LOADING_ACTION_NAME, MetaData } from "./global";
+import { LOADING, MetaData } from "./global";
 import { TaskCountEvent, TaskCounter } from "./sprite";
 
 const loadings: { [namespace: string]: TaskCounter } = {};
@@ -15,7 +15,7 @@ export function setLoading<T>(item: T, namespace: string = "app", group: string 
     loadings[key].addListener(TaskCountEvent, e => {
       const store = MetaData.singleStore;
       if (store) {
-        const action = MetaData.actionCreatorMap[namespace][LOADING_ACTION_NAME]({ [group]: e.data });
+        const action = MetaData.actionCreatorMap[namespace][LOADING]({ [group]: e.data });
         store.dispatch(action);
       }
     });
