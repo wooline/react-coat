@@ -1,21 +1,15 @@
 import React from "react";
-import { connect } from "react-redux";
-import { Dispatch } from "redux";
-import { errorAction } from "./actions";
+import { DispatchProp, connect } from "react-redux";
+import { ModuleViews, errorAction } from "./global";
 import { setLoading } from "./loading";
-import { ModuleViews } from "./types";
 
 const defaultLoadingComponent = () => <div className="react-coat-asyncComponent-loading">Loading...</div>;
 const defaultErrorComponent = (props: { message: string }) => {
   return <div className="react-coat-asyncComponent-error">Error: {props.message}</div>;
 };
 
-export interface Props {
-  dispatch: any;
-}
-
-export function asyncComponent(resolve: () => Promise<ModuleViews>, componentName: string = "Main", defLoadingComponent: React.ComponentType<any> = defaultLoadingComponent, ErrorComponent: React.ComponentType<any> = defaultErrorComponent) {
-  class AsyncComponent extends React.Component<Props> {
+export function async(resolve: () => Promise<ModuleViews>, componentName: string = "Main", defLoadingComponent: React.ComponentType<any> = defaultLoadingComponent, ErrorComponent: React.ComponentType<any> = defaultErrorComponent) {
+  class AsyncComponent extends React.Component<DispatchProp> {
     public state: {
       Component: React.ComponentType<any> | null;
     };
@@ -66,10 +60,6 @@ export function asyncComponent(resolve: () => Promise<ModuleViews>, componentNam
       }
     }
   }
-  const mapDispatchToProps = (dispatch: Dispatch) => {
-    return {
-      dispatch,
-    };
-  };
-  return connect(null, mapDispatchToProps)(AsyncComponent);
+
+  return connect()(AsyncComponent);
 }

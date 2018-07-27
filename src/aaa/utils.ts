@@ -7,8 +7,14 @@
 //   return target as T & U;
 // }
 
+export function generator() {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    const fun = descriptor.value as any;
+    setGenerator(fun);
+  };
+}
 export function isGenerator(fun: Function) {
-  return Boolean(fun["__generator__"]);
+  return Boolean(fun["__generator__"]) || fun.toString().indexOf("__generator") > 0;
 }
 export function setGenerator(fun: Function) {
   fun["__generator__"] = true;

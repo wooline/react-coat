@@ -1,13 +1,11 @@
 /// <reference types="react" />
 /// <reference types="react-redux" />
 import React from "react";
-export interface Props {
-    dispatch: any;
-}
+import { DispatchProp } from "react-redux";
 export interface State {
     message: string;
 }
-declare const _default: React.ComponentClass<Pick<Props, never>> & {
-    WrappedComponent: React.ComponentType<Props>;
+declare const _default: React.ComponentClass<Pick<DispatchProp<any>, never>> & {
+    WrappedComponent: React.ComponentType<DispatchProp<any>>;
 };
 export default _default;

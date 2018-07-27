@@ -1,12 +1,16 @@
 import React from "react";
-import { DispatchProp, connect } from "react-redux";
-import { errorAction } from "./global";
+import { connect } from "react-redux";
+import { Dispatch } from "redux";
+import { errorAction } from "./actions";
 
+export interface Props {
+  dispatch: any;
+}
 export interface State {
   message: string;
 }
 
-class ErrorBoundary extends React.PureComponent<DispatchProp<any>, State> {
+class Component extends React.PureComponent<Props, State> {
   public state = {
     message: "",
   };
@@ -22,4 +26,13 @@ class ErrorBoundary extends React.PureComponent<DispatchProp<any>, State> {
   }
 }
 
-export default connect()(ErrorBoundary);
+const mapDispatchToProps = (dispatch: Dispatch) => {
+  return {
+    dispatch,
+  };
+};
+
+export default connect(
+  null,
+  mapDispatchToProps,
+)(Component);

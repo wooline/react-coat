@@ -1,6 +1,6 @@
-import { Actions } from "./types";
-export declare function injectActions(namespace: string, actions: Actions): void;
-export declare function injectHandlers(listenerModule: string, handlers: Actions): void;
+import { ActionHandlerList } from "./types";
+export declare function injectActions(namespace: string, actions: ActionHandlerList<any>): ActionHandlerList<any>;
+export declare function injectHandlers(listenerModule: string, handlers: ActionHandlerList<any>): ActionHandlerList<any>;
 export interface BaseState {
     loading: {
         global: string;
