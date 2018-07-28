@@ -1,5 +1,5 @@
 import { LOADING, MetaData } from "./global";
-import { TaskCountEvent, TaskCounter } from "./sprite";
+import { TaskCounter, TaskCountEvent } from "./sprite";
 
 const loadings: { [namespace: string]: TaskCounter } = {};
 

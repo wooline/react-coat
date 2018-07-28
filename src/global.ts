@@ -17,26 +17,35 @@ export interface RootState<P = {}> {
 }
 
 export interface ActionCreatorMap {
-  [moduleName: string]: { [actionName: string]: (payload?) => Action };
+  [moduleName: string]: ActionCreatorList;
 }
-
+export interface ActionCreatorList {
+  [actionName: string]: ActionCreator;
+}
+export interface ActionCreator {
+  __handler__?: ActionHandler;
+  (payload?): Action;
+}
 export interface ActionHandler {
-  __host__: any;
   __isReducer__: boolean;
   __isEffect__: boolean;
   __isHandler__: boolean;
   __decorators__: Array<[any, any, any]>;
   (payload?): any;
 }
-export interface ActionHandlerList {
-  [actionName: string]: ActionHandler;
+export function newActionCreator(fun: Function, handler: Function): ActionCreator {
+  fun["__handler__"] = handler;
+  return fun as any;
 }
+// export interface ActionHandlerList {
+//   [actionName: string]: ActionHandler;
+// }
 export interface ActionHandlerMap {
   [actionName: string]: { [moduleName: string]: ActionHandler };
 }
 export interface Model {
   namespace: string;
-  actions: { [actionName: string]: (payload?) => any };
+  actions: ActionCreatorList;
 }
 export interface Views {
   [viewName: string]: ComponentType<any>;

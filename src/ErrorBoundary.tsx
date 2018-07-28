@@ -1,5 +1,5 @@
 import React from "react";
-import { DispatchProp, connect } from "react-redux";
+import { connect, DispatchProp } from "react-redux";
 import { errorAction } from "./global";
 
 export interface State {

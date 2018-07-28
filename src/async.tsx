@@ -1,6 +1,6 @@
 import React from "react";
-import { DispatchProp, connect } from "react-redux";
-import { ModuleViews, errorAction } from "./global";
+import { connect, DispatchProp } from "react-redux";
+import { errorAction, ModuleViews } from "./global";
 import { setLoading } from "./loading";
 
 const defaultLoadingComponent = () => <div className="react-coat-asyncComponent-loading">Loading...</div>;

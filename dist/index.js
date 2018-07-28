@@ -4,6 +4,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var effects = require('redux-saga/effects');
 var React = _interopDefault(require('react'));
 var reactRedux = require('react-redux');
 var connectedReactRouter = require('connected-react-router');
@@ -11,7 +12,6 @@ var ReactDOM = _interopDefault(require('react-dom'));
 var reactRouterDom = require('react-router-dom');
 var redux = require('redux');
 var createSagaMiddleware = _interopDefault(require('redux-saga'));
-var effects = require('redux-saga/effects');
 var createHistory = _interopDefault(require('history/createBrowserHistory'));
 
 /*! *****************************************************************************
@@ -48,6 +48,13 @@ var __assign = Object.assign || function __assign(t) {
     return t;
 };
 
+function __decorate(decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+}
+
 function __generator(thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
@@ -55,8 +62,8 @@ function __generator(thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -87,6 +94,10 @@ function __values(o) {
     };
 }
 
+function newActionCreator(fun, handler) {
+    fun["__handler__"] = handler;
+    return fun;
+}
 var ERROR = "@@framework/ERROR";
 var LOADING = "LOADING";
 var SET_INIT_DATA = "SET_INIT_DATA";
@@ -303,6 +314,138 @@ function setLoading(item, namespace, group) {
     return item;
 }
 
+var BaseModuleActions = /** @class */ (function () {
+    function BaseModuleActions() {
+        this.call = effects.call;
+        this.callPromise = callPromise;
+    }
+    Object.defineProperty(BaseModuleActions.prototype, "state", {
+        get: function () {
+            return MetaData.rootState.project[this.namespace];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BaseModuleActions.prototype, "rootState", {
+        get: function () {
+            return MetaData.rootState;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    BaseModuleActions.prototype.put = function (action) {
+        var type = action.type;
+        var arr = type.split("NSP");
+        if (!arr[1]) {
+            type = this.namespace + NSP + type;
+            if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
+                action.type = type;
+            }
+        }
+        return effects.put(action);
+    };
+    BaseModuleActions.prototype[_a = SET_INIT_DATA] = function () {
+        return this.initState;
+    };
+    BaseModuleActions.prototype[_b = LOADING] = function (payload) {
+        var state = this.state;
+        if (!state) {
+            return state;
+        }
+        return __assign({}, state, { loading: __assign({}, state.loading, payload) });
+    };
+    BaseModuleActions.prototype[_c = INIT] = function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, this.put(this.SET_INIT_DATA())];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    };
+    __decorate([
+        reducer
+    ], BaseModuleActions.prototype, _a, null);
+    __decorate([
+        reducer
+    ], BaseModuleActions.prototype, _b, null);
+    __decorate([
+        effect
+    ], BaseModuleActions.prototype, _c, null);
+    return BaseModuleActions;
+    var _a, _b, _c;
+}());
+function logger(before, after) {
+    return function (target, key, descriptor) {
+        var fun = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
+        if (!fun.__decorators__) {
+            fun.__decorators__ = [];
+        }
+        fun.__decorators__.push([before, after, null]);
+    };
+}
+function loading(loadingForModuleName, loadingForGroupName) {
+    if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
+    if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
+    return function (target, key, descriptor) {
+        var fun = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
+        if (loadingForModuleName !== null) {
+            var before = function () {
+                var loadingCallback = null;
+                setLoading(new Promise(function (resolve, reject) {
+                    loadingCallback = resolve;
+                }), loadingForModuleName, loadingForGroupName);
+                return loadingCallback;
+            };
+            var after = function (resolve, error) {
+                resolve(error);
+            };
+            if (!fun.__decorators__) {
+                fun.__decorators__ = [];
+            }
+            fun.__decorators__.push([before, after, null]);
+        }
+    };
+}
+function reducer(target, key, descriptor) {
+    var fun = descriptor.value;
+    fun.__isReducer__ = true;
+    descriptor.value = newActionCreator(function (payload) { return ({ type: key, payload: payload }); }, fun);
+    return descriptor;
+}
+function effect(target, key, descriptor) {
+    var fun = descriptor.value;
+    fun.__isEffect__ = true;
+    descriptor.value = newActionCreator(function (payload) { return ({ type: key, payload: payload }); }, fun);
+    return descriptor;
+}
+var callPromise = function (fn) {
+    var rest = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        rest[_i - 1] = arguments[_i];
+    }
+    var response;
+    var proxy = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return fn.apply(void 0, args).then(function (res) {
+            response = res;
+            return response;
+        }, function (rej) {
+            response = rej;
+            throw rej;
+        });
+    };
+    var callEffect = effects.call.apply(void 0, [proxy].concat(rest));
+    callEffect.getResponse = function () {
+        return response;
+    };
+    return callEffect;
+};
+
 var defaultLoadingComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-loading" }, "Loading..."); };
 var defaultErrorComponent = function (props) {
     return React.createElement("div", { className: "react-coat-asyncComponent-error" },
@@ -420,7 +563,7 @@ function rootReducer(combineReducer) {
         return MetaData.rootState;
     };
 }
-function reducer(state, action) {
+function reducer$1(state, action) {
     if (state === void 0) { state = {}; }
     var item = MetaData.reducerMap[action.type];
     if (item && MetaData.singleStore) {
@@ -443,7 +586,7 @@ function reducer(state, action) {
                     decorator[2] = decorator[0](action.type, namespace);
                 });
             }
-            var result = fun.call(fun.__host__, getActionData(action));
+            var result = fun(getActionData(action));
             newState_1[namespace] = result;
             MetaData.rootState = __assign({}, MetaData.rootState, { project: __assign({}, MetaData.rootState.project, (_a = {}, _a[namespace] = result, _a)) });
             if (action.type === namespace + NSP + INIT) {
@@ -466,7 +609,7 @@ function reducer(state, action) {
     }
     return state;
 }
-function effect(action) {
+function effect$1(action) {
     var item, list_2, _loop_1, _i, list_3, moduleName;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -498,7 +641,7 @@ function effect(action) {
                                 _a.label = 1;
                             case 1:
                                 _a.trys.push([1, 3, , 4]);
-                                return [5 /*yield**/, __values(fun.call(fun.__host__, getActionData(action)))];
+                                return [5 /*yield**/, __values(fun(getActionData(action)))];
                             case 2:
                                 _a.sent();
                                 return [3 /*break*/, 4];
@@ -542,7 +685,7 @@ function effect(action) {
 function saga() {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, effects.takeEvery("*", effect)];
+            case 0: return [4 /*yield*/, effects.takeEvery("*", effect$1)];
             case 1:
                 _a.sent();
                 return [2 /*return*/];
@@ -557,7 +700,7 @@ function buildStore(storeHistory, reducers, storeMiddlewares, storeEnhancers) {
     if (reducers.router || reducers.project) {
         throw new Error("the reducer name 'router' 'project' is not allowed");
     }
-    reducers.project = reducer;
+    reducers.project = reducer$1;
     var routingMiddleware = connectedReactRouter.routerMiddleware(storeHistory);
     var sagaMiddleware = createSagaMiddleware();
     var middlewares = storeMiddlewares.concat([routingMiddleware, sagaMiddleware]);
@@ -584,13 +727,21 @@ function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, 
     buildApp(view, container, storeMiddlewares, storeEnhancers, store, MetaData.history);
 }
 
+function exportModel(namespace, initState, actions) {
+    actions.namespace = namespace;
+    actions.initState = initState;
+    return { namespace: namespace, actions: actions };
+}
+
 var hasInjected = {};
 function exportViews(views, model) {
     var namespace = model.namespace;
     if (!hasInjected[namespace]) {
-        var locationChangeHandler = model.actions[LOCATION_CHANGE];
-        if (locationChangeHandler) {
-            model.actions[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
+        var locationChangeActionCreator = model.actions[LOCATION_CHANGE];
+        if (locationChangeActionCreator) {
+            var actionType_1 = namespace + NSP + INIT_LOCATION;
+            var creator = newActionCreator(function (payload) { return ({ type: actionType_1, payload: payload }); }, locationChangeActionCreator.__handler__);
+            model.actions[actionType_1] = creator;
         }
         var actions = getModuleActionCreatorList(namespace);
         injectActions(namespace, model.actions, actions);
@@ -638,22 +789,29 @@ function getModuleActionCreatorList(namespace) {
         return obj;
     }
 }
+function bindThis(fun, thisObj) {
+    var newFun = fun.bind(thisObj);
+    Object.keys(fun).forEach(function (key) {
+        newFun[key] = fun[key];
+    });
+    return newFun;
+}
 function injectActions(namespace, actions, list) {
     var _loop_1 = function (actionName) {
         if (typeof actions[actionName] === "function") {
             var fun = actions[actionName];
-            if (fun.__isReducer__ || fun.__isEffect__) {
-                fun.__host__ = actions;
+            if (fun.__handler__) {
+                var handler = bindThis(fun.__handler__, actions);
+                fun.__handler__ = null;
                 var arr = actionName.split(NSP);
                 if (arr[1]) {
-                    fun.__isHandler__ = true;
-                    transformAction(actionName, fun, namespace, fun.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
+                    handler.__isHandler__ = true;
+                    transformAction(actionName, handler, namespace, handler.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
                 }
                 else {
-                    fun.__isHandler__ = false;
-                    transformAction(namespace + NSP + actionName, fun, namespace, fun.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
+                    handler.__isHandler__ = false;
+                    transformAction(namespace + NSP + actionName, handler, namespace, handler.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
                     list[actionName] = function (payload) { return ({ type: namespace + NSP + actionName, payload: payload }); };
-                    actions[actionName] = list[actionName];
                 }
             }
         }
@@ -675,134 +833,21 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
     //   }
 }
 
-function exportModel(namespace, initState, actions) {
-    actions.namespace = namespace;
-    actions.initState = initState;
-    return { namespace: namespace, actions: actions };
-}
-
-var BaseModuleActions = /** @class */ (function () {
-    function BaseModuleActions() {
-        this.call = effects.call;
-        this.callPromise = callPromise;
-    }
-    Object.defineProperty(BaseModuleActions.prototype, "state", {
-        get: function () {
-            return MetaData.rootState.project[this.namespace];
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(BaseModuleActions.prototype, "rootState", {
-        get: function () {
-            return MetaData.rootState;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    BaseModuleActions.prototype.put = function (action) {
-        return effects.put(action);
-    };
-    BaseModuleActions.prototype[SET_INIT_DATA] = function () {
-        return this.initState;
-    };
-    BaseModuleActions.prototype[LOADING] = function (payload) {
-        var state = this.state;
-        return __assign({}, state, { loading: __assign({}, state.loading, payload) });
-    };
-    BaseModuleActions.prototype[INIT] = function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, this.put(this.SET_INIT_DATA())];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    };
-    return BaseModuleActions;
-}());
-function logger(before, after) {
-    return function (target, key, descriptor) {
-        var fun = descriptor.value;
-        if (!fun.__decorators__) {
-            fun.__decorators__ = [];
-        }
-        fun.__decorators__.push([before, after, null]);
-    };
-}
-function loading(loadingForModuleName, loadingForGroupName) {
-    if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
-    if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
-    return function (target, key, descriptor) {
-        var fun = descriptor.value;
-        if (loadingForModuleName !== null) {
-            var before = function () {
-                var loadingCallback = null;
-                setLoading(new Promise(function (resolve, reject) {
-                    loadingCallback = resolve;
-                }), loadingForModuleName, loadingForGroupName);
-                return loadingCallback;
-            };
-            var after = function (resolve, error) {
-                resolve(error);
-            };
-            if (!fun.__decorators__) {
-                fun.__decorators__ = [];
-            }
-            fun.__decorators__.push([before, after, null]);
-        }
-    };
-}
-function reducer$1(target, key, descriptor) {
-    var fun = descriptor.value;
-    fun.__isReducer__ = true;
-}
-function effect$1(target, key, descriptor) {
-    var fun = descriptor.value;
-    fun.__isEffect__ = true;
-}
-var callPromise = function (fn) {
-    var rest = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        rest[_i - 1] = arguments[_i];
-    }
-    var response;
-    var proxy = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        return fn.apply(void 0, args).then(function (res) {
-            response = res;
-            return response;
-        }, function (rej) {
-            response = rej;
-            throw rej;
-        });
-    };
-    var callEffect = effects.call.apply(void 0, [proxy].concat(rest));
-    callEffect.getResponse = function () {
-        return response;
-    };
-    return callEffect;
-};
-
+exports.BaseModuleActions = BaseModuleActions;
+exports.effect = effect;
+exports.loading = loading;
+exports.logger = logger;
+exports.reducer = reducer;
 exports.async = async;
 exports.createApp = createApp;
-exports.setLoadingDepthTime = setLoadingDepthTime;
-exports.setLoading = setLoading;
 exports.delayPromise = delayPromise;
 exports.ERROR = ERROR;
-exports.LOCATION_CHANGE = LOCATION_CHANGE;
-exports.getStore = getStore;
 exports.getHistory = getHistory;
-exports.exportViews = exportViews;
-exports.exportModule = exportModule;
+exports.getStore = getStore;
+exports.LOCATION_CHANGE = LOCATION_CHANGE;
+exports.setLoading = setLoading;
+exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.exportModel = exportModel;
-exports.logger = logger;
-exports.effect = effect$1;
-exports.reducer = reducer$1;
-exports.loading = loading;
-exports.BaseModuleActions = BaseModuleActions;
+exports.exportModule = exportModule;
+exports.exportViews = exportViews;
 //# sourceMappingURL=index.js.map

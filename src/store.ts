@@ -1,9 +1,9 @@
 import { connectRouter, routerMiddleware } from "connected-react-router";
 import { History } from "history";
-import { Action, AnyAction, Middleware, ReducersMapObject, Store, applyMiddleware, combineReducers, compose, createStore } from "redux";
+import { Action, AnyAction, applyMiddleware, combineReducers, compose, createStore, Middleware, ReducersMapObject, Store } from "redux";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { put, takeEvery } from "redux-saga/effects";
-import { INIT, MetaData, NSP, errorAction, initLocationAction } from "./global";
+import { errorAction, INIT, initLocationAction, MetaData, NSP } from "./global";
 
 function getActionData(action: {}) {
   const arr = Object.keys(action).filter(key => key !== "type");
@@ -45,7 +45,7 @@ function reducer(state: any = {}, action: Action) {
           decorator[2] = decorator[0](action.type, namespace);
         });
       }
-      const result = fun.call(fun.__host__, getActionData(action));
+      const result = fun(getActionData(action));
       newState[namespace] = result;
       MetaData.rootState = { ...MetaData.rootState, project: { ...MetaData.rootState.project, [namespace]: result } };
       if (action.type === namespace + NSP + INIT) {
@@ -89,7 +89,7 @@ function* effect(action: Action) {
         });
       }
       try {
-        yield* fun.call(fun.__host__, getActionData(action));
+        yield* fun(getActionData(action));
       } catch (error) {
         err = error;
       }

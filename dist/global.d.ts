@@ -19,21 +19,23 @@ export interface RootState<P = {}> {
     project: P;
 }
 export interface ActionCreatorMap {
-    [moduleName: string]: {
-        [actionName: string]: (payload?) => Action;
-    };
+    [moduleName: string]: ActionCreatorList;
+}
+export interface ActionCreatorList {
+    [actionName: string]: ActionCreator;
+}
+export interface ActionCreator {
+    __handler__?: ActionHandler;
+    (payload?: any): Action;
 }
 export interface ActionHandler {
-    __host__: any;
     __isReducer__: boolean;
     __isEffect__: boolean;
     __isHandler__: boolean;
     __decorators__: Array<[any, any, any]>;
     (payload?: any): any;
 }
-export interface ActionHandlerList {
-    [actionName: string]: ActionHandler;
-}
+export declare function newActionCreator(fun: Function, handler: Function): ActionCreator;
 export interface ActionHandlerMap {
     [actionName: string]: {
         [moduleName: string]: ActionHandler;
@@ -41,9 +43,7 @@ export interface ActionHandlerMap {
 }
 export interface Model {
     namespace: string;
-    actions: {
-        [actionName: string]: (payload?) => any;
-    };
+    actions: ActionCreatorList;
 }
 export interface Views {
     [viewName: string]: ComponentType<any>;

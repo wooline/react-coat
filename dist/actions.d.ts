@@ -1,7 +1,7 @@
-import { INIT, LOADING, ModuleState, RootState, SET_INIT_DATA } from "./global";
-import { CallEffect, call, PutEffect } from "redux-saga/effects";
-import { SagaIterator } from "redux-saga";
 import { Action } from "redux";
+import { SagaIterator } from "redux-saga";
+import { call, CallEffect, PutEffect } from "redux-saga/effects";
+import { INIT, LOADING, ModuleState, RootState, SET_INIT_DATA } from "./global";
 export { PutEffect };
 export declare class BaseModuleActions<S extends ModuleState, R extends RootState> {
     protected readonly namespace: string;
@@ -19,8 +19,8 @@ export declare class BaseModuleActions<S extends ModuleState, R extends RootStat
 }
 export declare function logger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function loading(loadingForModuleName?: string, loadingForGroupName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): void;
-export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): void;
+export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
+export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
 export interface CallProxy<T> extends CallEffect {
     getResponse: () => T;
 }

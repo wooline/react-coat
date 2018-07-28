@@ -1,8 +1,8 @@
-import { INIT, LOADING, MetaData, ModuleState, RootState, ActionHandler, SET_INIT_DATA } from "./global";
-import { CallEffect, call, put, PutEffect } from "redux-saga/effects";
-import { SagaIterator } from "redux-saga";
-import { setLoading } from "./loading";
 import { Action } from "redux";
+import { SagaIterator } from "redux-saga";
+import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
+import { ActionHandler, INIT, LOADING, MetaData, ModuleState, newActionCreator, RootState, SET_INIT_DATA, NSP } from "./global";
+import { setLoading } from "./loading";
 
 export { PutEffect };
 export class BaseModuleActions<S extends ModuleState, R extends RootState> {
@@ -18,25 +18,39 @@ export class BaseModuleActions<S extends ModuleState, R extends RootState> {
     return MetaData.rootState as any;
   }
   protected put(action: Action | S | SagaIterator) {
+    let type: string = (action as any).type;
+    const arr = type.split("NSP");
+    if (!arr[1]) {
+      type = this.namespace + NSP + type;
+      if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
+        (action as any).type = type;
+      }
+    }
     return put(action as any);
   }
+  @reducer
   [SET_INIT_DATA](): S {
     return this.initState;
   }
+  @reducer
   [LOADING](payload: { [group: string]: string }): S {
     const state = this.state as any;
+    if (!state) {
+      return state;
+    }
     return {
       ...state,
       loading: { ...state.loading, ...payload },
     };
   }
+  @effect
   *[INIT](): SagaIterator {
     yield this.put(this.SET_INIT_DATA());
   }
 }
 export function logger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
-    const fun = descriptor.value as ActionHandler;
+    const fun: ActionHandler = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
     if (!fun.__decorators__) {
       fun.__decorators__ = [];
     }
@@ -45,7 +59,7 @@ export function logger(before: (actionName: string, moduleName: string) => void,
 }
 export function loading(loadingForModuleName: string = "app", loadingForGroupName: string = "global") {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
-    const fun = descriptor.value as ActionHandler;
+    const fun: ActionHandler = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
     if (loadingForModuleName !== null) {
       const before = () => {
         let loadingCallback: Function | null = null;
@@ -72,10 +86,14 @@ export function loading(loadingForModuleName: string = "app", loadingForGroupNam
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__isReducer__ = true;
+  descriptor.value = newActionCreator(payload => ({ type: key, payload }), fun);
+  return descriptor;
 }
 export function effect(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__isEffect__ = true;
+  descriptor.value = newActionCreator(payload => ({ type: key, payload }), fun);
+  return descriptor;
 }
 export interface CallProxy<T> extends CallEffect {
   getResponse: () => T;
