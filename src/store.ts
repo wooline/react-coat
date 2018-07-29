@@ -3,8 +3,12 @@ import { History } from "history";
 import { Action, AnyAction, applyMiddleware, combineReducers, compose, createStore, Middleware, ReducersMapObject, Store } from "redux";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, INIT, initLocationAction, MetaData, NSP } from "./global";
+import { errorAction, initLocationAction, INIT_LOCATION, MetaData, NSP, STARTED } from "./global";
 
+function hasLocationChangeHandler(moduleName: string) {
+  const actionName = moduleName + NSP + INIT_LOCATION;
+  return !!MetaData.effectMap[actionName] || !!MetaData.reducerMap[actionName];
+}
 function getActionData(action: {}) {
   const arr = Object.keys(action).filter(key => key !== "type");
   if (arr.length === 0) {
@@ -39,19 +43,19 @@ function reducer(state: any = {}, action: Action) {
     });
     list.forEach(namespace => {
       const fun = item[namespace];
-      const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, state: any) => void, any]> = fun.__decorators__;
+      const decorators: Array<[(action: Action, moduleName: string) => any, (data: any, state: any) => void, any]> = fun.__decorators__;
       if (decorators) {
         decorators.forEach(decorator => {
-          decorator[2] = decorator[0](action.type, namespace);
+          decorator[2] = decorator[0](action, namespace);
         });
       }
       const result = fun(getActionData(action));
       newState[namespace] = result;
       MetaData.rootState = { ...MetaData.rootState, project: { ...MetaData.rootState.project, [namespace]: result } };
-      if (action.type === namespace + NSP + INIT) {
+      if (action.type === namespace + NSP + STARTED) {
         // 对模块补发一次locationChange
         setTimeout(() => {
-          if (MetaData.singleStore) {
+          if (MetaData.singleStore && hasLocationChangeHandler(namespace)) {
             MetaData.singleStore.dispatch(initLocationAction(namespace, MetaData.rootState.router));
           }
         }, 0);
@@ -81,11 +85,11 @@ function* effect(action: Action) {
     });
     for (const moduleName of list) {
       const fun = item[moduleName];
-      const decorators: Array<[(actionName: string, moduleName: string) => any, (data: any, error?: Error) => void, any]> | null = fun.__decorators__;
+      const decorators: Array<[(action: Action, moduleName: string) => any, (data: any, error?: Error) => void, any]> | null = fun.__decorators__;
       let err: Error | undefined;
       if (decorators) {
         decorators.forEach(decorator => {
-          decorator[2] = decorator[0](action.type, moduleName);
+          decorator[2] = decorator[0](action, moduleName);
         });
       }
       try {

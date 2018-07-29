@@ -94,14 +94,11 @@ function __values(o) {
     };
 }
 
-function newActionCreator(fun, handler) {
-    fun["__handler__"] = handler;
-    return fun;
-}
 var ERROR = "@@framework/ERROR";
 var LOADING = "LOADING";
-var SET_INIT_DATA = "SET_INIT_DATA";
 var INIT = "INIT";
+var START = "START";
+var STARTED = "STARTED";
 var INIT_LOCATION = "@@router/LOCATION_CHANGE";
 var LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 var NSP = "/";
@@ -334,30 +331,33 @@ var BaseModuleActions = /** @class */ (function () {
         configurable: true
     });
     BaseModuleActions.prototype.put = function (action) {
-        var type = action.type;
-        var arr = type.split("NSP");
-        if (!arr[1]) {
-            type = this.namespace + NSP + type;
-            if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
-                action.type = type;
-            }
-        }
+        // let type: string = (action as any).type;
+        // const arr = type.split(NSP);
+        // if (!arr[1]) {
+        //   type = this.namespace + NSP + type;
+        //   if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
+        //     (action as any).type = type;
+        //   }
+        // }
         return effects.put(action);
     };
-    BaseModuleActions.prototype[_a = SET_INIT_DATA] = function () {
+    BaseModuleActions.prototype[_a = INIT] = function () {
         return this.initState;
     };
-    BaseModuleActions.prototype[_b = LOADING] = function (payload) {
+    BaseModuleActions.prototype[_b = STARTED] = function (payload) {
+        return payload;
+    };
+    BaseModuleActions.prototype[_c = LOADING] = function (payload) {
         var state = this.state;
         if (!state) {
             return state;
         }
         return __assign({}, state, { loading: __assign({}, state.loading, payload) });
     };
-    BaseModuleActions.prototype[_c = INIT] = function () {
+    BaseModuleActions.prototype[_d = START] = function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, this.put(this.SET_INIT_DATA())];
+                case 0: return [4 /*yield*/, this.put(this.STARTED(this.state))];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -371,28 +371,35 @@ var BaseModuleActions = /** @class */ (function () {
         reducer
     ], BaseModuleActions.prototype, _b, null);
     __decorate([
-        effect
+        reducer
     ], BaseModuleActions.prototype, _c, null);
+    __decorate([
+        effect
+    ], BaseModuleActions.prototype, _d, null);
     return BaseModuleActions;
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
 }());
 function logger(before, after) {
     return function (target, key, descriptor) {
-        var fun = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
+        var fun = descriptor.value;
         if (!fun.__decorators__) {
             fun.__decorators__ = [];
         }
         fun.__decorators__.push([before, after, null]);
     };
 }
-function loading(loadingForModuleName, loadingForGroupName) {
-    if (loadingForModuleName === void 0) { loadingForModuleName = "app"; }
-    if (loadingForGroupName === void 0) { loadingForGroupName = "global"; }
+function loading(loadingKey) {
+    if (loadingKey === void 0) { loadingKey = "app/global"; }
     return function (target, key, descriptor) {
-        var fun = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
-        if (loadingForModuleName !== null) {
-            var before = function () {
+        var fun = descriptor.value;
+        if (loadingKey) {
+            var before = function (curAction, moduleName) {
                 var loadingCallback = null;
+                var _a = loadingKey.split(NSP), loadingForModuleName = _a[0], loadingForGroupName = _a[1];
+                if (!loadingForGroupName) {
+                    loadingForGroupName = loadingForModuleName;
+                    loadingForModuleName = moduleName;
+                }
                 setLoading(new Promise(function (resolve, reject) {
                     loadingCallback = resolve;
                 }), loadingForModuleName, loadingForGroupName);
@@ -408,17 +415,14 @@ function loading(loadingForModuleName, loadingForGroupName) {
         }
     };
 }
+var globalLoading = loading();
 function reducer(target, key, descriptor) {
     var fun = descriptor.value;
     fun.__isReducer__ = true;
-    descriptor.value = newActionCreator(function (payload) { return ({ type: key, payload: payload }); }, fun);
-    return descriptor;
 }
 function effect(target, key, descriptor) {
     var fun = descriptor.value;
     fun.__isEffect__ = true;
-    descriptor.value = newActionCreator(function (payload) { return ({ type: key, payload: payload }); }, fun);
-    return descriptor;
 }
 var callPromise = function (fn) {
     var rest = [];
@@ -542,6 +546,10 @@ function buildApp(view, container, storeMiddlewares, storeEnhancers, store, hist
                 React.createElement(WithRouter, null)))), document.getElementById(container));
 }
 
+function hasLocationChangeHandler(moduleName) {
+    var actionName = moduleName + NSP + INIT_LOCATION;
+    return !!MetaData.effectMap[actionName] || !!MetaData.reducerMap[actionName];
+}
 function getActionData(action) {
     var arr = Object.keys(action).filter(function (key) { return key !== "type"; });
     if (arr.length === 0) {
@@ -583,16 +591,16 @@ function reducer$1(state, action) {
             var decorators = fun.__decorators__;
             if (decorators) {
                 decorators.forEach(function (decorator) {
-                    decorator[2] = decorator[0](action.type, namespace);
+                    decorator[2] = decorator[0](action, namespace);
                 });
             }
             var result = fun(getActionData(action));
             newState_1[namespace] = result;
             MetaData.rootState = __assign({}, MetaData.rootState, { project: __assign({}, MetaData.rootState.project, (_a = {}, _a[namespace] = result, _a)) });
-            if (action.type === namespace + NSP + INIT) {
+            if (action.type === namespace + NSP + STARTED) {
                 // 对模块补发一次locationChange
                 setTimeout(function () {
-                    if (MetaData.singleStore) {
+                    if (MetaData.singleStore && hasLocationChangeHandler(namespace)) {
                         MetaData.singleStore.dispatch(initLocationAction(namespace, MetaData.rootState.router));
                     }
                 }, 0);
@@ -635,7 +643,7 @@ function effect$1(action) {
                                 decorators = fun.__decorators__;
                                 if (decorators) {
                                     decorators.forEach(function (decorator) {
-                                        decorator[2] = decorator[0](action.type, moduleName);
+                                        decorator[2] = decorator[0](action, moduleName);
                                     });
                                 }
                                 _a.label = 1;
@@ -737,22 +745,22 @@ var hasInjected = {};
 function exportViews(views, model) {
     var namespace = model.namespace;
     if (!hasInjected[namespace]) {
-        var locationChangeActionCreator = model.actions[LOCATION_CHANGE];
-        if (locationChangeActionCreator) {
-            var actionType_1 = namespace + NSP + INIT_LOCATION;
-            var creator = newActionCreator(function (payload) { return ({ type: actionType_1, payload: payload }); }, locationChangeActionCreator.__handler__);
-            model.actions[actionType_1] = creator;
+        var locationChangeHandler = model.actions[LOCATION_CHANGE];
+        if (locationChangeHandler) {
+            model.actions[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
         }
         var actions = getModuleActionCreatorList(namespace);
         injectActions(namespace, model.actions, actions);
         hasInjected[namespace] = true;
-        var action = actions[INIT]();
+        var initAction = actions[INIT]();
+        var startAction = actions[START]();
         var store = MetaData.singleStore;
         if (store) {
-            store.dispatch(action);
+            store.dispatch(initAction);
+            store.dispatch(startAction);
         }
         else {
-            MetaData.injectedModules.push(action);
+            MetaData.injectedModules.push(initAction, startAction);
         }
         return views;
     }
@@ -799,10 +807,9 @@ function bindThis(fun, thisObj) {
 function injectActions(namespace, actions, list) {
     var _loop_1 = function (actionName) {
         if (typeof actions[actionName] === "function") {
-            var fun = actions[actionName];
-            if (fun.__handler__) {
-                var handler = bindThis(fun.__handler__, actions);
-                fun.__handler__ = null;
+            var handler = actions[actionName];
+            if (handler.__isReducer__ || handler.__isEffect__) {
+                handler = bindThis(handler, actions);
                 var arr = actionName.split(NSP);
                 if (arr[1]) {
                     handler.__isHandler__ = true;
@@ -812,6 +819,7 @@ function injectActions(namespace, actions, list) {
                     handler.__isHandler__ = false;
                     transformAction(namespace + NSP + actionName, handler, namespace, handler.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
                     list[actionName] = function (payload) { return ({ type: namespace + NSP + actionName, payload: payload }); };
+                    actions[actionName] = list[actionName];
                 }
             }
         }
@@ -835,6 +843,7 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
 
 exports.BaseModuleActions = BaseModuleActions;
 exports.effect = effect;
+exports.globalLoading = globalLoading;
 exports.loading = loading;
 exports.logger = logger;
 exports.reducer = reducer;

@@ -1,7 +1,7 @@
 import { Action } from "redux";
 import { SagaIterator } from "redux-saga";
 import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
-import { ActionHandler, INIT, LOADING, MetaData, ModuleState, newActionCreator, RootState, SET_INIT_DATA, NSP } from "./global";
+import { ActionHandler, INIT, LOADING, MetaData, ModuleState, NSP, RootState, START, STARTED } from "./global";
 import { setLoading } from "./loading";
 
 export { PutEffect };
@@ -18,19 +18,23 @@ export class BaseModuleActions<S extends ModuleState, R extends RootState> {
     return MetaData.rootState as any;
   }
   protected put(action: Action | S | SagaIterator) {
-    let type: string = (action as any).type;
-    const arr = type.split("NSP");
-    if (!arr[1]) {
-      type = this.namespace + NSP + type;
-      if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
-        (action as any).type = type;
-      }
-    }
+    // let type: string = (action as any).type;
+    // const arr = type.split(NSP);
+    // if (!arr[1]) {
+    //   type = this.namespace + NSP + type;
+    //   if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
+    //     (action as any).type = type;
+    //   }
+    // }
     return put(action as any);
   }
   @reducer
-  [SET_INIT_DATA](): S {
+  [INIT](): S {
     return this.initState;
+  }
+  @reducer
+  [STARTED](payload: S): S {
+    return payload;
   }
   @reducer
   [LOADING](payload: { [group: string]: string }): S {
@@ -44,25 +48,30 @@ export class BaseModuleActions<S extends ModuleState, R extends RootState> {
     };
   }
   @effect
-  *[INIT](): SagaIterator {
-    yield this.put(this.SET_INIT_DATA());
+  *[START](): SagaIterator {
+    yield this.put(this.STARTED(this.state));
   }
 }
-export function logger(before: (actionName: string, moduleName: string) => void, after: (beforeData: any, data: any) => void) {
+export function logger(before: (action: Action, moduleName: string) => void, after: (beforeData: any, data: any) => void) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
-    const fun: ActionHandler = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
+    const fun: ActionHandler = descriptor.value;
     if (!fun.__decorators__) {
       fun.__decorators__ = [];
     }
     fun.__decorators__.push([before, after, null]);
   };
 }
-export function loading(loadingForModuleName: string = "app", loadingForGroupName: string = "global") {
+export function loading(loadingKey: string = "app/global") {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
-    const fun: ActionHandler = descriptor.value.__handler__ ? descriptor.value.__handler__ : descriptor.value;
-    if (loadingForModuleName !== null) {
-      const before = () => {
+    const fun: ActionHandler = descriptor.value;
+    if (loadingKey) {
+      const before = (curAction: Action, moduleName: string) => {
         let loadingCallback: Function | null = null;
+        let [loadingForModuleName, loadingForGroupName] = loadingKey.split(NSP);
+        if (!loadingForGroupName) {
+          loadingForGroupName = loadingForModuleName;
+          loadingForModuleName = moduleName;
+        }
         setLoading(
           new Promise<any>((resolve, reject) => {
             loadingCallback = resolve;
@@ -83,17 +92,15 @@ export function loading(loadingForModuleName: string = "app", loadingForGroupNam
     }
   };
 }
+export const globalLoading = loading();
+
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__isReducer__ = true;
-  descriptor.value = newActionCreator(payload => ({ type: key, payload }), fun);
-  return descriptor;
 }
 export function effect(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__isEffect__ = true;
-  descriptor.value = newActionCreator(payload => ({ type: key, payload }), fun);
-  return descriptor;
 }
 export interface CallProxy<T> extends CallEffect {
   getResponse: () => T;

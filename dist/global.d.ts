@@ -11,7 +11,7 @@ export interface SingleStore {
 }
 export interface ModuleState {
     loading: {
-        global: LoadingState;
+        [key: string]: LoadingState;
     };
 }
 export interface RootState<P = {}> {
@@ -24,18 +24,17 @@ export interface ActionCreatorMap {
 export interface ActionCreatorList {
     [actionName: string]: ActionCreator;
 }
-export interface ActionCreator {
-    __handler__?: ActionHandler;
-    (payload?: any): Action;
-}
+export declare type ActionCreator = (payload?) => Action;
 export interface ActionHandler {
-    __isReducer__: boolean;
-    __isEffect__: boolean;
-    __isHandler__: boolean;
-    __decorators__: Array<[any, any, any]>;
+    __isReducer__?: boolean;
+    __isEffect__?: boolean;
+    __isHandler__?: boolean;
+    __decorators__?: Array<[(action: Action, moduleName: string) => any, any, any]>;
     (payload?: any): any;
 }
-export declare function newActionCreator(fun: Function, handler: Function): ActionCreator;
+export interface ActionHandlerList {
+    [actionName: string]: ActionHandler;
+}
 export interface ActionHandlerMap {
     [actionName: string]: {
         [moduleName: string]: ActionHandler;
@@ -43,7 +42,7 @@ export interface ActionHandlerMap {
 }
 export interface Model {
     namespace: string;
-    actions: ActionCreatorList;
+    actions: ActionHandlerList;
 }
 export interface Views {
     [viewName: string]: ComponentType<any>;
@@ -53,8 +52,9 @@ export interface ModuleViews {
 }
 export declare const ERROR = "@@framework/ERROR";
 export declare const LOADING = "LOADING";
-export declare const SET_INIT_DATA = "SET_INIT_DATA";
 export declare const INIT = "INIT";
+export declare const START = "START";
+export declare const STARTED = "STARTED";
 export declare const INIT_LOCATION = "@@router/LOCATION_CHANGE";
 export declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 export declare const NSP = "/";
