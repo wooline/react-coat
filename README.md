@@ -1,52 +1,27 @@
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
 
-## 2.4.0 发布：
+## 3.0.0 发布：
 
-- 用 redux-saga 中的 yield call 方法无法得到正确的返回类型，为了解决此问题，本版本增加了 callPromise 方法：
-
-```JS
-// 原：需要显示声明curUser:CurUser
-const curUser:CurUser = yield this.call(ajax.login, username, password);
-
-// 2.4.0：不需要显示声明curUser
-const effect = this.callPromise(ajax.login, username, password);
-yield effect;
-const curUser = effect.getResponse();
-```
-
-特别注意：在 model 中定义异步 effect 时，有时会莫名奇妙的推导不出类型，显示编译错误，这种情况下，请将该 effect 返回值设置为 any，期待 typescript 的改进。例如：
-
-```JS
-class ModuleActions {
-  // 定义一个名为login的Effect，有时会莫名奇妙的推导不出类型，可将返回值设置为any
-  @effect()
-  *login({payload}: ActionData<{ username: string; password: string }>): any {
-    const curUser: userService.LoginResponse = yield call(userService.login, payload.username, payload.password);
-    yield put(thisModule.actions.updateCurUser(curUser));
-  }
-
-};
-```
+- 基于 2.0 的基本概念，进一步简化和清晰 API 的定义
 
 ## react-coat 特点：
 
-- 集成"history", "connected-react-router", "react-router-dom", "redux-saga"
+- 集成 react、redux、redux-saga、react-router、history 等相关框架
+- 仅为以上框架的糖衣外套，不改变其基本概念，无强侵入与破坏性
 - 精简而自然的 API 语法，几乎不用学习即可上手
-- 微框架，源码不到 500 行，编译成 ES5 并压缩后仅 11k 左右
-- 无强侵入性，仅为 redux 的糖衣外套，不改变其本身逻辑
-- 业务模块化，可整体加载也可按需加载
-- 使用 typescript，所有 state 和 action 都可以做类型推断
+- 微框架，源码不到千行，编译成 ES5 并压缩后仅 15k 左右
+- 业务模块化，支持按需加载
+- 使用 typescript 强类型，更好的静态检查与智能提示
 
 > 感谢 [Dva](https://github.com/dvajs/dva)带来的灵感，本框架与 Dva 主要差异：
 
-- 采用 reducer 代理的原理实现，而非 combineReducers
-- 更加精简和自然的 API
-- 引入 handler 概念，模块之间彼此独立，使用观察者模式进行监听
-- 同步模块和异步模块采用同样的代码结构
-- action 可使用 ts 强类型推断和检查，例如：
+- 更优雅和自然的 API
+- 更清晰和简单的组织结构
+- 使用 typescript 强类型推断和检查
+- 路由支持按需加载，也支持整体加载
 
 ```
-// Dva中常这样写
+// 比如：Dva中常这样写
 dispatch({ type: 'moduleA/query', payload:{args:[10]} })
 
 //本框架中可直接利用ts类型反射和检查:
@@ -77,7 +52,7 @@ this.dispatch(moduleA.actions.query([10]))
   },
 ```
 
-#### react-coat-pkg
+#### 套装版 react-coat-pkg
 
 如果你想省心，你也可以直接安装"all in 1"的 [react-coat-pkg](https://github.com/wooline/react-coat-pkg)，它将自动包含以上组件，并保证各组件版本不会冲突：
 
@@ -91,13 +66,23 @@ IE9 或 IE9 以上
 
 ## 使用 react-coat：
 
-### 简单四步：buildModel(), buildViews(), buildModule(), createApp()
-
 > 快速上手：[一个简单的 Hello Word](https://github.com/wooline/react-coat-demo-simple)
 
 > 快速上手：[使用 react-coat 重构 antd-pro](https://github.com/wooline/react-coat-antd)
 
-基本目录结构如下
+> 为何需要此框架？redux 实践中的痛点与总结可参考 Dva
+
+### Module 概念
+
+> react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发和测试，可以打包、可以同步或异步加载。**一个 Module 主要由 namespace、model、views 组成**。
+
+- namespace 表示该 Module 的命名空间，不能重复和冲突，常与目录同名
+- model 用于集中管理和操作 State
+- views 跟据 State 来渲染界面
+
+### 总结为简单四步：exportModel(), exportViews(), exportModule(), createApp()
+
+示例一个基本目录结构如下：
 
 ```
 src
@@ -106,10 +91,10 @@ src
 │       │     ├── views  \\存放该业务模块的视图
 │       │     │     ├── Other.tsX  \\一个名叫Other的视图
 │       │     │     ├── Main.tsx  \\一个名叫Main的视图
-│       │     │     └── index.ts  \\导出该模块对外的视图
-│       │     ├── model.ts  \\该模块的数据模型定义和操作
-│       │     ├── index.ts  \\导出该模块对外的操作
-│       │     └── exportActionNames.ts \\定义该模块可被外界监听的ActionName
+│       │     │     └── index.ts  \\导出该模块对外的视图  exportViews()
+│       │     ├── model.ts  \\该模块的数据模型定义和操作  exportModel()
+│       │     ├── index.ts  \\导出该模块对外的操作  exportModule()
+│       │     └── exportNames.ts \\定义该模块的某些常量
 │       └── app  \\一个名叫app的业务模块
 │             ├── views
 │             │     ├── Other.tsX
@@ -118,7 +103,7 @@ src
 │             ├── model.ts
 │             ├── index.ts
 │             └── exportActionNames.ts
-└── index.tsx  \\入口文件
+└── index.tsx  \\入口文件  createApp()
 ```
 
 ```JS
@@ -126,50 +111,136 @@ src
 import appViews from "modules/app/views";
 import { createApp } from "react-coat";
 
-/*
-createApp()还可以传入四个可选参数以自定义扩展Store：
-storeMiddlewares?: Middleware[]
-storeEnhancers?: Function[]
-reducers?: ReducersMapObject //你可以额外添加自已的reducers
-storeHistory?: History  //如果不传，则使用history/createBrowserHistory
-*/
 createApp(appViews.Main, "root");
 ```
 
-### Module 机制
+### Model 概念
 
-> react-coat 建议将复杂的业务场景分解为多个独立的`业务Module`，它们可以独立开发测试，可以独立打包、可以同步或异步加载。**一个基本的业务 Module 由 model、namespace、以及一组 view 组成，放在 modules 目录下**。
+> Model 为 Module 提供数据与状态的维护和更新，**主要定义 State 和 Action**
 
-- namespace 表示该 Module 的命名空间，模块的命名空间不能重复和冲突，建议与目录同名
-- 模块的 ActionName 不能重复或冲突，建议使用 namespace 和\_开头
-- view 为普通的 React Component 文件，一个 Module 可以有多个 view，我们建议从逻辑上对 View 和 Component 作一个区分：View 由一个或多个 Component 组成，反映比较独立和完整的具体业务逻辑，而 Component 侧重于抽象的交互逻辑，它们多为公共的交互控件，一般不会直接关联到全局 Store。
-- model 集中编写模块的数据定义和操作
+- State 表示本 Module 的状态，需要定义好数据结构和初始值
+- Action 表示交互操作，分为 reducer、effect，其概念与 redux 和 saga 中的定义相同
+- 原则上每个模块的 reducer 只能更新本模块的 State，但可以读取 RootState
+- reducer 和 effect 只能通过 `dispatch` 方法（在 view 中）或 `put` 方法（在 model）来触发执行
+- 将所有 reducer 和 effect 集中写在一个 ModuleActions 的 class 中
+- 对外输出 actions 和 state，供外界调用
+- Model 的启动过程会触发三个特定的 Action：`INIT->START->STARTED`，它们在 BaseModuleActions 中有默认的定义，你可以通过覆盖基类中的方法来扩展或自定义，其意义如下：
+  - `INIT(): State` 它是一个 reducer，它将本模块的 initState 注入到全局 RootState 中
+  - `START(): SagaIterator` 它是一个 Effect，它表示本模块正在启动，你可以在此过程中去异步拉取一些外部数据，并更新当前 State
+  - `STARTED(payload: State): State` 它是一个 reducer，它表示本模块启动完毕，并更新 State，该 Action 必须在前面 `START()`Effect 中手动触发
 
-### Module 接口机制
+示例一个 Model.ts 如下：
 
-> Module 是相对独立的，对内封装自已的逻辑，对外暴露接口，外部不要直接引用 Module 内部文件，而要通过其接口。Module 对外接口主要有 4 笔：**NAMESPACE、actions、State、views**
+```js
+// 定义该模块的State数据结构
+interface State extends ModuleState {
+  todosList: string[];
+  curUser: { //用于表示当前用户状态
+    uid: string;
+    username: string;
+  };
+  loading: { //用于表示本module中的各种loading状态
+    global: LoadingState;
+    login: LoadingState;
+  },
+}
+// 定义该模块的State的初始值
+const initState: State = {
+  todosList: [];
+  curUser: {
+    uid: "",
+    username: ""
+  },
+  loading: {
+    global: "Stop",
+    login: "Stop",
+  },
+});
 
-1.  模块根目录下的 index.ts，该文件将输出：actions、State
+// 定义该模块的Actions
+// RootState表示全局的State，State表示本模块的State
+class ModuleActions extends BaseModuleActions<State, RootState> {
 
-    - State 为一个 Type 类型，是该模块的 State 数据结构
-    - actions 包含了该模块所有可以被外界调用的操作
+  // 定义一个名为updateTodosList的reducer
+  @reducer
+  updateTodosList(todosList: string[]): State {
+    return { ...this.state, todosList };
+  }
 
-2.  模块 views 目录下的 index.ts，该文件将输出：views
+  // 定义一个名为updateCurUser的reducer
+  @reducer
+  setCurUser(curUser: { uid: string; username: string; }): State {
+    return { ...this.state, curUser };
+  }
 
-3.  模块根目录下的 exportActionNames.ts 该文件将输出该模块可供外界监听的 ActionName，如果不需要被外界监听，可能为空
+  // 定义一个名为login的effect
+  @effect
+  @loading("login") // 将该effect的loading状态注入State.loading.login中
+  *login({username,password}:{ username: string; password: string }): SagaIterator {
+    // 调用登录api，并获取Resphonse
+    const curUser = yield this.call(api.login, username, password);
+    // 通过this.put触发并调用前面定义的setCurUser
+    yield this.put(this.setCurUser(curUser));
+    // 对于非Action，可以直接调用
+    this.log(username);
+    // 为了方便，基类中集成了routerActions
+    // 包括history方法push,replace,go,goBack,goForward
+    yield this.put(this.routerActions.push("/"));
+  }
 
-> 例如，模块 A 可以 dispatch 模块 B 的 action：
+  // 非Action请使用private或protected权限
+  private log(username: string){
+    console.log(`${username} 已登录！`)
+  }
+
+  // 可以兼听另一个模块的 Action 来协同修改本模块的 State, 可以是reducer或effect
+  // 以观察者模式对全局的"错误Action："@framework/ERROR"兼听，并上报后台
+  // 因为兼听并不需要主动调用，请设置为private或protected权限
+  @effect
+  protected *[ERROR as string](payload: Error): SagaIterator {
+    yield this.call(settingsService.api.reportError, payload);
+  }
+  // 兼听路由变化的Action，并作出更新
+  @effect
+  protected *[LOCATION_CHANGE as string](payload: { location: { pathname: string } }): SagaIterator {
+    if (payload.location.pathname === "/admin/todos") {
+      const todos = yield this.call(todoService.api.getTodosList);
+      yield this.put(this.updateTodosList(todos.list));
+    }
+  }
+
+  // 自定义启动项，覆盖基类默认的START Effect
+  // 初次进入，需要获取当前用户的信息
+  @effect
+  @globalLoading // 使用全局loading状态
+  *START(): SagaIterator {
+    const curUser = yield this.call(sessionService.api.getCurUser);
+    // 必须手动触发并调用基类的STARTED Reducer
+    yield this.put(this.STARTED({ ...this.state, curUser }));
+  }
+
+};
+ // 创建并导出Model
+const model = exportModel(NAMESPACE, initState, new ModuleActions());
+export default model;
+
+// 导出类型Actions, State供外界使用
+type Actions = typeof model.actions;
+export { Actions, State };
+```
+
+从上面示例代码中看到，在 Model 内部，触发并调用一个 Action 必须使用`this.put`，而如果在 View 中，则需要用 dispatch 方法，请看示例，在模块 A 的 View 中，dispatch 模块 B 的 action：
 
 ```JS
 // src/modules/A/views/Main.tsx
 import B from "modules/B";
 
 export default function(){
-  return <button onClick={e => {dispatch(B.actions.login())}}>click me</button>
+  return <button onClick={e => {this.props.dispatch(B.actions.logout())}}>注销</button>
 }
 ```
 
-### Module 加载机制
+### Module 路由与加载
 
 > react-coat 中的业务 Module 是相对独立的，可以同步加载，也可以按需加载。
 
@@ -192,127 +263,28 @@ export default function() {
 
 ```js
 // src/modules/A/views/Main.tsx
-const BViewsLoader = asyncComponent(() => import("modules/B/views"));
+const BView = async(() => import("modules/B/views"));
 ...
-<Route component={BViewsLoader} />;
+<Route exact path={`${match.url}/todos`} component={BView} />;
 ```
-
-### Model 机制
-
-> model 用于组织和管理整个模块的数据，Model 的典型结构如下：
-
-```js
-// 定义该模块的State数据结构
-interface State extends BaseModuleState {
-  curUser: {
-    uid: string;
-    username: string;
-  };
-}
-// 定义该模块的State的初始值
-const state: State = {
-  curUser: {
-    uid: "",
-    username: ""
-  }
-});
-
-// 定义该模块的操作
-// 继承BaseModuleActions，拥有了put、call等saga的方法
-// 2.1.0增加dispatch方法，等同于 store.dispatch，仅用于某些特殊场景，比如计时器回调，推荐用 saga 的put
-// 该类的所有public方法均为Action，其它请定义为private或者protected
-class ModuleActions extends BaseModuleActions {
-
-  // 定义一个名为updateCurUser的Action
-  updateCurUser({payload, moduleState}: ActionData<State["curUser"],State>): State {
-    // 需要符合reducer的要求，moduleState和rootState都是只读，不要去修改
-    return { ...moduleState, curUser:payload };
-  }
-
-  // 定义一个名为login的Effect
-  @effect(NAMESPACE) //@effect为装饰器，参数为注入loading的状态
-  *login({payload}: ActionData<{ username: string; password: string }>): any {
-    const curUser: userService.LoginResponse = yield this.call(userService.login, payload.username, payload.password);
-    yield this.put(thisModule.actions.updateCurUser(curUser));
-    this.log(username);
-    //集成routerActions，包括history方法push,replace,go,goBack,goForward
-    yield this.put(thisModule.actions.routerActions.push("/"));
-  }
-
-  // 非Action请使用private或protected权限
-  private log(username: string){
-    console.log(`${username} 已登录！`)
-  }
-};
-
-// 以观察者模式对action监听
-// 继承BaseModuleHandlers，拥有了put、call等saga的方法
-// 该类的所有public方法均为Handler，其它请定义为private或者protected
-class ModuleHandlers extends BaseModuleHandlers {
-
-  // 监听"app_Init"这个action
-  @buildlogger( //可选，注入跟踪勾子，打印该Action的执行时间
-    (actionName: string, moduleName: string) => {
-      const startTime = new Date().getTime();
-      console.log(moduleName,actionName,"start at",time)
-      return {startTime, moduleName, actionName};
-    },
-    ({startTime, moduleName, actionName}) => {
-      const endTime = new Date().getTime();
-      console.log(moduleName,actionName,"spend",endTime-startTime)
-    }
-  )
-  @effect() //@effect为装饰器，参数为空默认使用global loading
-  *[actionNames.INIT](){
-    const curUser: userService.GetCurUserResponse = yield call(userService.getCurUser);
-    yield this.put(thisModule.actions.updateCurUser(curUser));
-  }
-  @effect(null)// 监听"@framework/ERROR"这个action，上报给服务器，参数null表示不注入loading
-  *[ERROR_ACTION_NAME]({ payload }: ActionData<Error>) {
-    console.log(payload);
-    yield this.call(settingsService.api.reportError, payload);
-  }
-};
-```
-
-### Action 机制
-
-> Action 用于调用 Reducer 或 saga-effect 来加载和更新模块的 State。原则上每个模块的 Action 只能更新自已的 State。
-
-- 定义 ActionName，模块 Action 的名称可供自已或外界监听与调用，通常使用常量定义在模块根目录下的 actionName.ts 中
-- 在 Model 中集中集中编写整个模块的 Action
-- Action 主要分为 Reducer 和 Effect，即同步和异步，异步 Action 请使用`@effect`装饰器
-- 执行 Action，使用 redux 的 `dispatch` 或 saga 的 `put` 方法
-- 监听 Action，一个模块可以另一个模块的 Action 来协同修改本模块的 State
-- Action 装饰器，框架提供两个 Decorator
-  - `@effect(moduleNameForLoading="app", groupNameForLoading="global")`
-    申明该 Action 为异步 effect，同时注入 loading 状态，不需注入 loading 状态参数为 null
-  - `@buildlogger(beforeFun, afterFun)` 为 Action 注入跟踪勾子，比如监控 action 的执行时间
-- 框架内置 Action，在特定的生命周期，框架会自动触发以下特定的 Action，你可以监听它们，但不要覆盖或修改它们
-
-  - `ERROR_ACTION_NAME` = "@@framework/ERROR" 当出现错误时触发
-  - `LOCATION_CHANGE_ACTION_NAME` = "@@router/LOCATION_CHANGE" 当路由切换时触发
-  - `moduleName + "/INIT"` 当模块初始化时触发，每个模块只会触发一次
-  - `moduleName + "/LOADING"` 当出现 loading 状态时触发
-  - `moduleName + "/@@router/LOCATION_CHANGE"` 异步模块初始化路由时触发
 
 ### Loading 机制
 
-- loading 状态存放在每个 module 的 state 中，可以让组件绑定此状态，固定的 key 为 loading，每个模块有一个固定的 loading 分组为 global 例如：
+- loading 状态存放在每个 module 的 state 中，可以让组件绑定此状态来展示 loading UI
 
-```
+```js
 app: {
   username: string;
-  loading: {  // 固定key名
-    global: string; // 固定分组
-    login: string; // 自定义分组
-  };
-};
+  loading: {
+    global: LoadingState;
+    login: LoadingState;
+  }
+}
 ```
 
-- loading 每个模块都有自已的一组 loading 状态，同属于一组的多个 loading 会合并，例如
+- 每个模块都有自已的一组 loading 状态，同属于一组的多个 loading 会合并，例如
 
-```
+```js
 // 假设发起了多个异步请求，但他们可以共用一个loading状态
 // 当同组内所有请求全部完成时，loading状态才Stop
 setLoading(promise1, "app", "login");
@@ -321,12 +293,7 @@ setLoading(promise2, "app", "login");
 
 - 每个 loading 状态有三种变化值：Start、Depth、Stop，Depth 表示深度加载，当超过一定时间，默认为 2 秒，还没有返回，则过渡为 Depth 状态
 
-- 设置 Loading 状态有两种方法：函数式、Decorator。Decorator 方便用于对异步 Action 的注入
-
-```
-setLoading(item: Promise, moduleName?: string="app", group?: string="global")
-@effect("app","global")
-```
+- 设置 Loading 状态有两种方法：`setLoading`和`@loading`。@loading 专门用来对 Effect 进行跟踪
 
 ### 框架 API
 
