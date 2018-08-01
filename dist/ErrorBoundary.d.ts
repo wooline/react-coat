@@ -1,5 +1,3 @@
-/// <reference types="react" />
-/// <reference types="react-redux" />
 import React from "react";
 import { DispatchProp } from "react-redux";
 export interface State {

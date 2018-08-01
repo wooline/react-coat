@@ -1,23 +1,30 @@
 import { Action } from "redux";
 import { SagaIterator } from "redux-saga";
-import { call, CallEffect, PutEffect } from "redux-saga/effects";
-import { INIT, LOADING, ModuleState, RootState, START, STARTED } from "./global";
+import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
+import { ActionHandlerList, BaseModuleState, RootState } from "./global";
 export { PutEffect };
-export declare class BaseModuleActions<S extends ModuleState, R extends RootState> {
+export declare class BaseModuleHandlers<S extends BaseModuleState = any, R extends RootState = any, A extends Actions<BaseModuleHandlers> = any> {
+    protected readonly actions: A;
     protected readonly namespace: string;
     protected readonly initState: S;
-    protected call: typeof call;
-    protected callPromise: CallPromise;
+    protected readonly put: typeof put;
+    protected readonly call: typeof call;
+    protected readonly callPromise: typeof callPromise;
     protected readonly state: S;
     protected readonly rootState: R;
-    protected put(action: Action | S | SagaIterator): PutEffect<any>;
-    [INIT](): S;
-    [STARTED](payload: S): S;
-    [LOADING](payload: {
+    INIT(): S;
+    STARTED(payload: S): S;
+    LOADING(payload: {
         [group: string]: string;
     }): S;
-    [START](): SagaIterator;
+    START(): SagaIterator;
 }
+export declare function exportModel<S, A extends {
+    [K in keyof A]: (payload?: any) => S | SagaIterator;
+}>(namespace: string, initState: S, handlers: A): {
+    namespace: string;
+    handlers: ActionHandlerList;
+};
 export declare function logger(before: (action: Action, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function loading(loadingKey?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare const globalLoading: (target: any, key: string, descriptor: PropertyDescriptor) => void;
@@ -26,12 +33,12 @@ export declare function effect(target: any, key: string, descriptor: PropertyDes
 export interface CallProxy<T> extends CallEffect {
     getResponse: () => T;
 }
-export interface CallPromise {
-    <T>(fn: () => Promise<T>): CallProxy<T>;
-    <T, R1, A1 extends R1>(fn: (req1: R1) => Promise<T>, arg1: A1): CallProxy<T>;
-    <T, R1, R2, A1 extends R1, A2 extends R2>(fn: (req1: R1, req2: R2) => Promise<T>, arg1: A1, arg2: A2): CallProxy<T>;
-    <T, R1, R2, R3, A1 extends R1, A2 extends R2, A3 extends R3>(fn: (req1: R1, req2: R2, req3: R3) => Promise<T>, arg1: A1, arg2: A2, arg3: A3): CallProxy<T>;
-    <T, R1, R2, R3, R4, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4>(fn: (req1: R1, req2: R2, req3: R3, req4: R4) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4): CallProxy<T>;
-    <T, R1, R2, R3, R4, R5, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5): CallProxy<T>;
-}
-export declare const callPromise: CallPromise;
+export declare function callPromise<R, T extends any[]>(fn: (...args: T) => Promise<R>, ...rest: T): CallProxy<R>;
+export declare type Actions<Ins> = {
+    [K in keyof Ins]: Ins[K] extends () => any ? () => {
+        type: string;
+    } : Ins[K] extends (data: infer P) => any ? (payload: P) => {
+        type: string;
+        payload: P;
+    } : never;
+};

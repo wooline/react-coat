@@ -1,19 +1,19 @@
-import { ActionCreatorList, ActionHandler, ActionHandlerList, ActionHandlerMap, INIT, INIT_LOCATION, LOCATION_CHANGE, MetaData, Model, NSP, START } from "./global";
-
+import { ActionCreatorList, ActionHandler, ActionHandlerMap, INIT_LOCATION, LOCATION_CHANGE, MetaData, NSP, ActionHandlerList } from "./global";
+import { ComponentType } from "react";
 const hasInjected: { [moduleName: string]: boolean } = {};
 
-export function exportViews<T>(views: T, model: Model) {
+export function exportViews<T>(views: T, model: { namespace: string; handlers: ActionHandlerList }) {
   const namespace = model.namespace;
   if (!hasInjected[namespace]) {
-    const locationChangeHandler = model.actions[LOCATION_CHANGE];
+    const locationChangeHandler = model.handlers[LOCATION_CHANGE];
     if (locationChangeHandler) {
-      model.actions[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
+      model.handlers[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
     }
     const actions = getModuleActionCreatorList(namespace);
-    injectActions(namespace, model.actions, actions);
+    injectActions(namespace, model.handlers, actions);
     hasInjected[namespace] = true;
-    const initAction = actions[INIT]();
-    const startAction = actions[START]();
+    const initAction = actions.INIT();
+    const startAction = actions.START();
     const store = MetaData.singleStore;
     if (store) {
       store.dispatch(initAction);
@@ -62,12 +62,13 @@ function bindThis(fun: ActionHandler, thisObj) {
 
   return newFun as ActionHandler;
 }
-function injectActions(namespace: string, actions: ActionHandlerList, list: ActionCreatorList) {
-  for (const actionName in actions) {
-    if (typeof actions[actionName] === "function") {
-      let handler = actions[actionName];
+function injectActions(namespace: string, handlers: ActionHandlerList, list: ActionCreatorList) {
+  handlers.actions = list as any;
+  for (const actionName in handlers) {
+    if (typeof handlers[actionName] === "function") {
+      let handler = handlers[actionName];
       if (handler.__isReducer__ || handler.__isEffect__) {
-        handler = bindThis(handler, actions);
+        handler = bindThis(handler, handlers);
         const arr = actionName.split(NSP);
         if (arr[1]) {
           handler.__isHandler__ = true;
@@ -76,7 +77,6 @@ function injectActions(namespace: string, actions: ActionHandlerList, list: Acti
           handler.__isHandler__ = false;
           transformAction(namespace + NSP + actionName, handler, namespace, handler.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
           list[actionName] = payload => ({ type: namespace + NSP + actionName, payload });
-          (actions as ActionCreatorList)[actionName] = list[actionName];
         }
       }
     }
@@ -94,4 +94,10 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
   //   if (actionHandlerMap === MetaData.effectMap) {
   //     pushSagaName(actionName);
   //   }
+}
+export interface Views {
+  [viewName: string]: ComponentType<any>;
+}
+export interface ModuleViews {
+  default: Views;
 }

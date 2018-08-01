@@ -1,7 +1,5 @@
-/// <reference types="react" />
 import { RouterState } from "connected-react-router";
 import { History } from "history";
-import { ComponentType } from "react";
 import { Action, AnyAction, Store } from "redux";
 import { TaskCounterState as LoadingState } from "./sprite";
 export interface SingleStore {
@@ -9,7 +7,7 @@ export interface SingleStore {
         type: string;
     }) => void;
 }
-export interface ModuleState {
+export interface BaseModuleState {
     loading: {
         [key: string]: LoadingState;
     };
@@ -24,7 +22,7 @@ export interface ActionCreatorMap {
 export interface ActionCreatorList {
     [actionName: string]: ActionCreator;
 }
-export declare type ActionCreator = (payload?) => Action;
+export declare type ActionCreator = (payload?: any) => Action;
 export interface ActionHandler {
     __isReducer__?: boolean;
     __isEffect__?: boolean;
@@ -40,21 +38,7 @@ export interface ActionHandlerMap {
         [moduleName: string]: ActionHandler;
     };
 }
-export interface Model {
-    namespace: string;
-    actions: ActionHandlerList;
-}
-export interface Views {
-    [viewName: string]: ComponentType<any>;
-}
-export interface ModuleViews {
-    default: Views;
-}
 export declare const ERROR = "@@framework/ERROR";
-export declare const LOADING = "LOADING";
-export declare const INIT = "INIT";
-export declare const START = "START";
-export declare const STARTED = "STARTED";
 export declare const INIT_LOCATION = "@@router/LOCATION_CHANGE";
 export declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 export declare const NSP = "/";

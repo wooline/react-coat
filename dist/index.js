@@ -62,8 +62,8 @@ function __generator(thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -95,10 +95,6 @@ function __values(o) {
 }
 
 var ERROR = "@@framework/ERROR";
-var LOADING = "LOADING";
-var INIT = "INIT";
-var START = "START";
-var STARTED = "STARTED";
 var INIT_LOCATION = "@@router/LOCATION_CHANGE";
 var LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 var NSP = "/";
@@ -299,65 +295,55 @@ function setLoading(item, namespace, group) {
     if (!loadings[key]) {
         loadings[key] = new TaskCounter(depthTime);
         loadings[key].addListener(TaskCountEvent, function (e) {
+            var _a;
             var store = MetaData.singleStore;
             if (store) {
-                var action = MetaData.actionCreatorMap[namespace][LOADING]((_a = {}, _a[group] = e.data, _a));
+                var action = MetaData.actionCreatorMap[namespace]["LOADING"]((_a = {}, _a[group] = e.data, _a));
                 store.dispatch(action);
             }
-            var _a;
         });
     }
     loadings[key].addItem(item);
     return item;
 }
 
-var BaseModuleActions = /** @class */ (function () {
-    function BaseModuleActions() {
+var BaseModuleHandlers = /** @class */ (function () {
+    function BaseModuleHandlers() {
+        this.put = effects.put;
         this.call = effects.call;
         this.callPromise = callPromise;
     }
-    Object.defineProperty(BaseModuleActions.prototype, "state", {
+    Object.defineProperty(BaseModuleHandlers.prototype, "state", {
         get: function () {
             return MetaData.rootState.project[this.namespace];
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(BaseModuleActions.prototype, "rootState", {
+    Object.defineProperty(BaseModuleHandlers.prototype, "rootState", {
         get: function () {
             return MetaData.rootState;
         },
         enumerable: true,
         configurable: true
     });
-    BaseModuleActions.prototype.put = function (action) {
-        // let type: string = (action as any).type;
-        // const arr = type.split(NSP);
-        // if (!arr[1]) {
-        //   type = this.namespace + NSP + type;
-        //   if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
-        //     (action as any).type = type;
-        //   }
-        // }
-        return effects.put(action);
-    };
-    BaseModuleActions.prototype[_a = INIT] = function () {
+    BaseModuleHandlers.prototype.INIT = function () {
         return this.initState;
     };
-    BaseModuleActions.prototype[_b = STARTED] = function (payload) {
+    BaseModuleHandlers.prototype.STARTED = function (payload) {
         return payload;
     };
-    BaseModuleActions.prototype[_c = LOADING] = function (payload) {
+    BaseModuleHandlers.prototype.LOADING = function (payload) {
         var state = this.state;
         if (!state) {
             return state;
         }
         return __assign({}, state, { loading: __assign({}, state.loading, payload) });
     };
-    BaseModuleActions.prototype[_d = START] = function () {
+    BaseModuleHandlers.prototype.START = function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, this.put(this.STARTED(this.state))];
+                case 0: return [4 /*yield*/, this.put(this.actions.STARTED(this.state))];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -366,19 +352,23 @@ var BaseModuleActions = /** @class */ (function () {
     };
     __decorate([
         reducer
-    ], BaseModuleActions.prototype, _a, null);
+    ], BaseModuleHandlers.prototype, "INIT", null);
     __decorate([
         reducer
-    ], BaseModuleActions.prototype, _b, null);
+    ], BaseModuleHandlers.prototype, "STARTED", null);
     __decorate([
         reducer
-    ], BaseModuleActions.prototype, _c, null);
+    ], BaseModuleHandlers.prototype, "LOADING", null);
     __decorate([
         effect
-    ], BaseModuleActions.prototype, _d, null);
-    return BaseModuleActions;
-    var _a, _b, _c, _d;
+    ], BaseModuleHandlers.prototype, "START", null);
+    return BaseModuleHandlers;
 }());
+function exportModel(namespace, initState, handlers) {
+    handlers.namespace = namespace;
+    handlers.initState = initState;
+    return { namespace: namespace, handlers: handlers };
+}
 function logger(before, after) {
     return function (target, key, descriptor) {
         var fun = descriptor.value;
@@ -424,7 +414,7 @@ function effect(target, key, descriptor) {
     var fun = descriptor.value;
     fun.__isEffect__ = true;
 }
-var callPromise = function (fn) {
+function callPromise(fn) {
     var rest = [];
     for (var _i = 1; _i < arguments.length; _i++) {
         rest[_i - 1] = arguments[_i];
@@ -448,7 +438,7 @@ var callPromise = function (fn) {
         return response;
     };
     return callEffect;
-};
+}
 
 var defaultLoadingComponent = function () { return React.createElement("div", { className: "react-coat-asyncComponent-loading" }, "Loading..."); };
 var defaultErrorComponent = function (props) {
@@ -587,6 +577,7 @@ function reducer$1(state, action) {
             }
         });
         list_1.forEach(function (namespace) {
+            var _a;
             var fun = item[namespace];
             var decorators = fun.__decorators__;
             if (decorators) {
@@ -597,7 +588,7 @@ function reducer$1(state, action) {
             var result = fun(getActionData(action));
             newState_1[namespace] = result;
             MetaData.rootState = __assign({}, MetaData.rootState, { project: __assign({}, MetaData.rootState.project, (_a = {}, _a[namespace] = result, _a)) });
-            if (action.type === namespace + NSP + STARTED) {
+            if (action.type === namespace + NSP + "STARTED") {
                 // 对模块补发一次locationChange
                 setTimeout(function () {
                     if (MetaData.singleStore && hasLocationChangeHandler(namespace)) {
@@ -611,27 +602,26 @@ function reducer$1(state, action) {
                     decorator[2] = null;
                 });
             }
-            var _a;
         });
         return newState_1;
     }
     return state;
 }
 function effect$1(action) {
-    var item, list_2, _loop_1, _i, list_3, moduleName;
+    var item, list_3, _loop_1, _i, list_2, moduleName;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 item = MetaData.effectMap[action.type];
                 if (!(item && MetaData.singleStore)) return [3 /*break*/, 4];
-                list_2 = [];
+                list_3 = [];
                 Object.keys(item).forEach(function (namespace) {
                     var fun = item[namespace];
                     if (fun.__isHandler__) {
-                        list_2.push(namespace);
+                        list_3.push(namespace);
                     }
                     else {
-                        list_2.unshift(namespace);
+                        list_3.unshift(namespace);
                     }
                 });
                 _loop_1 = function (moduleName) {
@@ -674,11 +664,11 @@ function effect$1(action) {
                         }
                     });
                 };
-                _i = 0, list_3 = list_2;
+                _i = 0, list_2 = list_3;
                 _a.label = 1;
             case 1:
-                if (!(_i < list_3.length)) return [3 /*break*/, 4];
-                moduleName = list_3[_i];
+                if (!(_i < list_2.length)) return [3 /*break*/, 4];
+                moduleName = list_2[_i];
                 return [5 /*yield**/, _loop_1(moduleName)];
             case 2:
                 _a.sent();
@@ -735,25 +725,19 @@ function createApp(view, container, storeMiddlewares, storeEnhancers, reducers, 
     buildApp(view, container, storeMiddlewares, storeEnhancers, store, MetaData.history);
 }
 
-function exportModel(namespace, initState, actions) {
-    actions.namespace = namespace;
-    actions.initState = initState;
-    return { namespace: namespace, actions: actions };
-}
-
 var hasInjected = {};
 function exportViews(views, model) {
     var namespace = model.namespace;
     if (!hasInjected[namespace]) {
-        var locationChangeHandler = model.actions[LOCATION_CHANGE];
+        var locationChangeHandler = model.handlers[LOCATION_CHANGE];
         if (locationChangeHandler) {
-            model.actions[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
+            model.handlers[namespace + NSP + INIT_LOCATION] = locationChangeHandler;
         }
         var actions = getModuleActionCreatorList(namespace);
-        injectActions(namespace, model.actions, actions);
+        injectActions(namespace, model.handlers, actions);
         hasInjected[namespace] = true;
-        var initAction = actions[INIT]();
-        var startAction = actions[START]();
+        var initAction = actions.INIT();
+        var startAction = actions.START();
         var store = MetaData.singleStore;
         if (store) {
             store.dispatch(initAction);
@@ -804,12 +788,13 @@ function bindThis(fun, thisObj) {
     });
     return newFun;
 }
-function injectActions(namespace, actions, list) {
+function injectActions(namespace, handlers, list) {
+    handlers.actions = list;
     var _loop_1 = function (actionName) {
-        if (typeof actions[actionName] === "function") {
-            var handler = actions[actionName];
+        if (typeof handlers[actionName] === "function") {
+            var handler = handlers[actionName];
             if (handler.__isReducer__ || handler.__isEffect__) {
-                handler = bindThis(handler, actions);
+                handler = bindThis(handler, handlers);
                 var arr = actionName.split(NSP);
                 if (arr[1]) {
                     handler.__isHandler__ = true;
@@ -819,12 +804,11 @@ function injectActions(namespace, actions, list) {
                     handler.__isHandler__ = false;
                     transformAction(namespace + NSP + actionName, handler, namespace, handler.__isEffect__ ? MetaData.effectMap : MetaData.reducerMap);
                     list[actionName] = function (payload) { return ({ type: namespace + NSP + actionName, payload: payload }); };
-                    actions[actionName] = list[actionName];
                 }
             }
         }
     };
-    for (var actionName in actions) {
+    for (var actionName in handlers) {
         _loop_1(actionName);
     }
 }
@@ -841,8 +825,9 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
     //   }
 }
 
-exports.BaseModuleActions = BaseModuleActions;
+exports.BaseModuleHandlers = BaseModuleHandlers;
 exports.effect = effect;
+exports.exportModel = exportModel;
 exports.globalLoading = globalLoading;
 exports.loading = loading;
 exports.logger = logger;
@@ -856,7 +841,6 @@ exports.getStore = getStore;
 exports.LOCATION_CHANGE = LOCATION_CHANGE;
 exports.setLoading = setLoading;
 exports.setLoadingDepthTime = setLoadingDepthTime;
-exports.exportModel = exportModel;
 exports.exportModule = exportModule;
 exports.exportViews = exportViews;
 //# sourceMappingURL=index.js.map

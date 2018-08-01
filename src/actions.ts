@@ -1,43 +1,35 @@
 import { Action } from "redux";
 import { SagaIterator } from "redux-saga";
 import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
-import { ActionHandler, INIT, LOADING, MetaData, ModuleState, NSP, RootState, START, STARTED } from "./global";
+import { ActionHandler, ActionHandlerList, BaseModuleState, MetaData, NSP, RootState } from "./global";
 import { setLoading } from "./loading";
 
 export { PutEffect };
-export class BaseModuleActions<S extends ModuleState, R extends RootState> {
+
+export class BaseModuleHandlers<S extends BaseModuleState = any, R extends RootState = any, A extends Actions<BaseModuleHandlers> = any> {
+  protected readonly actions: A;
   protected readonly namespace: string;
   protected readonly initState: S;
-
-  protected call: typeof call = call;
-  protected callPromise: CallPromise = callPromise;
+  protected readonly put: typeof put = put;
+  protected readonly call: typeof call = call;
+  protected readonly callPromise = callPromise;
   protected get state(): S {
     return MetaData.rootState.project[this.namespace];
   }
   protected get rootState(): R {
     return MetaData.rootState as any;
   }
-  protected put(action: Action | S | SagaIterator) {
-    // let type: string = (action as any).type;
-    // const arr = type.split(NSP);
-    // if (!arr[1]) {
-    //   type = this.namespace + NSP + type;
-    //   if (MetaData.reducerMap[type] || MetaData.effectMap[type]) {
-    //     (action as any).type = type;
-    //   }
-    // }
-    return put(action as any);
-  }
+
   @reducer
-  [INIT](): S {
+  INIT(): S {
     return this.initState;
   }
   @reducer
-  [STARTED](payload: S): S {
+  STARTED(payload: S): S {
     return payload;
   }
   @reducer
-  [LOADING](payload: { [group: string]: string }): S {
+  LOADING(payload: { [group: string]: string }): S {
     const state = this.state as any;
     if (!state) {
       return state;
@@ -48,9 +40,15 @@ export class BaseModuleActions<S extends ModuleState, R extends RootState> {
     };
   }
   @effect
-  *[START](): SagaIterator {
-    yield this.put(this.STARTED(this.state));
+  *START(): SagaIterator {
+    yield this.put(this.actions.STARTED(this.state));
   }
+}
+
+export function exportModel<S, A extends { [K in keyof A]: (payload?) => S | SagaIterator }>(namespace: string, initState: S, handlers: A): { namespace: string; handlers: ActionHandlerList } {
+  (handlers as any).namespace = namespace;
+  (handlers as any).initState = initState;
+  return { namespace, handlers } as any;
 }
 export function logger(before: (action: Action, moduleName: string) => void, after: (beforeData: any, data: any) => void) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
@@ -106,18 +104,10 @@ export interface CallProxy<T> extends CallEffect {
   getResponse: () => T;
 }
 
-export interface CallPromise {
-  <T>(fn: () => Promise<T>): CallProxy<T>;
-  <T, R1, A1 extends R1>(fn: (req1: R1) => Promise<T>, arg1: A1): CallProxy<T>;
-  <T, R1, R2, A1 extends R1, A2 extends R2>(fn: (req1: R1, req2: R2) => Promise<T>, arg1: A1, arg2: A2): CallProxy<T>;
-  <T, R1, R2, R3, A1 extends R1, A2 extends R2, A3 extends R3>(fn: (req1: R1, req2: R2, req3: R3) => Promise<T>, arg1: A1, arg2: A2, arg3: A3): CallProxy<T>;
-  <T, R1, R2, R3, R4, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4>(fn: (req1: R1, req2: R2, req3: R3, req4: R4) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4): CallProxy<T>;
-  <T, R1, R2, R3, R4, R5, A1 extends R1, A2 extends R2, A3 extends R3, A4 extends R4, A5 extends R5>(fn: (req1: R1, req2: R2, req3: R3, req4: R4, req5: R5) => Promise<T>, arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5): CallProxy<T>;
-}
-export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
+export function callPromise<R, T extends any[]>(fn: (...args: T) => Promise<R>, ...rest: T): CallProxy<R> {
   let response: any;
   const proxy = (...args) => {
-    return fn(...args).then(
+    return fn(...(args as any)).then(
       res => {
         response = res;
         return response;
@@ -133,4 +123,19 @@ export const callPromise: CallPromise = (fn: (...args) => any, ...rest) => {
     return response;
   };
   return callEffect;
+}
+
+export type Actions<Ins> = {
+  [K in keyof Ins]: Ins[K] extends () => any
+    ? () => {
+        type: string;
+      }
+    : Ins[K] extends (data: infer P) => any
+      ? (
+          payload: P,
+        ) => {
+          type: string;
+          payload: P;
+        }
+      : never
 };

@@ -1,12 +1,11 @@
 import { RouterState } from "connected-react-router";
 import { History } from "history";
-import { ComponentType } from "react";
 import { Action, AnyAction, Store } from "redux";
 import { TaskCounterState as LoadingState } from "./sprite";
 export interface SingleStore {
   dispatch: (action: { type: string }) => void;
 }
-export interface ModuleState {
+export interface BaseModuleState {
   loading: { [key: string]: LoadingState };
 }
 export interface RootState<P = {}> {
@@ -36,21 +35,9 @@ export interface ActionHandlerList {
 export interface ActionHandlerMap {
   [actionName: string]: { [moduleName: string]: ActionHandler };
 }
-export interface Model {
-  namespace: string;
-  actions: ActionHandlerList;
-}
-export interface Views {
-  [viewName: string]: ComponentType<any>;
-}
-export interface ModuleViews {
-  default: Views;
-}
+
 export const ERROR = "@@framework/ERROR";
-export const LOADING = "LOADING";
-export const INIT = "INIT";
-export const START = "START";
-export const STARTED = "STARTED";
+
 export const INIT_LOCATION = "@@router/LOCATION_CHANGE";
 export const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
 export const NSP = "/";

@@ -3,7 +3,7 @@ import { History } from "history";
 import { Action, AnyAction, applyMiddleware, combineReducers, compose, createStore, Middleware, ReducersMapObject, Store } from "redux";
 import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
 import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, initLocationAction, INIT_LOCATION, MetaData, NSP, STARTED } from "./global";
+import { errorAction, initLocationAction, INIT_LOCATION, MetaData, NSP } from "./global";
 
 function hasLocationChangeHandler(moduleName: string) {
   const actionName = moduleName + NSP + INIT_LOCATION;
@@ -52,7 +52,7 @@ function reducer(state: any = {}, action: Action) {
       const result = fun(getActionData(action));
       newState[namespace] = result;
       MetaData.rootState = { ...MetaData.rootState, project: { ...MetaData.rootState.project, [namespace]: result } };
-      if (action.type === namespace + NSP + STARTED) {
+      if (action.type === namespace + NSP + "STARTED") {
         // 对模块补发一次locationChange
         setTimeout(() => {
           if (MetaData.singleStore && hasLocationChangeHandler(namespace)) {

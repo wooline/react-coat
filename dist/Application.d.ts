@@ -1,4 +1,3 @@
-/// <reference types="react" />
 import { History } from "history";
 import { ComponentType } from "react";
 import { Middleware, Store } from "redux";

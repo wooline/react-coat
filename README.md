@@ -19,13 +19,14 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - 更清晰和简单的组织结构
 - 使用 typescript 强类型推断和检查
 - 路由支持按需加载，也支持整体加载
+- 更大的灵活性和自由度，不强封装
 
 ```
 // 比如：Dva中常这样写
-dispatch({ type: 'moduleA/query', payload:{args:[10]} })
+dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
 
 //本框架中可直接利用ts类型反射和检查:
-this.dispatch(moduleA.actions.query([10]))
+dispatch(moduleA.actions.query({username:"jimmy"}))
 ```
 
 ## 安装 react-coat：
@@ -64,13 +65,13 @@ IE9 或 IE9 以上
 
 本框架依赖于浏览器 API "Promise"，低版本浏览器请自行安装 polyfill
 
-## 使用 react-coat：
+# 使用 react-coat：
 
 > 快速上手：[一个简单的 Hello Word](https://github.com/wooline/react-coat-demo-simple)
 
-> 快速上手：[使用 react-coat 重构 antd-pro](https://github.com/wooline/react-coat-antd)
+> 进阶：[使用 react-coat 重构 antd-pro](https://github.com/wooline/react-coat-antd)
 
-> 为何需要此框架？redux 实践中的痛点与总结可参考 Dva
+> 为何需要此框架？参考：[支付宝前端应用架构的发展和选择](https://github.com/sorrycc/blog/issues/6)
 
 ### Module 概念
 
@@ -116,24 +117,24 @@ createApp(appViews.Main, "root");
 
 ### Model 概念
 
-> Model 为 Module 提供数据与状态的维护和更新，**主要定义 State 和 Action**
+> Model 为 Module 提供数据与状态的维护和更新，**主要定义 ModuleState 和 ModuleActions**
 
-- State 表示本 Module 的状态，需要定义好数据结构和初始值
-- Action 表示交互操作，分为 reducer、effect，其概念与 redux 和 saga 中的定义相同
-- 原则上每个模块的 reducer 只能更新本模块的 State，但可以读取 RootState
+- ModuleState 表示本 Module 的状态，需要定义好数据结构和初始值
+- ModuleActions 表示交互操作，分为 reducer、effect，其概念与 redux 和 saga 中的定义相同
+- 原则上每个模块的 reducer 只能更新本模块的 ModuleState，但可以读取 RootState
 - reducer 和 effect 只能通过 `dispatch` 方法（在 view 中）或 `put` 方法（在 model）来触发执行
-- 将所有 reducer 和 effect 集中写在一个 ModuleActions 的 class 中
-- 对外输出 actions 和 state，供外界调用
+- 将所有 reducer 和 effect 集中写在一个 ModuleHandlers 的 class 中
+- 对外输出 ModuleActions 和 ModuleState，供外界调用
 - Model 的启动过程会触发三个特定的 Action：`INIT->START->STARTED`，它们在 BaseModuleActions 中有默认的定义，你可以通过覆盖基类中的方法来扩展或自定义，其意义如下：
-  - `INIT(): State` 它是一个 reducer，它将本模块的 initState 注入到全局 RootState 中
+  - `INIT(): ModuleState` 它是一个 reducer，它将本模块的 initState 注入到全局 RootState 中
   - `START(): SagaIterator` 它是一个 Effect，它表示本模块正在启动，你可以在此过程中去异步拉取一些外部数据，并更新当前 State
-  - `STARTED(payload: State): State` 它是一个 reducer，它表示本模块启动完毕，并更新 State，该 Action 必须在前面 `START()`Effect 中手动触发
+  - `STARTED(payload: State): ModuleState` 它是一个 reducer，它表示本模块启动完毕，并更新 ModuleState，该 Action 必须在前面 `START()`Effect 中手动触发
 
 示例一个 Model.ts 如下：
 
 ```js
 // 定义该模块的State数据结构
-interface State extends ModuleState {
+export interface ModuleState extends BaseModuleState {
   todosList: string[];
   curUser: { //用于表示当前用户状态
     uid: string;
@@ -145,7 +146,7 @@ interface State extends ModuleState {
   },
 }
 // 定义该模块的State的初始值
-const initState: State = {
+const initState: ModuleState = {
   todosList: [];
   curUser: {
     uid: "",
@@ -156,20 +157,19 @@ const initState: State = {
     login: "Stop",
   },
 });
-
-// 定义该模块的Actions
-// RootState表示全局的State，State表示本模块的State
-class ModuleActions extends BaseModuleActions<State, RootState> {
+export type ModuleActions = Actions<ModuleHandlers>;
+// 定义该模块的ActionHandlers
+class ModuleHandlers extends BaseModuleHandlers<ModuleState, RootState, ModuleActions> {
 
   // 定义一个名为updateTodosList的reducer
   @reducer
-  updateTodosList(todosList: string[]): State {
+  updateTodosList(todosList: string[]): ModuleState {
     return { ...this.state, todosList };
   }
 
   // 定义一个名为updateCurUser的reducer
   @reducer
-  setCurUser(curUser: { uid: string; username: string; }): State {
+  setCurUser(curUser: { uid: string; username: string; }): ModuleState {
     return { ...this.state, curUser };
   }
 
@@ -180,7 +180,8 @@ class ModuleActions extends BaseModuleActions<State, RootState> {
     // 调用登录api，并获取Resphonse
     const curUser = yield this.call(api.login, username, password);
     // 通过this.put触发并调用前面定义的setCurUser
-    yield this.put(this.setCurUser(curUser));
+    // *** 对于Action，包括reducer、effet不能用this.直接调用
+    yield this.put(this.actions.setCurUser(curUser));
     // 对于非Action，可以直接调用
     this.log(username);
     // 为了方便，基类中集成了routerActions
@@ -201,11 +202,13 @@ class ModuleActions extends BaseModuleActions<State, RootState> {
     yield this.call(settingsService.api.reportError, payload);
   }
   // 兼听路由变化的Action，并作出更新
+  // 因为兼听并不需要主动调用，请设置为private或protected权限
   @effect
   protected *[LOCATION_CHANGE as string](payload: { location: { pathname: string } }): SagaIterator {
     if (payload.location.pathname === "/admin/todos") {
       const todos = yield this.call(todoService.api.getTodosList);
-      yield this.put(this.updateTodosList(todos.list));
+      // *** 对于Action，包括reducer、effet不能用this.直接调用
+      yield this.put(this.actions.updateTodosList(todos.list));
     }
   }
 
@@ -216,20 +219,23 @@ class ModuleActions extends BaseModuleActions<State, RootState> {
   *START(): SagaIterator {
     const curUser = yield this.call(sessionService.api.getCurUser);
     // 必须手动触发并调用基类的STARTED Reducer
-    yield this.put(this.STARTED({ ...this.state, curUser }));
+    // *** 对于Action，包括reducer、effet不能用this.直接调用
+    yield this.put(this.actions.STARTED({ ...this.state, curUser }));
   }
 
 };
  // 创建并导出Model
-const model = exportModel(NAMESPACE, initState, new ModuleActions());
-export default model;
-
-// 导出类型Actions, State供外界使用
-type Actions = typeof model.actions;
-export { Actions, State };
+export default exportModel(NAMESPACE, initState, new ModuleHandlers());
 ```
 
-从上面示例代码中看到，在 Model 内部，触发并调用一个 Action 必须使用`this.put`，而如果在 View 中，则需要用 dispatch 方法，请看示例，在模块 A 的 View 中，dispatch 模块 B 的 action：
+> ModuleHandlers 中强调与注意事项：
+
+- 所有定义的 @reducer 和 @effect 的方法，不能直接用 this.来调用，请使用 this.put 来触发
+- @effect 的方法必须显式的返回: SagaIterator
+- 所有不需要被外界访问的方法都为辅助方法，请使用 private 或 protected 权限
+- 如果需要自已覆盖 START 启动方法，请记得在最后手动触发 STARTED
+
+从上面示例代码中看到，在 Model 内部，触发并调用一个 Action 必须使用`this.put`，而如果在 View 中，则需要用 `dispatch` 方法，请看示例，在模块 A 的 View 中，dispatch 模块 B 的 action：
 
 ```JS
 // src/modules/A/views/Main.tsx
@@ -295,47 +301,16 @@ setLoading(promise2, "app", "login");
 
 - 设置 Loading 状态有两种方法：`setLoading`和`@loading`。@loading 专门用来对 Effect 进行跟踪
 
-### 框架 API
+### API
 
-- Model 相关：
+BaseModuleState, delayPromise, ERROR, getHistory, getStore, LOCATION_CHANGE, RootState, exportModule, exportViews, LoadingState, setLoading, setLoadingDepthTime, createApp, async, SagaIterator, Actions, BaseModuleHandlers, effect, exportModel, globalLoading, loading, logger, reducer;
 
-  - `StoreState<P>` 整个 Store 的 State 类型
-  - `BaseModuleState` 模块 State 需继承此 interface
-  - `BaseModuleActions` 模块 Actions 需继承此基类，该基类拥有 saga 的 put、call 和 store 的 dispatch 和 routerActions 等方法
-  - `BaseModuleHandlers` 模块 Handlers 需继承此基类，该基类拥有 saga 的 put、call 和 store 的 dispatch 和 routerActions 等方法
-  - `buildModel(state, actions, handlers)` 创建模块的 Model
-  - `@effect()` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
-  - `@buildlogger(beforeFun, afterFun)` 装饰器，在该 Action 的执行前后各留下勾子
-
-- View 相关
-
-  - `buildViews(namespace, views, model)` 创建模块的对外调用接口
-
-- 模块调用相关
-
-  - `createApp(component, container, storeMiddlewares?, storeEnhancers?, reducers?, storeHistory?)` 创建 App
-  - `buildModule(namespace)` 创建模块的对外调用接口
-  - `getStore()` 获取全局的 Redux Store
-  - `asyncComponent(ModuleViews, componentName, LoadingComponent, ErrorComponent)` 异步加载模块的视图
-  - `getHistory()` 获取全局的 history
-
-- Loading 相关
-  - `@effect(moduleName, group)` 装饰器，指明该 Action 为异步 Effect，并可注入 loading 状态
-  - `setLoading(promiseItem, moduleName, group)` 用函数的方式设置 loading
-  - `LoadingState` loading 的三种状态
-  - `setLoadingDepthTime(second)` 设置 Loading 等待多少秒后转 Depth 状态
-
-### FAQ
+### 后记
 
 - `使用本框架必须使用typescript吗？`
 
   答：推荐使用 typescript，可以做到智能提示，但也可以直接使用原生 JS
 
-- `框架能用于生产环境吗，会一直维护吗？`
-  答：本人会持续升级维护。区别于某些强侵入型框架，本微框架原理简单，核心代码也就百多行，无过多封装。
-
-### 后记
-
-> 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈或 Email：wooline@qq.com
+  > 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈或 Email：wooline@qq.com
 
 > [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
