@@ -1,4 +1,4 @@
-react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以约定替代某些配置，固化某些最佳实践方案，从而提供给开发者一个更简洁的糖衣外套。
+react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
 ## 3.0.0 发布：
 
@@ -122,10 +122,11 @@ createApp(appViews.Main, "root");
 - ModuleState 表示本 Module 的状态，需要定义好数据结构和初始值
 - ModuleActions 表示交互操作，分为 reducer、effect，其概念与 redux 和 saga 中的定义相同
 - 原则上每个模块的 reducer 只能更新本模块的 ModuleState，但可以读取 RootState
+- 支持一个 module 以观察者模式对外界的 action 进行兼听，但兼听者仍然只能修改本 module 的 State
 - reducer 和 effect 只能通过 `dispatch` 方法（在 view 中）或 `put` 方法（在 model）来触发执行
 - 将所有 reducer 和 effect 集中写在一个 ModuleHandlers 的 class 中
 - 对外输出 ModuleActions 和 ModuleState，供外界调用
-- Model 的启动过程会触发三个特定的 Action：`INIT->START->STARTED`，它们在 BaseModuleActions 中有默认的定义，你可以通过覆盖基类中的方法来扩展或自定义，其意义如下：
+- Model 的启动过程会触发三个特定的 Action：`INIT->START->STARTED`，它们在 BaseModuleHandlers 中有默认的定义，你可以通过覆盖基类中的方法来扩展或自定义，其意义如下：
   - `INIT(): ModuleState` 它是一个 reducer，它将本模块的 initState 注入到全局 RootState 中
   - `START(): SagaIterator` 它是一个 Effect，它表示本模块正在启动，你可以在此过程中去异步拉取一些外部数据，并更新当前 State
   - `STARTED(payload: State): ModuleState` 它是一个 reducer，它表示本模块启动完毕，并更新 ModuleState，该 Action 必须在前面 `START()`Effect 中手动触发
