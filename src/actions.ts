@@ -1,35 +1,40 @@
+import { routerActions } from "connected-react-router";
 import { Action } from "redux";
 import { SagaIterator } from "redux-saga";
 import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
-import { ActionHandler, ActionHandlerList, BaseModuleState, MetaData, NSP, RootState } from "./global";
+import { ActionHandler, ActionHandlerList, BaseModuleState, getModuleActionCreatorList, MetaData, NSP, RootState } from "./global";
 import { setLoading } from "./loading";
 
 export { PutEffect };
 
-export class BaseModuleHandlers<S extends BaseModuleState = any, R extends RootState = any, A extends Actions<BaseModuleHandlers> = any> {
-  protected readonly actions: A;
+export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
   protected readonly namespace: string;
   protected readonly initState: S;
   protected readonly put: typeof put = put;
   protected readonly call: typeof call = call;
   protected readonly callPromise = callPromise;
+  protected readonly routerActions: typeof routerActions = routerActions;
+
   protected get state(): S {
     return MetaData.rootState.project[this.namespace];
   }
   protected get rootState(): R {
     return MetaData.rootState as any;
   }
-
+  protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): { type: string } {
+    const actions = getModuleActionCreatorList(this.namespace);
+    return actions[(handler as ActionHandler).__actionName__](rest[0]);
+  }
   @reducer
-  INIT(): S {
+  protected INIT(): S {
     return this.initState;
   }
   @reducer
-  STARTED(payload: S): S {
+  protected STARTED(payload: S): S {
     return payload;
   }
   @reducer
-  LOADING(payload: { [group: string]: string }): S {
+  protected LOADING(payload: { [group: string]: string }): S {
     const state = this.state as any;
     if (!state) {
       return state;
@@ -40,8 +45,8 @@ export class BaseModuleHandlers<S extends BaseModuleState = any, R extends RootS
     };
   }
   @effect
-  *START(): SagaIterator {
-    yield this.put(this.actions.STARTED(this.state));
+  protected *START(): SagaIterator {
+    yield this.put(this.callThisAction(this.STARTED, this.state));
   }
 }
 
@@ -91,13 +96,16 @@ export function loading(loadingKey: string = "app/global") {
   };
 }
 export const globalLoading = loading();
+export const moduleLoading = loading("global");
 
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
+  fun.__actionName__ = key;
   fun.__isReducer__ = true;
 }
 export function effect(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
+  fun.__actionName__ = key;
   fun.__isEffect__ = true;
 }
 export interface CallProxy<T> extends CallEffect {

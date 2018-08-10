@@ -4,10 +4,10 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var connectedReactRouter = require('connected-react-router');
 var effects = require('redux-saga/effects');
 var React = _interopDefault(require('react'));
 var reactRedux = require('react-redux');
-var connectedReactRouter = require('connected-react-router');
 var ReactDOM = _interopDefault(require('react-dom'));
 var reactRouterDom = require('react-router-dom');
 var redux = require('redux');
@@ -143,6 +143,16 @@ function getStore() {
 }
 function getHistory() {
     return MetaData.history;
+}
+function getModuleActionCreatorList(namespace) {
+    if (MetaData.actionCreatorMap[namespace]) {
+        return MetaData.actionCreatorMap[namespace];
+    }
+    else {
+        var obj = {};
+        MetaData.actionCreatorMap[namespace] = obj;
+        return obj;
+    }
 }
 
 function emptyObject(obj) {
@@ -306,12 +316,18 @@ function setLoading(item, namespace, group) {
     loadings[key].addItem(item);
     return item;
 }
+(function (LoadingState) {
+    LoadingState["Start"] = "Start";
+    LoadingState["Stop"] = "Stop";
+    LoadingState["Depth"] = "Depth";
+})(exports.LoadingState || (exports.LoadingState = {}));
 
 var BaseModuleHandlers = /** @class */ (function () {
     function BaseModuleHandlers() {
         this.put = effects.put;
         this.call = effects.call;
         this.callPromise = callPromise;
+        this.routerActions = connectedReactRouter.routerActions;
     }
     Object.defineProperty(BaseModuleHandlers.prototype, "state", {
         get: function () {
@@ -327,6 +343,14 @@ var BaseModuleHandlers = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    BaseModuleHandlers.prototype.callThisAction = function (handler) {
+        var rest = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            rest[_i - 1] = arguments[_i];
+        }
+        var actions = getModuleActionCreatorList(this.namespace);
+        return actions[handler.__actionName__](rest[0]);
+    };
     BaseModuleHandlers.prototype.INIT = function () {
         return this.initState;
     };
@@ -343,7 +367,7 @@ var BaseModuleHandlers = /** @class */ (function () {
     BaseModuleHandlers.prototype.START = function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, this.put(this.actions.STARTED(this.state))];
+                case 0: return [4 /*yield*/, this.put(this.callThisAction(this.STARTED, this.state))];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];
@@ -406,12 +430,15 @@ function loading(loadingKey) {
     };
 }
 var globalLoading = loading();
+var moduleLoading = loading("global");
 function reducer(target, key, descriptor) {
     var fun = descriptor.value;
+    fun.__actionName__ = key;
     fun.__isReducer__ = true;
 }
 function effect(target, key, descriptor) {
     var fun = descriptor.value;
+    fun.__actionName__ = key;
     fun.__isEffect__ = true;
 }
 function callPromise(fn) {
@@ -771,16 +798,6 @@ function exportModule(namespace) {
         actions: actions,
     };
 }
-function getModuleActionCreatorList(namespace) {
-    if (MetaData.actionCreatorMap[namespace]) {
-        return MetaData.actionCreatorMap[namespace];
-    }
-    else {
-        var obj = {};
-        MetaData.actionCreatorMap[namespace] = obj;
-        return obj;
-    }
-}
 function bindThis(fun, thisObj) {
     var newFun = fun.bind(thisObj);
     Object.keys(fun).forEach(function (key) {
@@ -789,7 +806,6 @@ function bindThis(fun, thisObj) {
     return newFun;
 }
 function injectActions(namespace, handlers, list) {
-    handlers.actions = list;
     var _loop_1 = function (actionName) {
         if (typeof handlers[actionName] === "function") {
             var handler = handlers[actionName];
@@ -829,6 +845,7 @@ exports.BaseModuleHandlers = BaseModuleHandlers;
 exports.effect = effect;
 exports.exportModel = exportModel;
 exports.globalLoading = globalLoading;
+exports.moduleLoading = moduleLoading;
 exports.loading = loading;
 exports.logger = logger;
 exports.reducer = reducer;

@@ -1,5 +1,5 @@
-import { ActionCreatorList, ActionHandler, ActionHandlerMap, INIT_LOCATION, LOCATION_CHANGE, MetaData, NSP, ActionHandlerList } from "./global";
 import { ComponentType } from "react";
+import { ActionCreatorList, ActionHandler, ActionHandlerList, ActionHandlerMap, getModuleActionCreatorList, INIT_LOCATION, LOCATION_CHANGE, MetaData, NSP } from "./global";
 const hasInjected: { [moduleName: string]: boolean } = {};
 
 export function exportViews<T>(views: T, model: { namespace: string; handlers: ActionHandlerList }) {
@@ -45,15 +45,7 @@ export function exportModule<T>(namespace: string) {
     actions,
   };
 }
-function getModuleActionCreatorList(namespace: string) {
-  if (MetaData.actionCreatorMap[namespace]) {
-    return MetaData.actionCreatorMap[namespace];
-  } else {
-    const obj = {};
-    MetaData.actionCreatorMap[namespace] = obj;
-    return obj;
-  }
-}
+
 function bindThis(fun: ActionHandler, thisObj) {
   const newFun = fun.bind(thisObj);
   Object.keys(fun).forEach(key => {
@@ -63,7 +55,6 @@ function bindThis(fun: ActionHandler, thisObj) {
   return newFun as ActionHandler;
 }
 function injectActions(namespace: string, handlers: ActionHandlerList, list: ActionCreatorList) {
-  handlers.actions = list as any;
   for (const actionName in handlers) {
     if (typeof handlers[actionName] === "function") {
       let handler = handlers[actionName];

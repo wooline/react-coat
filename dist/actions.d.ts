@@ -1,23 +1,27 @@
+import { routerActions } from "connected-react-router";
 import { Action } from "redux";
 import { SagaIterator } from "redux-saga";
 import { call, CallEffect, put, PutEffect } from "redux-saga/effects";
 import { ActionHandlerList, BaseModuleState, RootState } from "./global";
 export { PutEffect };
-export declare class BaseModuleHandlers<S extends BaseModuleState = any, R extends RootState = any, A extends Actions<BaseModuleHandlers> = any> {
-    protected readonly actions: A;
+export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
     protected readonly namespace: string;
     protected readonly initState: S;
     protected readonly put: typeof put;
     protected readonly call: typeof call;
     protected readonly callPromise: typeof callPromise;
+    protected readonly routerActions: typeof routerActions;
     protected readonly state: S;
     protected readonly rootState: R;
-    INIT(): S;
-    STARTED(payload: S): S;
-    LOADING(payload: {
+    protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): {
+        type: string;
+    };
+    protected INIT(): S;
+    protected STARTED(payload: S): S;
+    protected LOADING(payload: {
         [group: string]: string;
     }): S;
-    START(): SagaIterator;
+    protected START(): SagaIterator;
 }
 export declare function exportModel<S, A extends {
     [K in keyof A]: (payload?: any) => S | SagaIterator;
@@ -28,6 +32,7 @@ export declare function exportModel<S, A extends {
 export declare function logger(before: (action: Action, moduleName: string) => void, after: (beforeData: any, data: any) => void): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function loading(loadingKey?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare const globalLoading: (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare const moduleLoading: (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): void;
 export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): void;
 export interface CallProxy<T> extends CallEffect {

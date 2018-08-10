@@ -1,12 +1,11 @@
 import { RouterState } from "connected-react-router";
 import { History } from "history";
 import { Action, AnyAction, Store } from "redux";
-import { TaskCounterState as LoadingState } from "./sprite";
 export interface SingleStore {
   dispatch: (action: { type: string }) => void;
 }
 export interface BaseModuleState {
-  loading: { [key: string]: LoadingState };
+  loading: {};
 }
 export interface RootState<P = {}> {
   router: RouterState;
@@ -22,6 +21,7 @@ export interface ActionCreatorList {
 export type ActionCreator = (payload?) => Action;
 
 export interface ActionHandler {
+  __actionName__: string;
   __isReducer__?: boolean;
   __isEffect__?: boolean;
   __isHandler__?: boolean;
@@ -93,4 +93,13 @@ export function getStore<S = any, A extends Action = AnyAction>(): Store<S, A> {
 }
 export function getHistory(): History {
   return MetaData.history;
+}
+export function getModuleActionCreatorList(namespace: string) {
+  if (MetaData.actionCreatorMap[namespace]) {
+    return MetaData.actionCreatorMap[namespace];
+  } else {
+    const obj = {};
+    MetaData.actionCreatorMap[namespace] = obj;
+    return obj;
+  }
 }

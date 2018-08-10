@@ -8,7 +8,7 @@ let depthTime: number = 2;
 export function setLoadingDepthTime(second: number) {
   depthTime = second;
 }
-export function setLoading<T>(item: T, namespace: string = "app", group: string = "global"): T {
+export function setLoading<T extends Promise<any>>(item: T, namespace: string = "app", group: string = "global"): T {
   const key = namespace + "/" + group;
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
@@ -22,4 +22,9 @@ export function setLoading<T>(item: T, namespace: string = "app", group: string 
   }
   loadings[key].addItem(item as any);
   return item;
+}
+export enum LoadingState {
+  Start = "Start",
+  Stop = "Stop",
+  Depth = "Depth",
 }

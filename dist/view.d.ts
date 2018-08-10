@@ -1,5 +1,5 @@
-import { ActionHandlerList } from "./global";
 import { ComponentType } from "react";
+import { ActionHandlerList } from "./global";
 export declare function exportViews<T>(views: T, model: {
     namespace: string;
     handlers: ActionHandlerList;

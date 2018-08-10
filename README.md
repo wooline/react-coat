@@ -4,6 +4,19 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 - 基于 2.0 的基本概念，进一步简化和清晰 API 的定义
 
+## 3.1.0 发布：
+
+- 对 ModuleAction 增加权限控制，对外暴露的 action 请使用 public 权限，model 内部调用的私有 action 请使用 protected 或 private 权限
+- model 内部触发自已的 action，不再使用 this.actions.xxx()，改为：this.callThisAction(this.xxx)
+
+```JS
+ //3.0.0
+yield this.put(this.actions.STARTED(this.state));
+
+ //3.1.0
+ yield this.put(this.callThisAction(this.STARTED, this.state));
+```
+
 ## react-coat 特点：
 
 - 集成 react、redux、redux-saga、react-router、history 等相关框架
@@ -158,73 +171,79 @@ const initState: ModuleState = {
     login: "Stop",
   },
 });
-export type ModuleActions = Actions<ModuleHandlers>;
+
 // 定义该模块的ActionHandlers
-class ModuleHandlers extends BaseModuleHandlers<ModuleState, RootState, ModuleActions> {
+class ModuleHandlers extends BaseModuleHandlers<ModuleState, RootState> {
 
-  // 定义一个名为updateTodosList的reducer
-  @reducer
-  updateTodosList(todosList: string[]): ModuleState {
-    return { ...this.state, todosList };
-  }
-
-  // 定义一个名为updateCurUser的reducer
-  @reducer
-  setCurUser(curUser: { uid: string; username: string; }): ModuleState {
-    return { ...this.state, curUser };
-  }
-
-  // 定义一个名为login的effect
+  // 定义一个名为 login 的 effect
+  // 暴露给外界使用，使用 public 权限
   @effect
-  @loading("login") // 将该effect的loading状态注入State.loading.login中
+  @loading("login") // 将该 effect 的 loading 状态注入 State.loading.login 中
   *login({username,password}:{ username: string; password: string }): SagaIterator {
-    // 调用登录api，并获取Resphonse
+    // 调用登录api，并获取 Resphonse
     const curUser = yield this.call(api.login, username, password);
-    // 通过this.put触发并调用前面定义的setCurUser
-    // *** 对于Action，包括reducer、effet不能用this.直接调用
-    yield this.put(this.actions.setCurUser(curUser));
-    // 对于非Action，可以直接调用
+    // 通过 this.put 触发并调用前面定义的 setCurUser
+    // *** 对于 Action，包括 reducer、effet 不能用 this. 直接调用
+    yield this.put(this.callThisAction(this.setCurUser, curUser));
+    // 对于非 Action，可以直接调用
     this.log(username);
-    // 为了方便，基类中集成了routerActions
-    // 包括history方法push,replace,go,goBack,goForward
+    // 为了方便，基类中集成了 routerActions
+    // 包括 history 方法 push,replace,go,goBack,goForward
     yield this.put(this.routerActions.push("/"));
   }
 
-  // 非Action请使用private或protected权限
+
+  // 定义一个名为 updateTodosList 的 reducer
+  // 仅内部使用，使用 protected 权限
+  @reducer
+  protected updateTodosList(todosList: string[]): ModuleState {
+    return { ...this.state, todosList };
+  }
+
+  // 定义一个名为 updateCurUser 的 reducer
+  // 仅内部使用，使用 protected 权限
+  @reducer
+  protected setCurUser(curUser: { uid: string; username: string; }): ModuleState {
+    return { ...this.state, curUser };
+  }
+
+  // 非Action请使用 private 或 protected 权限
   private log(username: string){
     console.log(`${username} 已登录！`)
   }
 
-  // 可以兼听另一个模块的 Action 来协同修改本模块的 State, 可以是reducer或effect
-  // 以观察者模式对全局的"错误Action："@framework/ERROR"兼听，并上报后台
-  // 因为兼听并不需要主动调用，请设置为private或protected权限
+  // 可以兼听另一个模块的 Action 来协同修改本模块的 State, 可以是 reducer 或 effect
+  // 以观察者模式对全局的"错误 Action："@framework/ERROR"兼听，并上报后台
+  // 因为兼听并不需要主动调用，请设置为 private 或 protected 权限
   @effect
   protected *[ERROR as string](payload: Error): SagaIterator {
     yield this.call(settingsService.api.reportError, payload);
   }
-  // 兼听路由变化的Action，并作出更新
-  // 因为兼听并不需要主动调用，请设置为private或protected权限
+  // 兼听路由变化的 Action，并作出更新
+  // 因为兼听并不需要主动调用，请设置为 private 或 protected 权限
   @effect
   protected *[LOCATION_CHANGE as string](payload: { location: { pathname: string } }): SagaIterator {
     if (payload.location.pathname === "/admin/todos") {
       const todos = yield this.call(todoService.api.getTodosList);
-      // *** 对于Action，包括reducer、effet不能用this.直接调用
-      yield this.put(this.actions.updateTodosList(todos.list));
+      // *** 对于 Action，包括 reducer、effet 不能用 this. 直接调用
+      yield this.put(this.callThisAction(this.updateTodosList, todos.list));
     }
   }
 
-  // 自定义启动项，覆盖基类默认的START Effect
+  // 自定义启动项，覆盖基类默认的 START Effect
   // 初次进入，需要获取当前用户的信息
   @effect
-  @globalLoading // 使用全局loading状态
-  *START(): SagaIterator {
+  @globalLoading // 使用全局 loading 状态
+  protected *START(): SagaIterator {
     const curUser = yield this.call(sessionService.api.getCurUser);
-    // 必须手动触发并调用基类的STARTED Reducer
-    // *** 对于Action，包括reducer、effet不能用this.直接调用
-    yield this.put(this.actions.STARTED({ ...this.state, curUser }));
+    // 必须手动触发并调用基类的 STARTED Reducer
+    // *** 对于Action，包括 reducer、effet不能用 this. 直接调用
+    yield this.put(this.callThisAction(this.STARTED, { ...this.state, curUser }));
   }
 
 };
+// 导出 ModuleActions
+export type ModuleActions = Actions<ModuleHandlers>;
  // 创建并导出Model
 export default exportModel(NAMESPACE, initState, new ModuleHandlers());
 ```
@@ -300,11 +319,15 @@ setLoading(promise2, "app", "login");
 
 - 每个 loading 状态有三种变化值：Start、Depth、Stop，Depth 表示深度加载，当超过一定时间，默认为 2 秒，还没有返回，则过渡为 Depth 状态
 
-- 设置 Loading 状态有两种方法：`setLoading`和`@loading`。@loading 专门用来对 Effect 进行跟踪
+- 设置 Loading 状态有两种方法：函数方法、装饰器
+
+- 函数方法：setLoading<T extends Promise<any>>(item: T, namespace?: string, group?: string): T;
+
+- 装饰器方法仅用于对 effect 进行注入，@globalLoading, @moduleLoading, @loading(key="app/global")
 
 ### API
 
-BaseModuleState, delayPromise, ERROR, getHistory, getStore, LOCATION_CHANGE, RootState, exportModule, exportViews, LoadingState, setLoading, setLoadingDepthTime, createApp, async, SagaIterator, Actions, BaseModuleHandlers, effect, exportModel, globalLoading, loading, logger, reducer;
+BaseModuleState, delayPromise, ERROR, getHistory, getStore, LOCATION_CHANGE, RootState, exportModule, exportViews, LoadingState, setLoading, setLoadingDepthTime, createApp, async, SagaIterator, Actions, BaseModuleHandlers, effect, exportModel, globalLoading, moduleLoading, loading, logger, reducer;
 
 ### 后记
 

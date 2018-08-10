@@ -1,16 +1,13 @@
 import { RouterState } from "connected-react-router";
 import { History } from "history";
 import { Action, AnyAction, Store } from "redux";
-import { TaskCounterState as LoadingState } from "./sprite";
 export interface SingleStore {
     dispatch: (action: {
         type: string;
     }) => void;
 }
 export interface BaseModuleState {
-    loading: {
-        [key: string]: LoadingState;
-    };
+    loading: {};
 }
 export interface RootState<P = {}> {
     router: RouterState;
@@ -24,6 +21,7 @@ export interface ActionCreatorList {
 }
 export declare type ActionCreator = (payload?: any) => Action;
 export interface ActionHandler {
+    __actionName__: string;
     __isReducer__?: boolean;
     __isEffect__?: boolean;
     __isHandler__?: boolean;
@@ -62,3 +60,4 @@ export declare function initLocationAction(namespace: string, payload: any): {
 export declare function delayPromise(second: number): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export declare function getStore<S = any, A extends Action = AnyAction>(): Store<S, A>;
 export declare function getHistory(): History;
+export declare function getModuleActionCreatorList(namespace: string): ActionCreatorList;
