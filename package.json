@@ -1,6 +1,6 @@
 {
   "name": "react-coat",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "A Micro-Framework for React + Redux + Redux-Saga + React-Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
