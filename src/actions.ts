@@ -21,7 +21,7 @@ export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> 
   protected get rootState(): R {
     return MetaData.rootState as any;
   }
-  protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): { type: string } {
+  protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): { type: string; playload?: any } {
     const actions = getModuleActionCreatorList(this.namespace);
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }

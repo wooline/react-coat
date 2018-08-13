@@ -15,6 +15,7 @@ export declare class BaseModuleHandlers<S extends BaseModuleState, R extends Roo
     protected readonly rootState: R;
     protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): {
         type: string;
+        playload?: any;
     };
     protected INIT(): S;
     protected STARTED(payload: S): S;
