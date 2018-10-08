@@ -29,12 +29,24 @@ export function async(resolve: () => Promise<ModuleViews>, componentName: string
       return nextState.Component !== this.state.Component;
     }
     public componentDidMount() {
+      const now = new Date().getTime();
       const promise = resolve()
         .then(module => {
           const Component = module.default[componentName];
-          this.setState({
-            Component,
-          });
+          const du = new Date().getTime() - now;
+          if (du > 100 && du < 2000) {
+            setTimeout(
+              () =>
+                this.setState({
+                  Component,
+                }),
+              2000,
+            );
+          } else {
+            this.setState({
+              Component,
+            });
+          }
         })
         .catch(errorData => {
           this.errorMessage = errorData.message;

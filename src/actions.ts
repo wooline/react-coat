@@ -21,7 +21,7 @@ export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> 
   protected get rootState(): R {
     return MetaData.rootState as any;
   }
-  protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): { type: string; playload?: any } {
+  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): { type: string; playload?: any } {
     const actions = getModuleActionCreatorList(this.namespace);
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }
@@ -102,11 +102,15 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
   const fun = descriptor.value as ActionHandler;
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
+  descriptor.enumerable = true;
+  return descriptor;
 }
 export function effect(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__actionName__ = key;
   fun.__isEffect__ = true;
+  descriptor.enumerable = true;
+  return descriptor;
 }
 export interface CallProxy<T> extends CallEffect {
   getResponse: () => T;

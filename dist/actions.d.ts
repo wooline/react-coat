@@ -13,7 +13,7 @@ export declare class BaseModuleHandlers<S extends BaseModuleState, R extends Roo
     protected readonly routerActions: typeof routerActions;
     protected readonly state: S;
     protected readonly rootState: R;
-    protected callThisAction<T extends any[]>(handler: (...args: T) => S | SagaIterator, ...rest: T): {
+    protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;
         playload?: any;
     };
@@ -34,8 +34,8 @@ export declare function logger(before: (action: Action, moduleName: string) => v
 export declare function loading(loadingKey?: string): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare const globalLoading: (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare const moduleLoading: (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): void;
-export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): void;
+export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
+export declare function effect(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
 export interface CallProxy<T> extends CallEffect {
     getResponse: () => T;
 }

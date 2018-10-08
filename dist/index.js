@@ -435,11 +435,15 @@ function reducer(target, key, descriptor) {
     var fun = descriptor.value;
     fun.__actionName__ = key;
     fun.__isReducer__ = true;
+    descriptor.enumerable = true;
+    return descriptor;
 }
 function effect(target, key, descriptor) {
     var fun = descriptor.value;
     fun.__actionName__ = key;
     fun.__isEffect__ = true;
+    descriptor.enumerable = true;
+    return descriptor;
 }
 function callPromise(fn) {
     var rest = [];
@@ -493,12 +497,23 @@ function async(resolve, componentName, defLoadingComponent, ErrorComponent) {
         };
         AsyncComponent.prototype.componentDidMount = function () {
             var _this = this;
+            var now = new Date().getTime();
             var promise = resolve()
                 .then(function (module) {
                 var Component = module.default[componentName];
-                _this.setState({
-                    Component: Component,
-                });
+                var du = new Date().getTime() - now;
+                if (du > 100 && du < 2000) {
+                    setTimeout(function () {
+                        return _this.setState({
+                            Component: Component,
+                        });
+                    }, 2000);
+                }
+                else {
+                    _this.setState({
+                        Component: Component,
+                    });
+                }
             })
                 .catch(function (errorData) {
                 _this.errorMessage = errorData.message;
