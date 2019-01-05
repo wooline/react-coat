@@ -1,140 +1,186 @@
-import { connectRouter, routerMiddleware } from "connected-react-router";
-import { History } from "history";
-import { Action, AnyAction, applyMiddleware, combineReducers, compose, createStore, Middleware, ReducersMapObject, Store } from "redux";
-import createSagaMiddleware, { SagaMiddleware } from "redux-saga";
-import { put, takeEvery } from "redux-saga/effects";
-import { errorAction, initLocationAction, INIT_LOCATION, MetaData, NSP } from "./global";
+import {connectRouter, routerMiddleware} from "connected-react-router";
+import {History} from "history";
+import {applyMiddleware, compose, createStore, Middleware, ReducersMapObject, StoreEnhancer} from "redux";
+import {Action, LOADING, LOCATION_CHANGE, MetaData, ModelStore, NSP, RootState, errorAction} from "./global";
 
-function hasLocationChangeHandler(moduleName: string) {
-  const actionName = moduleName + NSP + INIT_LOCATION;
-  return !!MetaData.effectMap[actionName] || !!MetaData.reducerMap[actionName];
-}
-function getActionData(action: {}) {
-  const arr = Object.keys(action).filter(key => key !== "type");
+function getActionData(action: Action) {
+  const arr = Object.keys(action).filter(key => key !== "type" && key !== "priority" && key !== "time");
   if (arr.length === 0) {
     return undefined;
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    const data = { ...action };
+    const data = {...action};
     delete data["type"];
+    delete data["priority"];
+    delete data["time"];
     return data;
   }
 }
-function rootReducer(combineReducer: Function) {
-  return (state: any | undefined, action: Action) => {
-    MetaData.rootState = state || {};
-    MetaData.rootState = combineReducer(state, action);
-    return MetaData.rootState;
+
+export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
+
+export function buildStore(storeHistory: History, reducersMapObject: ReducersMapObject<any, any> = {}, storeMiddlewares: Middleware[] = [], storeEnhancers: StoreEnhancer[] = [], initData: any = {}, routerParser?: RouterParser): ModelStore {
+  let store: ModelStore;
+  const combineReducers = (rootState: RootState, action: Action) => {
+    if (!store) {
+      return rootState;
+    }
+    const reactCoat = store.reactCoat;
+    reactCoat.prevState = rootState;
+    const currentState = {...rootState} as RootState;
+    reactCoat.currentState = currentState;
+
+    Object.keys(reducersMapObject).forEach(namespace => {
+      currentState[namespace] = reducersMapObject[namespace](currentState[namespace], action);
+      if (namespace === "router" && routerParser && rootState.router !== currentState.router) {
+        currentState.router = routerParser(currentState.router, rootState.router);
+      }
+    });
+
+    const handlersCommon = reactCoat.reducerMap[action.type] || {};
+    const handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
+    const handlers = {...handlersCommon, ...handlersEvery};
+    const handlerModules = Object.keys(handlers);
+
+    if (handlerModules.length > 0) {
+      const orderList: string[] = action.priority ? [...action.priority] : [];
+      handlerModules.forEach(namespace => {
+        const fun = handlers[namespace];
+        if (fun.__isHandler__) {
+          orderList.push(namespace);
+        } else {
+          orderList.unshift(namespace);
+        }
+      });
+      const moduleNameMap: {[key: string]: boolean} = {};
+      orderList.forEach(namespace => {
+        if (!moduleNameMap[namespace]) {
+          moduleNameMap[namespace] = true;
+          const fun = handlers[namespace];
+          currentState[namespace] = fun(getActionData(action));
+        }
+      });
+    }
+    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(namespace => rootState[namespace] !== currentState[namespace]);
+    reactCoat.prevState = changed ? currentState : rootState;
+    return reactCoat.prevState;
   };
-}
-function reducer(state: any = {}, action: Action) {
-  const item = MetaData.reducerMap[action.type];
-  if (item && MetaData.singleStore) {
-    const newState = { ...state };
-    const list: string[] = [];
-    Object.keys(item).forEach(namespace => {
-      const fun = item[namespace];
-      if (fun.__isHandler__) {
-        list.push(namespace);
-      } else {
-        list.unshift(namespace);
-      }
-    });
-    list.forEach(namespace => {
-      const fun = item[namespace];
-      const decorators: Array<[(action: Action, moduleName: string) => any, (data: any, state: any) => void, any]> = fun.__decorators__;
-      if (decorators) {
-        decorators.forEach(decorator => {
-          decorator[2] = decorator[0](action, namespace);
-        });
-      }
-      const result = fun(getActionData(action));
-      newState[namespace] = result;
-      MetaData.rootState = { ...MetaData.rootState, project: { ...MetaData.rootState.project, [namespace]: result } };
-      if (action.type === namespace + NSP + "STARTED") {
-        // 对模块补发一次locationChange
-        setTimeout(() => {
-          if (MetaData.singleStore && hasLocationChangeHandler(namespace)) {
-            MetaData.singleStore.dispatch(initLocationAction(namespace, MetaData.rootState.router));
-          }
-        }, 0);
-      }
-      if (decorators) {
-        decorators.forEach(decorator => {
-          decorator[1](decorator[2], newState[namespace]);
-          decorator[2] = null;
-        });
-      }
-    });
-    return newState;
-  }
-  return state;
-}
-function* effect(action: Action) {
-  const item = MetaData.effectMap[action.type];
-  if (item && MetaData.singleStore) {
-    const list: string[] = [];
-    Object.keys(item).forEach(namespace => {
-      const fun = item[namespace];
-      if (fun.__isHandler__) {
-        list.push(namespace);
-      } else {
-        list.unshift(namespace);
-      }
-    });
-    for (const moduleName of list) {
-      const fun = item[moduleName];
-      const decorators: Array<[(action: Action, moduleName: string) => any, (data: any, error?: Error) => void, any]> | null = fun.__decorators__;
-      let err: Error | undefined;
-      if (decorators) {
-        decorators.forEach(decorator => {
-          decorator[2] = decorator[0](action, moduleName);
-        });
-      }
-      try {
-        yield* fun(getActionData(action));
-      } catch (error) {
-        err = error;
-      }
-      if (err) {
-        yield put(errorAction(err));
-      }
-      if (decorators) {
-        decorators.forEach(decorator => {
-          decorator[1](decorator[2], err);
-          decorator[2] = null;
-        });
+  const effectMiddleware = ({dispatch}: {dispatch: Function}) => (next: Function) => (originalAction: Action) => {
+    if (!MetaData.isBrowser) {
+      if (originalAction.type.split(NSP)[1] === LOADING) {
+        return originalAction;
       }
     }
-  }
-}
-function* saga() {
-  yield takeEvery("*", effect);
-}
-export function buildStore(storeHistory: History, reducers: ReducersMapObject, storeMiddlewares: Middleware[], storeEnhancers: Function[]) {
-  let devtools = (options: any) => (noop: any) => noop;
-  if (process.env.NODE_ENV !== "production" && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
-    devtools = window["__REDUX_DEVTOOLS_EXTENSION__"];
-  }
-  if (reducers.router || reducers.project) {
-    throw new Error("the reducer name 'router' 'project' is not allowed");
-  }
-  reducers.project = reducer;
-  const routingMiddleware = routerMiddleware(storeHistory);
-  const sagaMiddleware: SagaMiddleware<any> = createSagaMiddleware();
-  const middlewares = [...storeMiddlewares, routingMiddleware, sagaMiddleware];
-  const enhancers = [...storeEnhancers, applyMiddleware(...middlewares), devtools(window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"])];
-  const store: Store<any, AnyAction> = createStore(rootReducer(connectRouter(storeHistory)(combineReducers(reducers))), {}, compose(...enhancers));
-  MetaData.singleStore = store;
-  sagaMiddleware.run(saga);
-  window.onerror = (message: string, filename?: string, lineno?: number, colno?: number, error?: Error) => {
-    store.dispatch(errorAction(error || { message }));
+    // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
+    if (originalAction.type === LOCATION_CHANGE && !store.reactCoat.routerInited) {
+      store.reactCoat.routerInited = true;
+      return originalAction;
+    }
+    const action: Action = next(originalAction);
+    if (!action) {
+      return null;
+    }
+    const handlersCommon = store.reactCoat.effectMap[action.type] || {};
+    const handlersEvery = store.reactCoat.effectMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
+    const handlers = {...handlersCommon, ...handlersEvery};
+    const handlerModules = Object.keys(handlers);
+
+    if (handlerModules.length > 0) {
+      const orderList: string[] = action.priority ? [...action.priority] : [];
+      handlerModules.forEach(namespace => {
+        const fun = handlers[namespace];
+        if (fun.__isHandler__) {
+          orderList.push(namespace);
+        } else {
+          orderList.unshift(namespace);
+        }
+      });
+      const moduleNameMap: {[key: string]: boolean} = {};
+      const promiseResults: Array<Promise<any>> = [];
+      orderList.forEach(namespace => {
+        if (!moduleNameMap[namespace]) {
+          moduleNameMap[namespace] = true;
+          const fun = handlers[namespace];
+          const effectResult = fun(getActionData(action));
+          const decorators = fun.__decorators__;
+          if (decorators) {
+            const results: any[] = [];
+            decorators.forEach((decorator, index) => {
+              results[index] = decorator[0](action, namespace, effectResult);
+            });
+            fun.__decoratorResults__ = results;
+          }
+
+          effectResult.then(
+            (reslove: any) => {
+              if (decorators) {
+                const results = fun.__decoratorResults__ || [];
+                decorators.forEach((decorator, index) => {
+                  if (decorator[1]) {
+                    decorator[1]("Resolved", results[index], reslove);
+                  }
+                });
+                fun.__decoratorResults__ = undefined;
+              }
+              return reslove;
+            },
+            (reject: any) => {
+              if (decorators) {
+                const results = fun.__decoratorResults__ || [];
+                decorators.forEach((decorator, index) => {
+                  if (decorator[1]) {
+                    decorator[1]("Rejected", results[index], reject);
+                  }
+                });
+                fun.__decoratorResults__ = undefined;
+              }
+            },
+          );
+          promiseResults.push(effectResult);
+        }
+      });
+      if (promiseResults.length) {
+        return Promise.all(promiseResults);
+      }
+    }
+    return action;
   };
 
-  MetaData.injectedModules.forEach(action => {
-    store.dispatch(action);
-  });
-  MetaData.injectedModules.length = 0;
+  if (reducersMapObject.router) {
+    throw new Error("the reducer name 'router' is not allowed");
+  }
+  reducersMapObject.router = connectRouter(storeHistory);
+  const enhancers = [applyMiddleware(...[effectMiddleware, routerMiddleware(storeHistory), ...storeMiddlewares]), ...storeEnhancers];
+  if (MetaData.isBrowser && MetaData.isDev && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+    //
+    // __REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+    enhancers.push(window["__REDUX_DEVTOOLS_EXTENSION__"](window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"]));
+  }
+  store = createStore(combineReducers as any, initData, compose(...enhancers));
+  if (store.reactCoat) {
+    throw new Error("store enhancers has 'reactCoat' property");
+  } else {
+    store.reactCoat = {
+      history: storeHistory,
+      prevState: {router: null as any},
+      currentState: {router: null as any},
+      reducerMap: {},
+      effectMap: {},
+      injectedModules: {},
+      routerInited: false,
+    };
+  }
+  MetaData.clientStore = store;
+  if (MetaData.isBrowser) {
+    window.onerror = (evt: Event | string, source?: string, fileno?: number, columnNumber?: number, error?: Error) => {
+      store.dispatch(errorAction(error || evt));
+    };
+    if ("onunhandledrejection" in window) {
+      window.onunhandledrejection = error => {
+        store.dispatch(errorAction(error.reason));
+      };
+    }
+  }
   return store;
 }

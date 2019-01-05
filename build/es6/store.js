@@ -1,0 +1,174 @@
+import { connectRouter, routerMiddleware } from "connected-react-router";
+import { applyMiddleware, compose, createStore } from "redux";
+import { LOADING, LOCATION_CHANGE, MetaData, NSP, errorAction } from "./global";
+function getActionData(action) {
+    const arr = Object.keys(action).filter(key => key !== "type" && key !== "priority" && key !== "time");
+    if (arr.length === 0) {
+        return undefined;
+    }
+    else if (arr.length === 1) {
+        return action[arr[0]];
+    }
+    else {
+        const data = Object.assign({}, action);
+        delete data["type"];
+        delete data["priority"];
+        delete data["time"];
+        return data;
+    }
+}
+export function buildStore(storeHistory, reducersMapObject = {}, storeMiddlewares = [], storeEnhancers = [], initData = {}, routerParser) {
+    let store;
+    const combineReducers = (rootState, action) => {
+        if (!store) {
+            return rootState;
+        }
+        const reactCoat = store.reactCoat;
+        reactCoat.prevState = rootState;
+        const currentState = Object.assign({}, rootState);
+        reactCoat.currentState = currentState;
+        Object.keys(reducersMapObject).forEach(namespace => {
+            currentState[namespace] = reducersMapObject[namespace](currentState[namespace], action);
+            if (namespace === "router" && routerParser && rootState.router !== currentState.router) {
+                currentState.router = routerParser(currentState.router, rootState.router);
+            }
+        });
+        const handlersCommon = reactCoat.reducerMap[action.type] || {};
+        const handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
+        const handlers = Object.assign({}, handlersCommon, handlersEvery);
+        const handlerModules = Object.keys(handlers);
+        if (handlerModules.length > 0) {
+            const orderList = action.priority ? [...action.priority] : [];
+            handlerModules.forEach(namespace => {
+                const fun = handlers[namespace];
+                if (fun.__isHandler__) {
+                    orderList.push(namespace);
+                }
+                else {
+                    orderList.unshift(namespace);
+                }
+            });
+            const moduleNameMap = {};
+            orderList.forEach(namespace => {
+                if (!moduleNameMap[namespace]) {
+                    moduleNameMap[namespace] = true;
+                    const fun = handlers[namespace];
+                    currentState[namespace] = fun(getActionData(action));
+                }
+            });
+        }
+        const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(namespace => rootState[namespace] !== currentState[namespace]);
+        reactCoat.prevState = changed ? currentState : rootState;
+        return reactCoat.prevState;
+    };
+    const effectMiddleware = ({ dispatch }) => (next) => (originalAction) => {
+        if (!MetaData.isBrowser) {
+            if (originalAction.type.split(NSP)[1] === LOADING) {
+                return originalAction;
+            }
+        }
+        if (originalAction.type === LOCATION_CHANGE && !store.reactCoat.routerInited) {
+            store.reactCoat.routerInited = true;
+            return originalAction;
+        }
+        const action = next(originalAction);
+        if (!action) {
+            return null;
+        }
+        const handlersCommon = store.reactCoat.effectMap[action.type] || {};
+        const handlersEvery = store.reactCoat.effectMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
+        const handlers = Object.assign({}, handlersCommon, handlersEvery);
+        const handlerModules = Object.keys(handlers);
+        if (handlerModules.length > 0) {
+            const orderList = action.priority ? [...action.priority] : [];
+            handlerModules.forEach(namespace => {
+                const fun = handlers[namespace];
+                if (fun.__isHandler__) {
+                    orderList.push(namespace);
+                }
+                else {
+                    orderList.unshift(namespace);
+                }
+            });
+            const moduleNameMap = {};
+            const promiseResults = [];
+            orderList.forEach(namespace => {
+                if (!moduleNameMap[namespace]) {
+                    moduleNameMap[namespace] = true;
+                    const fun = handlers[namespace];
+                    const effectResult = fun(getActionData(action));
+                    const decorators = fun.__decorators__;
+                    if (decorators) {
+                        const results = [];
+                        decorators.forEach((decorator, index) => {
+                            results[index] = decorator[0](action, namespace, effectResult);
+                        });
+                        fun.__decoratorResults__ = results;
+                    }
+                    effectResult.then((reslove) => {
+                        if (decorators) {
+                            const results = fun.__decoratorResults__ || [];
+                            decorators.forEach((decorator, index) => {
+                                if (decorator[1]) {
+                                    decorator[1]("Resolved", results[index], reslove);
+                                }
+                            });
+                            fun.__decoratorResults__ = undefined;
+                        }
+                        return reslove;
+                    }, (reject) => {
+                        if (decorators) {
+                            const results = fun.__decoratorResults__ || [];
+                            decorators.forEach((decorator, index) => {
+                                if (decorator[1]) {
+                                    decorator[1]("Rejected", results[index], reject);
+                                }
+                            });
+                            fun.__decoratorResults__ = undefined;
+                        }
+                    });
+                    promiseResults.push(effectResult);
+                }
+            });
+            if (promiseResults.length) {
+                return Promise.all(promiseResults);
+            }
+        }
+        return action;
+    };
+    if (reducersMapObject.router) {
+        throw new Error("the reducer name 'router' is not allowed");
+    }
+    reducersMapObject.router = connectRouter(storeHistory);
+    const enhancers = [applyMiddleware(...[effectMiddleware, routerMiddleware(storeHistory), ...storeMiddlewares]), ...storeEnhancers];
+    if (MetaData.isBrowser && MetaData.isDev && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+        enhancers.push(window["__REDUX_DEVTOOLS_EXTENSION__"](window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"]));
+    }
+    store = createStore(combineReducers, initData, compose(...enhancers));
+    if (store.reactCoat) {
+        throw new Error("store enhancers has 'reactCoat' property");
+    }
+    else {
+        store.reactCoat = {
+            history: storeHistory,
+            prevState: { router: null },
+            currentState: { router: null },
+            reducerMap: {},
+            effectMap: {},
+            injectedModules: {},
+            routerInited: false,
+        };
+    }
+    MetaData.clientStore = store;
+    if (MetaData.isBrowser) {
+        window.onerror = (evt, source, fileno, columnNumber, error) => {
+            store.dispatch(errorAction(error || evt));
+        };
+        if ("onunhandledrejection" in window) {
+            window.onunhandledrejection = error => {
+                store.dispatch(errorAction(error.reason));
+            };
+        }
+    }
+    return store;
+}

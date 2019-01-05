@@ -1,25 +1,26 @@
 {
   "compilerOptions": {
     "baseUrl": "./src",
-    "outDir": "./dist",
+    "outDir": "./libs",
     "module": "esnext",
     "target": "es5",
-    "importHelpers": true,
     "moduleResolution": "node",
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
+    "sourceMap": false,
+    "inlineSources": false,
+    "declaration": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": false,
+    "esModuleInterop": false,
+    "importHelpers": true,
+    "newLine": "LF",
     "jsx": "react",
-    "lib": ["dom", "es5", "es2015.promise", "es2015.iterable"],
+    "lib": ["dom", "es2017"],
+    "removeComments": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true,
-    "declaration": true
+    "noImplicitReturns": true,
+    "noUnusedLocals": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["./src"]
 }

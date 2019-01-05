@@ -1,6 +1,7 @@
 {
   "files.eol": "\n",
   "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSave": true,
   "prettier.stylelintIntegration": true,
-  "editor.formatOnSave": true
+  "typescript.updateImportsOnFileMove.enabled": "never"
 }

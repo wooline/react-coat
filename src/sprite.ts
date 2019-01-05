@@ -23,8 +23,8 @@ export const TaskCountEvent = "TaskCountEvent";
 export type TaskCounterState = "Start" | "Stop" | "Depth";
 
 export class PEvent {
-  public readonly target: PDispatcher;
-  public readonly currentTarget: PDispatcher;
+  public readonly target: PDispatcher = null as any;
+  public readonly currentTarget: PDispatcher = null as any;
 
   constructor(public readonly name: string, public readonly data?: any, public bubbling: boolean = false) {}
 
@@ -99,15 +99,16 @@ export class PDispatcher {
 }
 
 export class TaskCounter extends PDispatcher {
-  public readonly list: Array<{ promise: Promise<any>; note: string }> = [];
-  private ctimer: number;
+  public readonly list: Array<{promise: Promise<any>; note: string}> = [];
+  private ctimer: number = 0;
   constructor(public deferSecond: number) {
     super();
   }
   public addItem(promise: Promise<any>, note: string = ""): Promise<any> {
     if (!this.list.some(item => item.promise === promise)) {
-      this.list.push({ promise, note });
-      promise.then(value => this.completeItem(promise), reason => this.completeItem(promise));
+      this.list.push({promise, note});
+      promise.then(resolve => this.completeItem(promise), reject => this.completeItem(promise));
+
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, "Start"));
         this.ctimer = window.setTimeout(() => {

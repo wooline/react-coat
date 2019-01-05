@@ -1,6 +1,9 @@
 {
-  "extends": ["tslint:recommended", "tslint-react"],
+  "extends": ["tslint:recommended", "tslint-react", "tslint-config-prettier"],
+  "rulesDirectory": ["tslint-plugin-prettier"],
   "rules": {
+    "prettier": true,
+    "interface-over-type-literal": false,
     "interface-name": [true, "never-prefix"],
     "object-literal-sort-keys": false,
     "ordered-imports": false,
