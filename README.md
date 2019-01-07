@@ -4,6 +4,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
+- [与 蚂蚁金服 Dav 的异同](#与-蚂蚁金服-dav-的异同)
 - [安装 react-coat](#安装-react-coat)
 - [兼容性](#兼容性)
 - [快速上手及 Demo](#快速上手及-demo)
@@ -39,7 +40,9 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - 使用 typescript 严格类型，更好的静态检查与智能提示
 - 开源微框架，源码不到千行，几乎不用学习即可上手
 
-> 感谢阿里系 [Dva](https://github.com/dvajs/dva)带来的灵感，本框架与 Dva 理念略同，主要差异：
+## 与 蚂蚁金服 Dav 的异同
+
+> 本框架与 [Dvajs](https://github.com/dvajs/dva) 主要理念略同，主要差异：
 
 - 使用 typescript 强类型推断和检查
 - 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
@@ -48,15 +51,17 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - 支持 SPA(单页应用)和 SSR(服务器渲染)一键切换，
 - 支持模块异步按需加载和同步加载一键切换
 
+> 差异示例：使用 class 组织所有 reducer 和 effect
+
 ```
-// 比如：Dva中常这样写
+// Dva中常这样写
 dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
 
 //本框架中可直接利用ts类型反射和检查:
 this.dispatch(moduleA.actions.query({username:"jimmy"}))
 ```
 
-另外在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理，例如：
+> 差异示例：在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
 
 ```
 // 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
@@ -67,11 +72,42 @@ effects: {
     }
 }
 
-// 在react-coat中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
+// 在本框架中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
 class ModuleHandlers {
     async query (){
         await this.dispatch(otherModule.actions.query(1));
         this.dispatch(thisModule.actions.updateState(2));
+    }
+}
+```
+
+> 差异示例：如果 ModuleA 进行某项操作成功之后，ModuleB 或 ModuleC 都需要 update 自已的 State，由于缺少 action 的观察者模式，所以只能将 ModuleB 或 ModuleC 的刷新动作写死在 ModuleA 中：
+
+```
+// 在Dva中需要主动Put调用ModuleB或ModuleC的Action
+effects: {
+    * update (){
+        ...
+        if(callBackModuleName==="ModuleB"){
+          yield put({type: 'ModuleB/update',payload:1});
+        }else if(callBackModuleName==="ModuleC"){
+          yield put({type: 'ModuleC/update',payload:1});
+        }
+    }
+}
+
+// 在本框架中,可使用ActionHandler观察者模式：
+class ModuleB {
+    //在ModuleB中兼听"ModuleA/update"方法
+    async ["ModuleA/update"] (){
+        ....
+    }
+}
+
+class ModuleC {
+    //在ModuleC中兼听"ModuleA/update"方法
+    async ["ModuleA/update"] (){
+        ....
     }
 }
 ```
@@ -114,7 +150,7 @@ class ModuleHandlers {
 
 本框架上手简单
 
-- 只需理解 8 个新概念：
+- 8 个新概念：
 
   > Effect、ActionHandler、Module、ModuleState、RootState、Model、View、Component
 
@@ -122,7 +158,7 @@ class ModuleHandlers {
   > exportModel(), exportView(), exportModule(), createApp()
 - 2 个 Demo:
 
-  > SPA(单页应用)：[较简单的客户端渲染 Demo](https://github.com/wooline/react-coat-demo-simple)
+  > SPA(单页应用)：[较简单的客户端渲染 Demo](https://github.com/wooline/react-coat-spa-demo)
 
   > SPA(单页应用)+SSR(服务器渲染)：[较复杂的混合渲染 Demo](https://github.com/wooline/react-coat-ssr-demo)
 
