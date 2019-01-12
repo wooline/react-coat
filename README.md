@@ -4,10 +4,10 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
-- [与 蚂蚁金服 Dav 的异同](#与-蚂蚁金服-dav-的异同)
 - [安装 react-coat](#安装-react-coat)
 - [兼容性](#兼容性)
 - [快速上手及 Demo](#快速上手及-demo)
+- [与 蚂蚁金服 Dav 的异同](#与-蚂蚁金服-dav-的异同)
 - [基本概念与名词](#基本概念与名词)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
@@ -18,10 +18,11 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
   - [View、Component](#viewcomponent)
 - [路由与动态加载](#路由与动态加载)
 - [API 一览](#api-一览)
+- [几个特殊的 Action](#几个特殊的-action)
 - [后续开发](#后续开发)
   - [react-coat-immutable](#react-coat-immutable)
   - [react-shirt](#react-shirt)
-  - [后记](#后记)
+  - [学习交流](#学习交流)
 
 <!-- /TOC -->
 
@@ -39,78 +40,6 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - 同时支持 SPA(单页应用)和 SSR(服务器渲染)
 - 使用 typescript 严格类型，更好的静态检查与智能提示
 - 开源微框架，源码不到千行，几乎不用学习即可上手
-
-## 与 蚂蚁金服 Dav 的异同
-
-> 本框架与 [Dvajs](https://github.com/dvajs/dva) 主要理念略同，主要差异：
-
-- 使用 typescript 强类型推断和检查
-- 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
-- 路由组件化、无 Page 概念、更自然的 API 和更简单的组织结构
-- 更大的灵活性和自由度，不强封装
-- 支持 SPA(单页应用)和 SSR(服务器渲染)一键切换，
-- 支持模块异步按需加载和同步加载一键切换
-
-> 差异示例：使用 class 组织所有 reducer 和 effect
-
-```
-// Dva中常这样写
-dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
-
-//本框架中可直接利用ts类型反射和检查:
-this.dispatch(moduleA.actions.query({username:"jimmy"}))
-```
-
-> 差异示例：在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
-
-```
-// 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
-effects: {
-    * query (){
-        yield put({type: 'otherModule/query',payload:1});
-        yield put({type: 'updateState',  payload: 2});
-    }
-}
-
-// 在本框架中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
-class ModuleHandlers {
-    async query (){
-        await this.dispatch(otherModule.actions.query(1));
-        this.dispatch(thisModule.actions.updateState(2));
-    }
-}
-```
-
-> 差异示例：如果 ModuleA 进行某项操作成功之后，ModuleB 或 ModuleC 都需要 update 自已的 State，由于缺少 action 的观察者模式，所以只能将 ModuleB 或 ModuleC 的刷新动作写死在 ModuleA 中：
-
-```
-// 在Dva中需要主动Put调用ModuleB或ModuleC的Action
-effects: {
-    * update (){
-        ...
-        if(callBackModuleName==="ModuleB"){
-          yield put({type: 'ModuleB/update',payload:1});
-        }else if(callBackModuleName==="ModuleC"){
-          yield put({type: 'ModuleC/update',payload:1});
-        }
-    }
-}
-
-// 在本框架中,可使用ActionHandler观察者模式：
-class ModuleB {
-    //在ModuleB中兼听"ModuleA/update"方法
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-
-class ModuleC {
-    //在ModuleC中兼听"ModuleA/update"方法
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-```
 
 ## 安装 react-coat
 
@@ -158,9 +87,106 @@ class ModuleC {
   > exportModel(), exportView(), exportModule(), createApp()
 - 2 个 Demo:
 
-  > SPA(单页应用)：[较简单的客户端渲染 Demo](https://github.com/wooline/react-coat-spa-demo)
+  > [入手：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
 
-  > SPA(单页应用)+SSR(服务器渲染)：[较复杂的混合渲染 Demo](https://github.com/wooline/react-coat-ssr-demo)
+  > [进阶：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+
+## 与 蚂蚁金服 Dav 的异同
+
+> 本框架与 [Dvajs](https://github.com/dvajs/dva) 理念略同，主要差异：
+
+- 使用 typescript 强类型推断和检查
+- 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
+- 路由组件化、无 Page 概念、更自然的 API 和更简单的组织结构
+- 更大的灵活性和自由度，不强封装
+- 支持 SPA(单页应用)和 SSR(服务器渲染)一键切换，
+- 支持模块异步按需加载和同步加载一键切换
+
+> 差异示例：使用强类型组织所有 reducer 和 effect
+
+```JS
+// Dva中常这样写
+dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
+
+//本框架中可直接利用ts类型反射和检查:
+this.dispatch(moduleA.actions.query({username:"jimmy"}))
+```
+
+> 差异示例：State 和 Actions 支持继承
+
+```JS
+// Dva不支持继承
+
+// 本框架可以直接继承
+
+class ModuleHandlers extends ArticleHandlers<State, PhotoResource> {
+  constructor() {
+    super({}, {api});
+  }
+  @effect()
+  protected async parseRouter() {
+    const result = await super.parseRouter();
+    this.dispatch(this.actions.putRouteData({showComment: true}));
+    return result;
+  }
+  @effect()
+  protected async [ModuleNames.photos + "/INIT"]() {
+    await super.onInit();
+  }
+}
+
+```
+
+> 差异示例：在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
+
+```JS
+// 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
+effects: {
+    * query (){
+        yield put({type: 'otherModule/query',payload:1});
+        yield put({type: 'updateState',  payload: 2});
+    }
+}
+
+// 在本框架中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
+class ModuleHandlers {
+    async query (){
+        await this.dispatch(otherModule.actions.query(1));
+        this.dispatch(thisModule.actions.updateState(2));
+    }
+}
+```
+
+> 差异示例：如果 ModuleA 进行某项操作成功之后，ModuleB 或 ModuleC 都需要 update 自已的 State，由于缺少 action 的观察者模式，所以只能将 ModuleB 或 ModuleC 的刷新动作写死在 ModuleA 中：
+
+```JS
+// 在Dva中需要主动Put调用ModuleB或ModuleC的Action
+effects: {
+    * update (){
+        ...
+        if(callbackModuleName==="ModuleB"){
+          yield put({type: 'ModuleB/update',payload:1});
+        }else if(callbackModuleName==="ModuleC"){
+          yield put({type: 'ModuleC/update',payload:1});
+        }
+    }
+}
+
+// 在本框架中,可使用ActionHandler观察者模式：
+class ModuleB {
+    //在ModuleB中兼听"ModuleA/update"方法
+    async ["ModuleA/update"] (){
+        ....
+    }
+}
+
+class ModuleC {
+    //在ModuleC中兼听"ModuleA/update"方法
+    async ["ModuleA/update"] (){
+        ....
+    }
+}
+```
 
 ## 基本概念与名词
 
@@ -234,7 +260,7 @@ src
 
 例如：某个 Store 数据结构:
 
-```
+```JS
 
 {
 router:{...},// StoreReducer
@@ -284,7 +310,7 @@ src
 
 src/modules/user/userOverview/model.ts
 
-```
+```JS
 // 定义本模块的ModuleState类型
 export interface State extends BaseModuleState {
   listSearch: {username:string; page:number; pageSize:number};
@@ -344,7 +370,7 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
 
 需要特别说明的是以上代码的最后一个 ActionHandler：
 
-```
+```JS
 protected async ["@@router/LOCATION_CHANGE](){
     // this.rootState指向整个Store
     if(this.rootState.router.location.pathname === "/list"){
@@ -397,7 +423,7 @@ src
 
 例如，某个 LoginForm：
 
-```
+```JS
 interface Props extends DispatchProp {
   logining: boolean;
 }
@@ -444,7 +470,7 @@ export default connect(mapStateToProps)(Component);
 
 react-coat 赞同 react-router 4 `组件化路由`的理念，路由即组件，嵌套路由好比嵌套 component 一样简单，无需繁琐的配置。如：
 
-```
+```JS
 import {BottomNav} from "modules/navs/views"; // BottomNav 来自于 navs 模块
 import LoginForm from "./LoginForm"; // LoginForm 来自于本模块
 
@@ -475,11 +501,18 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 
 ## API 一览
 
-[API 一览](https://github.com/wooline/react-coat/issues/4)
+[API 一览](https://github.com/wooline/react-coat/blob/master/docs/api.md)
 
 ```
 BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
 ```
+
+## 几个特殊的 Action
+
+- **@@router/LOCATION_CHANGE**：本框架集成了 connected-react-router，路由发生变化时将触发此 action，你可以在 moduleHandlers 中监听此 action
+- **"@@framework/ERROR**：本框架 catch 了未处理的 error，发生 error 时将自动派发此 action，你可以在 moduleHandlers 中监听此 action
+- **module/INIT**：模块初次载入时会触发此 action，来向 store 注入初始 moduleState
+- **module/LOADING**：触发加载进度时会触发此 action，比如 @effect(login)
 
 ## 后续开发
 
@@ -491,12 +524,14 @@ BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, erro
 
 用 mobx 替换 redux。本框架不仅是一个 redux 框架，也是一种数据流模型、API 风格、代码组织架构，所以理论上不仅仅适应于 redux。react-shirt 是计划中的后续开发项目，使用 mobx 替换 redux，并将部分 Immutability 不可变数据变为可变数据，敬请期待。
 
-### 后记
+### 学习交流
 
 - 使用本框架必须使用 typescript 吗？
 
   答：推荐使用 typescript，可以做到静态检查与智能提示，但也可以直接使用原生 JS
 
-- 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈或 Email：wooline@qq.com
-
+- 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
 - [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
+- Email：[wooline@qq.com](wooline@qq.com)
+- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我，
+  ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
