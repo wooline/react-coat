@@ -43,7 +43,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 ## 安装 react-coat
 
-    $ npm insatll react-coat
+    $ npm install react-coat
 
 依赖周边生态库：
 
