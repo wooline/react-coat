@@ -533,5 +533,6 @@ BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, erro
 - 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
 - [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
 - Email：[wooline@qq.com](wooline@qq.com)
-- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我，
+- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
+
   ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
