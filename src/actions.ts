@@ -73,10 +73,7 @@ export function logger(before: (action: Action, moduleName: string, promiseResul
     fun.__decorators__.push([before, after]);
   };
 }
-// loading2() [global, app]
-// loading2(login)[login, currentModule]
-// loading(login, photos)[login,photos]
-// loading2(null)[]
+
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = "global";

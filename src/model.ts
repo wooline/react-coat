@@ -1,14 +1,5 @@
 import {ActionHandler, ActionHandlerList, ActionHandlerMap, isPromise, getModuleActionCreatorList, NSP, BaseModuleState, RootState, ModelStore, Model} from "./global";
 import {BaseModuleHandlers} from "./actions";
-/* export function createModel(appModel: () => Promise<void>, storeMiddlewares: Middleware[] = [], storeEnhancers: Function[] = [], reducers: ReducersMapObject = {}, storeHistory?: History) {
-  const history = storeHistory || createHistory();
-  MetaData.history = history;
-  const store = buildStore(MetaData.history, reducers, storeMiddlewares, storeEnhancers);
-  const startup = appModel().then(() => {
-    return store.getState();
-  });
-  return { store, history, startup };
-} */
 
 export function exportModel<N extends string>(namespace: N, HandlersClass: {new (presetData?: any): BaseModuleHandlers<BaseModuleState, RootState, N>}): Model {
   return (store: ModelStore) => {

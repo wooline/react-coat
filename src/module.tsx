@@ -86,3 +86,65 @@ export function exportView<C extends ComponentType<any>>(ComponentView: C, model
     }
   } as any;
 }
+
+/*
+let autoId: number = 0;
+export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model): C {
+  const Comp = ComponentView as any;
+  return class PureComponent extends React.PureComponent {
+    private uid: string = (autoId++).toString();
+    public static contextTypes = {
+      store: PropTypes.object,
+    };
+    public render() {
+      return <Comp {...this.props} />;
+    }
+    public componentWillMount() {
+      const {store} = this.context;
+      (model as InternalModel)(store, this.uid);
+    }
+    public componentWillUnmount() {
+      const {store} = this.context;
+      (model as InternalModel)(store, this.uid, true);
+    }
+  } as any;
+}
+
+export function exportModel(namespace: string, HandlersClass: {new (): BaseModuleHandlers<BaseModuleState, RootState>}): Model {
+  return async (store: ModelStore, viewName?: string, unmount?: boolean) => {
+    const hasInjected = store.reactCoat.injectedModules[namespace];
+    if (!hasInjected) {
+      store.reactCoat.injectedModules[namespace] = viewName ? {[viewName]: true} : {};
+      const handlers = new HandlersClass();
+      (handlers as any).namespace = namespace;
+      (handlers as any).store = store;
+      const actions = injectActions(store, namespace, handlers as any);
+      const hasInited = Boolean(store.getState()[namespace]);
+      if (!hasInited) {
+        const initAction = actions.INIT((handlers as any).initState);
+        await store.dispatch(initAction);
+      }
+      if (viewName) {
+        console.log("mount", namespace, "first Inject", hasInited);
+        return store.dispatch(actions.MOUNT());
+      }
+    } else {
+      const actions = getModuleActionCreatorList(namespace);
+      if (unmount && viewName) {
+        delete hasInjected[viewName];
+        if (Object.keys(hasInjected).length === 0) {
+          return store.dispatch(actions.UNMOUNT());
+        }
+      } else if (viewName) {
+        if (Object.keys(hasInjected).length === 0) {
+          console.log("mount", namespace, "hasInjected");
+          hasInjected[viewName] = true;
+          return store.dispatch(actions.MOUNT());
+        } else {
+          hasInjected[viewName] = true;
+        }
+      }
+    }
+    return void 0;
+  };
+*/

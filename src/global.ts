@@ -105,12 +105,7 @@ export function errorAction(error: any) {
 export function setAppModuleName(moduleName: string) {
   MetaData.appModuleName = moduleName;
 }
-/* export function initLocationAction(namespace: string, payload: any) {
-  return {
-    type: namespace + NSP + INIT_LOCATION,
-    payload,
-  };
-} */
+
 export function delayPromise(second: number) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const fun = descriptor.value;
@@ -127,10 +122,6 @@ export function delayPromise(second: number) {
   };
 }
 
-/* export function getHistory(): History {
-  return MetaData.history;
-}
-*/
 export function getModuleActionCreatorList(namespace: string) {
   // if (window["Proxy"]) {
   //   actions = new window["Proxy"](
