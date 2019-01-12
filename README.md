@@ -7,6 +7,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - [安装 react-coat](#安装-react-coat)
 - [兼容性](#兼容性)
 - [快速上手及 Demo](#快速上手及-demo)
+- [API 一览](#api-一览)
 - [与 蚂蚁金服 Dav 的异同](#与-蚂蚁金服-dav-的异同)
 - [基本概念与名词](#基本概念与名词)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
@@ -17,7 +18,6 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
   - [Model](#model)
   - [View、Component](#viewcomponent)
 - [路由与动态加载](#路由与动态加载)
-- [API 一览](#api-一览)
 - [几个特殊的 Action](#几个特殊的-action)
 - [后续开发](#后续开发)
   - [react-coat-immutable](#react-coat-immutable)
@@ -90,6 +90,14 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
   > [入手：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
 
   > [进阶：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+
+## API 一览
+
+[查看详细 API 一览](https://github.com/wooline/react-coat/blob/master/docs/api.md)
+
+```
+BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
+```
 
 ## 与 蚂蚁金服 Dav 的异同
 
@@ -498,14 +506,6 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 
 - 不管是同步、异步、按：需、动态加载，要改变的仅仅是加载方式，而不用修改被加载的模块。模块本身并不需要事先拟定自已将被谁、以何种方式加载，保证的模块的独立性。
 - 前面讲过，view 是 model 数据的展现，那嵌入其它模块 view 时，是否还要导入其它模块的 model 呢？无需，框架将自动导入。
-
-## API 一览
-
-[API 一览](https://github.com/wooline/react-coat/blob/master/docs/api.md)
-
-```
-BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
-```
 
 ## 几个特殊的 Action
 
