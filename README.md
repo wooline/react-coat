@@ -84,12 +84,16 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
   > Effect、ActionHandler、Module、ModuleState、RootState、Model、View、Component
 
 - 4 步创建：
+
   > exportModel(), exportView(), exportModule(), createApp()
-- 2 个 Demo:
 
-  > [入手：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
+- 3 个 Demo，循序渐进:
 
-  > [进阶：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+  > [入手：Helloworld](https://github.com/wooline/react-coat-helloworld)
+
+  > [进阶：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
+
+  > [升级：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
 
 ## API 一览
 
@@ -182,14 +186,14 @@ effects: {
 
 // 在本框架中,可使用ActionHandler观察者模式：
 class ModuleB {
-    //在ModuleB中兼听"ModuleA/update"方法
+    //在ModuleB中兼听"ModuleA/update" action
     async ["ModuleA/update"] (){
         ....
     }
 }
 
 class ModuleC {
-    //在ModuleC中兼听"ModuleA/update"方法
+    //在ModuleC中兼听"ModuleA/update" action
     async ["ModuleA/update"] (){
         ....
     }
