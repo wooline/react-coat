@@ -1,5 +1,3 @@
-最新文档请查看：[https://github.com/wooline/react-coat](https://github.com/wooline/react-coat)
-
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
 <!-- TOC -->
@@ -535,10 +533,10 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 - 使用本框架必须使用 typescript 吗？
 
   答：推荐使用 typescript，可以做到静态检查与智能提示，但也可以直接使用原生 JS
-
-- 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
 - [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
 - Email：[wooline@qq.com](wooline@qq.com)
 - reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
 
   ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
+  
+  ### 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
