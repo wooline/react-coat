@@ -1,8 +1,8 @@
-**各路神仙大侠，如果有错误或Bug欢迎批评指正，如果觉得还不错请别忘了给个`Star` >\_<**
+**各路神仙大侠，如果有错误或 Bug 欢迎批评指正，如果觉得还不错请别忘了给个`Star` >\_<**
 
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
-你还在老老实实按照原生redux教程维护store么？试试简单到几乎不用学习就能上手的react-coat吧：
+你还在老老实实按照原生 redux 教程维护 store 么？试试简单到几乎不用学习就能上手的 react-coat 吧：
 
 <!-- TOC -->
 
@@ -12,7 +12,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - [兼容性](#兼容性)
 - [快速上手及 Demo](#快速上手及-demo)
 - [API 一览](#api-一览)
-- [与 蚂蚁金服 Dav 的异同](#与-蚂蚁金服-dav-的异同)
+- [与 蚂蚁金服 Dva 的异同](#与-蚂蚁金服-dva-的异同)
 - [基本概念与名词](#基本概念与名词)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
@@ -106,7 +106,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
 ```
 
-## 与 蚂蚁金服 Dav 的异同
+## 与 蚂蚁金服 Dva 的异同
 
 > 本框架与 `Dvajs` 理念略同，主要差异：
 
@@ -537,10 +537,11 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 - 使用本框架必须使用 typescript 吗？
 
   答：推荐使用 typescript，可以做到静态检查与智能提示，但也可以直接使用原生 JS
+
 - [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
 - Email：[wooline@qq.com](wooline@qq.com)
 - reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
 
   ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
-  
+
   ### 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
