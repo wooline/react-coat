@@ -1,6 +1,6 @@
 import { routerActions } from "connected-react-router";
 import { Action, BaseModuleState, ModelStore, RootState } from "./global";
-export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState, N extends string> {
+export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState<{}>, N extends string> {
     protected readonly initState: S;
     protected readonly namespace: N;
     protected readonly store: ModelStore;

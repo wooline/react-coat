@@ -1,7 +1,32 @@
 import * as tslib_1 from "tslib";
 import { connectRouter, routerMiddleware } from "connected-react-router";
 import { applyMiddleware, compose, createStore } from "redux";
-import { LOADING, LOCATION_CHANGE, MetaData, NSP, errorAction } from "./global";
+import { LOADING, LOCATION_CHANGE, MetaData, NSP, errorAction, viewInvalidAction, VIEW_INVALID } from "./global";
+var invalidViewTimer;
+function checkInvalidview() {
+    invalidViewTimer = null;
+    var currentViews = MetaData.clientStore.reactCoat.currentViews;
+    var views = {};
+    for (var moduleName in currentViews) {
+        if (currentViews.hasOwnProperty(moduleName)) {
+            var element = currentViews[moduleName];
+            for (var viewname in element) {
+                if (element[viewname]) {
+                    if (!views[moduleName]) {
+                        views[moduleName] = {};
+                    }
+                    views[moduleName][viewname] = element[viewname];
+                }
+            }
+        }
+    }
+    MetaData.clientStore.dispatch(viewInvalidAction(views));
+}
+export function invalidview() {
+    if (!invalidViewTimer) {
+        invalidViewTimer = setTimeout(checkInvalidview, 4);
+    }
+}
 function getActionData(action) {
     var arr = Object.keys(action).filter(function (key) { return key !== "type" && key !== "priority" && key !== "time"; });
     if (arr.length === 0) {
@@ -38,6 +63,9 @@ export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, st
                 currentState.router = routerParser(currentState.router, rootState.router);
             }
         });
+        if (action.type === VIEW_INVALID) {
+            currentState.views = getActionData(action);
+        }
         var handlersCommon = reactCoat.reducerMap[action.type] || {};
         var handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), "*")] || {};
         var handlers = tslib_1.__assign({}, handlersCommon, handlersEvery);
@@ -74,9 +102,14 @@ export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, st
                     return originalAction;
                 }
             }
-            if (originalAction.type === LOCATION_CHANGE && !store.reactCoat.routerInited) {
-                store.reactCoat.routerInited = true;
-                return originalAction;
+            if (originalAction.type === LOCATION_CHANGE) {
+                if (!store.reactCoat.routerInited) {
+                    store.reactCoat.routerInited = true;
+                    return originalAction;
+                }
+                else {
+                    invalidview();
+                }
             }
             var action = next(originalAction);
             if (!action) {
@@ -165,6 +198,7 @@ export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, st
             effectMap: {},
             injectedModules: {},
             routerInited: false,
+            currentViews: {},
         };
     }
     MetaData.clientStore = store;

@@ -7,8 +7,7 @@ import {renderToNodeStream, renderToString} from "react-dom/server";
 import {Provider} from "react-redux";
 import {withRouter} from "react-router-dom";
 import {Middleware, ReducersMapObject, StoreEnhancer, Store} from "redux";
-import {errorAction, MetaData, Module} from "./global";
-import {ModuleGetter} from "./module";
+import {errorAction, MetaData, Module, ModuleGetter} from "./global";
 import {buildStore, RouterParser} from "./store";
 
 export interface StoreOptions {

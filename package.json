@@ -1,6 +1,6 @@
 {
   "name": "react-coat",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "Structured React + Redux with Typescript and support for isomorphic rendering beautifully(SSR)",
   "main": "build/dist/index.js",
   "module": "build/es5/index.js",
@@ -42,10 +42,12 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "~10.12.2",
+    "@types/jest": "^23.3.13",
     "@types/react": "~16.4.18",
     "@types/react-dom": "~16.0.9",
     "@types/react-redux": "~6.0.9",
     "@types/react-router-dom": "~4.3.1",
+    "jest": "^23.6.0",
     "babel-eslint": "~10.0.1",
     "chalk": "~2.4.1",
     "connected-react-router": "~5.0.1",

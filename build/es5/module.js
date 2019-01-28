@@ -2,6 +2,7 @@ import * as tslib_1 from "tslib";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { MetaData } from "./global";
+import { invalidview } from "./store";
 function isPromiseModule(module) {
     return typeof module["then"] === "function";
 }
@@ -63,7 +64,8 @@ export function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
         return Loader;
     }(React.Component));
 }
-export function exportView(ComponentView, model) {
+export function exportView(ComponentView, model, viewName) {
+    if (viewName === void 0) { viewName = "Main"; }
     var _a;
     var Comp = ComponentView;
     return _a = (function (_super) {
@@ -72,9 +74,34 @@ export function exportView(ComponentView, model) {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
             PureComponent.prototype.componentWillMount = function () {
+                var _a;
                 if (MetaData.isBrowser) {
                     var store = this.context.store;
                     model(store);
+                    var currentViews = store.reactCoat.currentViews;
+                    if (!currentViews[model.namespace]) {
+                        currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+                    }
+                    else {
+                        var views = currentViews[model.namespace];
+                        if (!views[viewName]) {
+                            views[viewName] = 1;
+                        }
+                        else {
+                            views[viewName]++;
+                        }
+                    }
+                    invalidview();
+                }
+            };
+            PureComponent.prototype.componentWillUnmount = function () {
+                if (MetaData.isBrowser) {
+                    var store = this.context.store;
+                    var currentViews = store.reactCoat.currentViews;
+                    if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
+                        currentViews[model.namespace][viewName]--;
+                    }
+                    invalidview();
                 }
             };
             PureComponent.prototype.render = function () {

@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var global_1 = require("./global");
-function exportModel(namespace, HandlersClass) {
-    return function (store) {
+function exportModel(namespace, HandlersClass, initState) {
+    var fun = function (store) {
         var hasInjected = store.reactCoat.injectedModules[namespace];
         if (!hasInjected) {
             store.reactCoat.injectedModules[namespace] = true;
             var moduleState = store.getState()[namespace];
-            var handlers = new HandlersClass(moduleState);
+            var handlers = new HandlersClass(initState, moduleState);
             handlers.namespace = namespace;
             handlers.store = store;
             var actions = injectActions(store, namespace, handlers);
@@ -30,6 +30,9 @@ function exportModel(namespace, HandlersClass) {
             return Promise.resolve(void 0);
         }
     };
+    fun.namespace = namespace;
+    fun.initState = initState;
+    return fun;
 }
 exports.exportModel = exportModel;
 function bindThis(fun, thisObj) {

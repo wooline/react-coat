@@ -6,14 +6,24 @@ import { LoadingState } from "./loading";
 export interface ModelStore extends Store {
     reactCoat: {
         history: History;
-        prevState: RootState;
-        currentState: RootState;
+        prevState: {
+            [key: string]: any;
+        };
+        currentState: {
+            [key: string]: any;
+        };
         reducerMap: ReducerMap;
         effectMap: EffectMap;
         injectedModules: {
             [namespace: string]: boolean;
         };
         routerInited: boolean;
+        currentViews: CurrentViews;
+    };
+}
+export interface CurrentViews {
+    [moduleName: string]: {
+        [viewName: string]: number;
     };
 }
 export interface BaseModuleState {
@@ -23,9 +33,23 @@ export interface BaseModuleState {
     };
 }
 export declare function isModuleState(module: any): module is BaseModuleState;
-export interface RootState<R = RouterState> {
-    router: R;
+export declare type GetModule<M extends Module = Module> = () => M | Promise<M>;
+export interface ModuleGetter {
+    [moduleName: string]: GetModule;
 }
+export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : Module;
+declare type ModuleStates<M extends any> = M["model"]["initState"];
+declare type ModuleViews<M extends any> = {
+    [key in keyof M["views"]]?: number;
+};
+export declare type RootState<G extends ModuleGetter = {}, R = RouterState> = {
+    router: R;
+    views: {
+        [key in keyof G]?: ModuleViews<ReturnModule<G[key]>>;
+    };
+} & {
+    [key in keyof G]?: ModuleStates<ReturnModule<G[key]>>;
+};
 export interface Action {
     type: string;
     priority?: string[];
@@ -75,6 +99,7 @@ export declare const LOADING = "LOADING";
 export declare const ERROR = "@@framework/ERROR";
 export declare const INIT = "INIT";
 export declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
+export declare const VIEW_INVALID = "@@framework/VIEW_INVALID";
 export declare const NSP = "/";
 export declare const MetaData: {
     isBrowser: boolean;
@@ -96,12 +121,21 @@ export declare function errorAction(error: any): {
     type: string;
     error: any;
 };
+export declare function viewInvalidAction(currentViews: CurrentViews): {
+    type: string;
+    currentViews: CurrentViews;
+};
 export declare function setAppModuleName(moduleName: string): void;
 export declare function delayPromise(second: number): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export declare function getModuleActionCreatorList(namespace: string): ActionCreatorList;
-export declare type Model = (store: ModelStore) => Promise<any>;
+export interface Model<ModuleState = BaseModuleState> {
+    namespace: string;
+    initState: ModuleState;
+    (store: ModelStore): Promise<any>;
+}
 export declare function exportModule<T extends ActionCreatorList>(namespace: string): {
     namespace: string;
     actions: T;
 };
 export declare function warning(...args: any[]): void;
+export {};

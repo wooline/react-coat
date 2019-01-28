@@ -4,6 +4,7 @@ var tslib_1 = require("tslib");
 var PropTypes = require("prop-types");
 var React = require("react");
 var global_1 = require("./global");
+var store_1 = require("./store");
 function isPromiseModule(module) {
     return typeof module["then"] === "function";
 }
@@ -67,7 +68,8 @@ function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
     }(React.Component));
 }
 exports.loadView = loadView;
-function exportView(ComponentView, model) {
+function exportView(ComponentView, model, viewName) {
+    if (viewName === void 0) { viewName = "Main"; }
     var _a;
     var Comp = ComponentView;
     return _a = (function (_super) {
@@ -76,9 +78,34 @@ function exportView(ComponentView, model) {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
             PureComponent.prototype.componentWillMount = function () {
+                var _a;
                 if (global_1.MetaData.isBrowser) {
                     var store = this.context.store;
                     model(store);
+                    var currentViews = store.reactCoat.currentViews;
+                    if (!currentViews[model.namespace]) {
+                        currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+                    }
+                    else {
+                        var views = currentViews[model.namespace];
+                        if (!views[viewName]) {
+                            views[viewName] = 1;
+                        }
+                        else {
+                            views[viewName]++;
+                        }
+                    }
+                    store_1.invalidview();
+                }
+            };
+            PureComponent.prototype.componentWillUnmount = function () {
+                if (global_1.MetaData.isBrowser) {
+                    var store = this.context.store;
+                    var currentViews = store.reactCoat.currentViews;
+                    if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
+                        currentViews[model.namespace][viewName]--;
+                    }
+                    store_1.invalidview();
                 }
             };
             PureComponent.prototype.render = function () {

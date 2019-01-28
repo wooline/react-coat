@@ -15,6 +15,7 @@ exports.errorAction = global_1.errorAction;
 exports.exportModule = global_1.exportModule;
 exports.INIT = global_1.INIT;
 exports.LOCATION_CHANGE = global_1.LOCATION_CHANGE;
+exports.VIEW_INVALID = global_1.VIEW_INVALID;
 var loading_1 = require("./loading");
 exports.LoadingState = loading_1.LoadingState;
 exports.setLoading = loading_1.setLoading;

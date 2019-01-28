@@ -2,7 +2,7 @@ import {routerActions} from "connected-react-router";
 import {Action, ActionHandler, BaseModuleState, getModuleActionCreatorList, MetaData, ModelStore, RootState} from "./global";
 import {setLoading} from "./loading";
 
-export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState, N extends string> {
+export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState<{}>, N extends string> {
   protected readonly initState: S;
   protected readonly namespace: N = "" as any;
   protected readonly store: ModelStore = null as any;

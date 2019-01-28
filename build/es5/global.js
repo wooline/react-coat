@@ -5,6 +5,7 @@ export var LOADING = "LOADING";
 export var ERROR = "@@framework/ERROR";
 export var INIT = "INIT";
 export var LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
+export var VIEW_INVALID = "@@framework/VIEW_INVALID";
 export var NSP = "/";
 export var MetaData = {
     isBrowser: typeof window === "object",
@@ -20,6 +21,12 @@ export function errorAction(error) {
     return {
         type: ERROR,
         error: error,
+    };
+}
+export function viewInvalidAction(currentViews) {
+    return {
+        type: VIEW_INVALID,
+        currentViews: currentViews,
     };
 }
 export function setAppModuleName(moduleName) {

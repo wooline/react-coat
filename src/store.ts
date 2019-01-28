@@ -1,7 +1,35 @@
 import {connectRouter, routerMiddleware} from "connected-react-router";
 import {History} from "history";
 import {applyMiddleware, compose, createStore, Middleware, ReducersMapObject, StoreEnhancer} from "redux";
-import {Action, LOADING, LOCATION_CHANGE, MetaData, ModelStore, NSP, RootState, errorAction} from "./global";
+import {Action, LOADING, LOCATION_CHANGE, MetaData, ModelStore, NSP, errorAction, viewInvalidAction, VIEW_INVALID} from "./global";
+
+let invalidViewTimer: NodeJS.Timer | null;
+
+function checkInvalidview() {
+  invalidViewTimer = null;
+  const currentViews = MetaData.clientStore.reactCoat.currentViews;
+  const views: typeof currentViews = {};
+  for (const moduleName in currentViews) {
+    if (currentViews.hasOwnProperty(moduleName)) {
+      const element = currentViews[moduleName];
+      for (const viewname in element) {
+        if (element[viewname]) {
+          if (!views[moduleName]) {
+            views[moduleName] = {};
+          }
+          views[moduleName][viewname] = element[viewname];
+        }
+      }
+    }
+  }
+  MetaData.clientStore.dispatch(viewInvalidAction(views));
+}
+
+export function invalidview() {
+  if (!invalidViewTimer) {
+    invalidViewTimer = setTimeout(checkInvalidview, 4);
+  }
+}
 
 function getActionData(action: Action) {
   const arr = Object.keys(action).filter(key => key !== "type" && key !== "priority" && key !== "time");
@@ -22,13 +50,13 @@ export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
 export function buildStore(storeHistory: History, reducersMapObject: ReducersMapObject<any, any> = {}, storeMiddlewares: Middleware[] = [], storeEnhancers: StoreEnhancer[] = [], initData: any = {}, routerParser?: RouterParser): ModelStore {
   let store: ModelStore;
-  const combineReducers = (rootState: RootState, action: Action) => {
+  const combineReducers = (rootState: {[key: string]: any}, action: Action) => {
     if (!store) {
       return rootState;
     }
     const reactCoat = store.reactCoat;
     reactCoat.prevState = rootState;
-    const currentState = {...rootState} as RootState;
+    const currentState = {...rootState};
     reactCoat.currentState = currentState;
 
     Object.keys(reducersMapObject).forEach(namespace => {
@@ -37,8 +65,12 @@ export function buildStore(storeHistory: History, reducersMapObject: ReducersMap
         currentState.router = routerParser(currentState.router, rootState.router);
       }
     });
-
+    // 内置 action handler
+    if (action.type === VIEW_INVALID) {
+      currentState.views = getActionData(action);
+    }
     const handlersCommon = reactCoat.reducerMap[action.type] || {};
+    // 支持泛监听，形如 */loading
     const handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
     const handlers = {...handlersCommon, ...handlersEvery};
     const handlerModules = Object.keys(handlers);
@@ -73,15 +105,20 @@ export function buildStore(storeHistory: History, reducersMapObject: ReducersMap
       }
     }
     // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
-    if (originalAction.type === LOCATION_CHANGE && !store.reactCoat.routerInited) {
-      store.reactCoat.routerInited = true;
-      return originalAction;
+    if (originalAction.type === LOCATION_CHANGE) {
+      if (!store.reactCoat.routerInited) {
+        store.reactCoat.routerInited = true;
+        return originalAction;
+      } else {
+        invalidview();
+      }
     }
     const action: Action = next(originalAction);
     if (!action) {
       return null;
     }
     const handlersCommon = store.reactCoat.effectMap[action.type] || {};
+    // 支持泛监听，形如 */loading
     const handlersEvery = store.reactCoat.effectMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
     const handlers = {...handlersCommon, ...handlersEvery};
     const handlerModules = Object.keys(handlers);
@@ -169,6 +206,7 @@ export function buildStore(storeHistory: History, reducersMapObject: ReducersMap
       effectMap: {},
       injectedModules: {},
       routerInited: false,
+      currentViews: {},
     };
   }
   MetaData.clientStore = store;

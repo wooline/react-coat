@@ -6,13 +6,17 @@ import {LoadingState} from "./loading";
 export interface ModelStore extends Store {
   reactCoat: {
     history: History;
-    prevState: RootState;
-    currentState: RootState;
+    prevState: {[key: string]: any};
+    currentState: {[key: string]: any};
     reducerMap: ReducerMap;
     effectMap: EffectMap;
     injectedModules: {[namespace: string]: boolean};
     routerInited: boolean;
+    currentViews: CurrentViews;
   };
+}
+export interface CurrentViews {
+  [moduleName: string]: {[viewName: string]: number};
 }
 export interface BaseModuleState {
   isModule?: boolean;
@@ -22,9 +26,22 @@ export interface BaseModuleState {
 export function isModuleState(module: any): module is BaseModuleState {
   return module.isModule;
 }
-export interface RootState<R = RouterState> {
-  router: R;
+
+export type GetModule<M extends Module = Module> = () => M | Promise<M>;
+
+export interface ModuleGetter {
+  [moduleName: string]: GetModule;
 }
+
+export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : Module;
+
+type ModuleStates<M extends any> = M["model"]["initState"];
+type ModuleViews<M extends any> = {[key in keyof M["views"]]?: number};
+
+export type RootState<G extends ModuleGetter = {}, R = RouterState> = {
+  router: R;
+  views: {[key in keyof G]?: ModuleViews<ReturnModule<G[key]>>};
+} & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
 export interface Action {
   type: string;
@@ -71,6 +88,7 @@ export const LOADING = "LOADING";
 export const ERROR = "@@framework/ERROR";
 export const INIT = "INIT";
 export const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
+export const VIEW_INVALID = "@@framework/VIEW_INVALID";
 export const NSP = "/";
 
 export const MetaData: {
@@ -102,6 +120,12 @@ export function errorAction(error: any) {
   };
 }
 
+export function viewInvalidAction(currentViews: CurrentViews) {
+  return {
+    type: VIEW_INVALID,
+    currentViews,
+  };
+}
 export function setAppModuleName(moduleName: string) {
   MetaData.appModuleName = moduleName;
 }
@@ -144,7 +168,11 @@ export function getModuleActionCreatorList(namespace: string) {
   }
 }
 
-export type Model = (store: ModelStore) => Promise<any>;
+export interface Model<ModuleState = BaseModuleState> {
+  namespace: string;
+  initState: ModuleState;
+  (store: ModelStore): Promise<any>;
+}
 
 export function exportModule<T extends ActionCreatorList>(namespace: string) {
   const actions: T = getModuleActionCreatorList(namespace) as T;

@@ -1,13 +1,13 @@
 import {ActionHandler, ActionHandlerList, ActionHandlerMap, isPromise, getModuleActionCreatorList, NSP, BaseModuleState, RootState, ModelStore, Model} from "./global";
 import {BaseModuleHandlers} from "./actions";
 
-export function exportModel<N extends string>(namespace: N, HandlersClass: {new (presetData?: any): BaseModuleHandlers<BaseModuleState, RootState, N>}): Model {
-  return (store: ModelStore) => {
+export function exportModel<S extends BaseModuleState, N extends string>(namespace: N, HandlersClass: {new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState<{}>, N>}, initState: S): Model<S> {
+  const fun = (store: ModelStore) => {
     const hasInjected = store.reactCoat.injectedModules[namespace];
     if (!hasInjected) {
       store.reactCoat.injectedModules[namespace] = true;
       const moduleState: BaseModuleState = store.getState()[namespace];
-      const handlers = new HandlersClass(moduleState);
+      const handlers = new HandlersClass(initState, moduleState);
       (handlers as any).namespace = namespace;
       (handlers as any).store = store;
       const actions = injectActions(store, namespace, handlers as any);
@@ -27,6 +27,9 @@ export function exportModel<N extends string>(namespace: N, HandlersClass: {new 
       return Promise.resolve(void 0);
     }
   };
+  fun.namespace = namespace;
+  fun.initState = initState;
+  return fun;
 }
 function bindThis(fun: ActionHandler, thisObj: any) {
   const newFun = fun.bind(thisObj);

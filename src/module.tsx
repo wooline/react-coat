@@ -1,13 +1,8 @@
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import {ComponentType} from "react";
-import {Model, Module, MetaData} from "./global";
-
-export type GetModule<M extends Module = Module> = () => M | Promise<M>;
-
-export interface ModuleGetter {
-  [moduleName: string]: GetModule;
-}
+import {Model, Module, MetaData, ModelStore, GetModule, ModuleGetter} from "./global";
+import {invalidview} from "./store";
 
 function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module["then"] === "function";
@@ -68,7 +63,7 @@ export function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, st
   } as any;
 }
 
-export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model): C {
+export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model, viewName: string = "Main"): C {
   const Comp = ComponentView as any;
   return class PureComponent extends React.PureComponent {
     public static contextTypes = {
@@ -77,8 +72,30 @@ export function exportView<C extends ComponentType<any>>(ComponentView: C, model
     public componentWillMount() {
       if (MetaData.isBrowser) {
         // ssr数据流是单向的，model->view
-        const {store} = this.context;
+        const {store}: {store: ModelStore} = this.context;
         model(store);
+        const currentViews = store.reactCoat.currentViews;
+        if (!currentViews[model.namespace]) {
+          currentViews[model.namespace] = {[viewName]: 1};
+        } else {
+          const views = currentViews[model.namespace];
+          if (!views[viewName]) {
+            views[viewName] = 1;
+          } else {
+            views[viewName]++;
+          }
+        }
+        invalidview();
+      }
+    }
+    public componentWillUnmount() {
+      if (MetaData.isBrowser) {
+        const {store}: {store: ModelStore} = this.context;
+        const currentViews = store.reactCoat.currentViews;
+        if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
+          currentViews[model.namespace][viewName]--;
+        }
+        invalidview();
       }
     }
     public render() {

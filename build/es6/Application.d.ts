@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Middleware, ReducersMapObject, StoreEnhancer, Store } from "redux";
-import { ModuleGetter } from "./module";
+import { ModuleGetter } from "./global";
 import { RouterParser } from "./store";
 export interface StoreOptions {
     reducers?: ReducersMapObject;

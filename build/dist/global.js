@@ -8,6 +8,7 @@ exports.LOADING = "LOADING";
 exports.ERROR = "@@framework/ERROR";
 exports.INIT = "INIT";
 exports.LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
+exports.VIEW_INVALID = "@@framework/VIEW_INVALID";
 exports.NSP = "/";
 exports.MetaData = {
     isBrowser: typeof window === "object",
@@ -27,6 +28,13 @@ function errorAction(error) {
     };
 }
 exports.errorAction = errorAction;
+function viewInvalidAction(currentViews) {
+    return {
+        type: exports.VIEW_INVALID,
+        currentViews: currentViews,
+    };
+}
+exports.viewInvalidAction = viewInvalidAction;
 function setAppModuleName(moduleName) {
     exports.MetaData.appModuleName = moduleName;
 }

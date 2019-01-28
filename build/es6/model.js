@@ -1,11 +1,11 @@
 import { isPromise, getModuleActionCreatorList, NSP } from "./global";
-export function exportModel(namespace, HandlersClass) {
-    return (store) => {
+export function exportModel(namespace, HandlersClass, initState) {
+    const fun = (store) => {
         const hasInjected = store.reactCoat.injectedModules[namespace];
         if (!hasInjected) {
             store.reactCoat.injectedModules[namespace] = true;
             const moduleState = store.getState()[namespace];
-            const handlers = new HandlersClass(moduleState);
+            const handlers = new HandlersClass(initState, moduleState);
             handlers.namespace = namespace;
             handlers.store = store;
             const actions = injectActions(store, namespace, handlers);
@@ -28,6 +28,9 @@ export function exportModel(namespace, HandlersClass) {
             return Promise.resolve(void 0);
         }
     };
+    fun.namespace = namespace;
+    fun.initState = initState;
+    return fun;
 }
 function bindThis(fun, thisObj) {
     const newFun = fun.bind(thisObj);

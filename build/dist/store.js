@@ -4,6 +4,32 @@ var tslib_1 = require("tslib");
 var connected_react_router_1 = require("connected-react-router");
 var redux_1 = require("redux");
 var global_1 = require("./global");
+var invalidViewTimer;
+function checkInvalidview() {
+    invalidViewTimer = null;
+    var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
+    var views = {};
+    for (var moduleName in currentViews) {
+        if (currentViews.hasOwnProperty(moduleName)) {
+            var element = currentViews[moduleName];
+            for (var viewname in element) {
+                if (element[viewname]) {
+                    if (!views[moduleName]) {
+                        views[moduleName] = {};
+                    }
+                    views[moduleName][viewname] = element[viewname];
+                }
+            }
+        }
+    }
+    global_1.MetaData.clientStore.dispatch(global_1.viewInvalidAction(views));
+}
+function invalidview() {
+    if (!invalidViewTimer) {
+        invalidViewTimer = setTimeout(checkInvalidview, 4);
+    }
+}
+exports.invalidview = invalidview;
 function getActionData(action) {
     var arr = Object.keys(action).filter(function (key) { return key !== "type" && key !== "priority" && key !== "time"; });
     if (arr.length === 0) {
@@ -40,6 +66,9 @@ function buildStore(storeHistory, reducersMapObject, storeMiddlewares, storeEnha
                 currentState.router = routerParser(currentState.router, rootState.router);
             }
         });
+        if (action.type === global_1.VIEW_INVALID) {
+            currentState.views = getActionData(action);
+        }
         var handlersCommon = reactCoat.reducerMap[action.type] || {};
         var handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp("[^" + global_1.NSP + "]+"), "*")] || {};
         var handlers = tslib_1.__assign({}, handlersCommon, handlersEvery);
@@ -76,9 +105,14 @@ function buildStore(storeHistory, reducersMapObject, storeMiddlewares, storeEnha
                     return originalAction;
                 }
             }
-            if (originalAction.type === global_1.LOCATION_CHANGE && !store.reactCoat.routerInited) {
-                store.reactCoat.routerInited = true;
-                return originalAction;
+            if (originalAction.type === global_1.LOCATION_CHANGE) {
+                if (!store.reactCoat.routerInited) {
+                    store.reactCoat.routerInited = true;
+                    return originalAction;
+                }
+                else {
+                    invalidview();
+                }
             }
             var action = next(originalAction);
             if (!action) {
@@ -167,6 +201,7 @@ function buildStore(storeHistory, reducersMapObject, storeMiddlewares, storeEnha
             effectMap: {},
             injectedModules: {},
             routerInited: false,
+            currentViews: {},
         };
     }
     global_1.MetaData.clientStore = store;

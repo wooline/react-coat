@@ -1,6 +1,31 @@
 import { connectRouter, routerMiddleware } from "connected-react-router";
 import { applyMiddleware, compose, createStore } from "redux";
-import { LOADING, LOCATION_CHANGE, MetaData, NSP, errorAction } from "./global";
+import { LOADING, LOCATION_CHANGE, MetaData, NSP, errorAction, viewInvalidAction, VIEW_INVALID } from "./global";
+let invalidViewTimer;
+function checkInvalidview() {
+    invalidViewTimer = null;
+    const currentViews = MetaData.clientStore.reactCoat.currentViews;
+    const views = {};
+    for (const moduleName in currentViews) {
+        if (currentViews.hasOwnProperty(moduleName)) {
+            const element = currentViews[moduleName];
+            for (const viewname in element) {
+                if (element[viewname]) {
+                    if (!views[moduleName]) {
+                        views[moduleName] = {};
+                    }
+                    views[moduleName][viewname] = element[viewname];
+                }
+            }
+        }
+    }
+    MetaData.clientStore.dispatch(viewInvalidAction(views));
+}
+export function invalidview() {
+    if (!invalidViewTimer) {
+        invalidViewTimer = setTimeout(checkInvalidview, 4);
+    }
+}
 function getActionData(action) {
     const arr = Object.keys(action).filter(key => key !== "type" && key !== "priority" && key !== "time");
     if (arr.length === 0) {
@@ -33,6 +58,9 @@ export function buildStore(storeHistory, reducersMapObject = {}, storeMiddleware
                 currentState.router = routerParser(currentState.router, rootState.router);
             }
         });
+        if (action.type === VIEW_INVALID) {
+            currentState.views = getActionData(action);
+        }
         const handlersCommon = reactCoat.reducerMap[action.type] || {};
         const handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};
         const handlers = Object.assign({}, handlersCommon, handlersEvery);
@@ -67,9 +95,14 @@ export function buildStore(storeHistory, reducersMapObject = {}, storeMiddleware
                 return originalAction;
             }
         }
-        if (originalAction.type === LOCATION_CHANGE && !store.reactCoat.routerInited) {
-            store.reactCoat.routerInited = true;
-            return originalAction;
+        if (originalAction.type === LOCATION_CHANGE) {
+            if (!store.reactCoat.routerInited) {
+                store.reactCoat.routerInited = true;
+                return originalAction;
+            }
+            else {
+                invalidview();
+            }
         }
         const action = next(originalAction);
         if (!action) {
@@ -157,6 +190,7 @@ export function buildStore(storeHistory, reducersMapObject = {}, storeMiddleware
             effectMap: {},
             injectedModules: {},
             routerInited: false,
+            currentViews: {},
         };
     }
     MetaData.clientStore = store;
