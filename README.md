@@ -9,7 +9,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 - [4.1 发布](#41-发布)
   - [新增框架级 Action: @@framework/VIEW_INVALID](#新增框架级-action-frameworkview_invalid)
   - [优化 RootState 泛型类型](#优化-rootstate-泛型类型)
-  - [升级帮助](#升级帮助)
+  - [详细说明及文档](#详细说明及文档)
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
 - [安装 react-coat](#安装-react-coat)
@@ -38,92 +38,13 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 ### 新增框架级 Action: @@framework/VIEW_INVALID
 
-更优雅的处理 view 的失效与更新：当 view 需要更新时，以前我们习惯监听路由变化 `@@router/LOCATION_CHANGE`，并判断当前 pathname 是否与本 view 相关，如：
-
-```JS
-// ./src/modules/videos/model.ts
-
-// 兼听路由变化的 action
-@effect(null)
-protected async ["@@router/LOCATION_CHANGE"](router: RouterState) {
-  const {pathname} = router.location;
-  if (pathname.indexOf("/videos") === 0) {
-    await this.parseRouter();
-  }
-}
-
- // 兼听自已初始化的 action
-@effect(null)
-protected async [ModuleNames.videos + "/INIT"]() {
-  await this.parseRouter();
-}
-```
-
-这样写有两个弊端：
-
-- 让 pathname 与 view 强关联，甚至被 hardcode 到代码中
-- 路由变化只是引起视图更新的原因之一，不是全部。
-
-新版 4.1 增加框架级 action: @@framework/VIEW_INVALID，在上述场景中，监听此 action 是比监听@@router/LOCATION_CHANGE 更合理的替代方案。
-
-> @@framework/VIEW_INVALID 派发时机：
-
-- @@router/LOCATION_CHANGE 被派发后的一个任务周期内
-- 任何一个 view 被 Mount 或 Unmount 后的一个任务周期内
-
-一个任务周期只派发一次：该 action 派发使用 setTimeout 延迟处理，在一个任务周期内只派发一次。
-
-在 RootState 中相对应的增加 **views** 节点，用来表示当前哪些 view 被展示：
-
-```JS
-// RootState
-{
-  router: R;  // 路由节点
-  views: { // 用来表示当前哪些 view 被展示
-      [moduleName: string]?: {[viewName: string]: number};
-  };
-}
-```
-
-使用 4.1 后，不需要判断当前 pathname，可直接使用 rootState.views 判断当前 view：
-
-```JS
-  @effect(null)
-  protected async ["@@framework/VIEW_INVALID"]() {
-    const views = this.rootState.views;
-    if (views.photos && views.photos.List) {
-      ...
-    } else if (views.photos && views.photos.Details) {
-      ...
-    }
-  }
-```
+更优雅的处理 view 的失效与更新
 
 ### 优化 RootState 泛型类型
 
-使期能自动推断，极大的减少了代码量：
+使其能自动推断，极大的减少了代码量
 
-```JS
-// ./src/modules/index.ts
-
-//原 4.0：需要手动引入并合集
-interface States {
-  [ModuleNames.app]: AppState;
-  [ModuleNames.photos]: PhotosState;
-  [ModuleNames.videos]: VideosState;
-  [ModuleNames.messages]: MessagesState;
-  [ModuleNames.comments]: CommentsState;
-}
-
-export type RootState = BaseState & ModulesDefined<States>;
-
-
-// 新 4.1：通过泛型自动推断生成：
-export type RootState = BaseState<ModuleGetter>;
-
-```
-
-### 升级帮助
+### 详细说明及文档
 
 - [4.0 升级 4.1 操作文档](https://github.com/wooline/react-coat/issues/5)
 - [直接查看 Demo](https://github.com/wooline/react-coat-helloworld)
