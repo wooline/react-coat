@@ -21,6 +21,7 @@
 - [RouterParser](#routerparser)
 - [setLoading](#setloading)
 - [setLoadingDepthTime](#setloadingdepthtime)
+- [VIEW_INVALID](#view_invalid)
 
 <!-- /TOC -->
 
@@ -135,12 +136,13 @@ declare const ERROR = "@@framework/ERROR";
 创建并导出模块的 Model，一般写在 module/model.ts 中
 
 ```JS
-declare function exportModel<N extends string>(
+declare function exportModel<S extends BaseModuleState, N extends string>(
     namespace: N, // 模块名称
     HandlersClass: { // ModuleActionHandlers
-        new (presetData?: any): BaseModuleHandlers<BaseModuleState, RootState, N>;
-    }
-): Model;
+        new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState<{}>, N>;
+    },
+    initState: S // 初始 ModuleState
+): Model<S>;
 ```
 
 ### exportModule
@@ -164,6 +166,7 @@ declare function exportModule<T extends ActionCreatorList>(
 declare function exportView<C extends ComponentType<any>>(
     ComponentView: C, // 要导出的 React Component
     model: Model // 本模块的 Model
+    viewName?: string // view名称
 ): C;
 ```
 
@@ -215,7 +218,7 @@ declare function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, s
 
 ### LOCATION_CHANGE
 
-一个常量，当 URL 发生变化时时，会派发一个 @@router/LOCATION_CHANGE 的 action，可以兼听本模块或其它模块的此 action，并对此作出反应
+一个常量，当 URL 发生变化时时，会派发一个 @@router/LOCATION_CHANGE 的 action，可以兼听此 action，并对此作出反应
 
 ```JS
 declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
@@ -261,11 +264,16 @@ declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, st
 
 ### RootState
 
-总的 Store 数据结构类型接口，包含名为 router 的路由数据，该节点默认由 connected-react-routert 生成，可以使用自定义的 RouterParser
+总的 Store 数据结构类型接口。
+包含名为 router 的路由数据，该节点默认由 connected-react-routert 生成，可以使用自定义的 RouterParser
+包含名为 views 的当前展示视图数据，该节点由框架根据当前 view 自动生成
 
 ```JS
-declare interface RootState<R = RouterState> {
-    router: R; // 路由节点
+declare declare type RootState<G extends ModuleGetter = {}, R = RouterState> = {
+    router: R;  // 路由节点
+    views: { // 当前视图展示节点
+        [moduleName:string]?: {[viewName:string]:number};
+    };
 }
 ```
 
@@ -297,3 +305,16 @@ declare function setLoading<T extends Promise<any>>(
 ```JS
 declare function setLoadingDepthTime(second: number): void;
 ```
+
+### VIEW_INVALID
+
+一个常量，当视图需要更新时，会派发一个 @@framework/VIEW_INVALID 的 action，可以兼听此 action，并对此作出反应
+
+```JS
+export declare const VIEW_INVALID = "@@framework/VIEW_INVALID";
+```
+
+当需要监听视图是否需要更新时，兼听此 action 比 @@router/LOCATION_CHANGE 更合理，该 action 的派发时机：
+
+- 当@@router/LOCATION_CHANGE 被派发后的一个任务周期内
+- 当任何一个 view 被 Mount 或 Unmount 后的一个任务周期内

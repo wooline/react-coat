@@ -69,7 +69,6 @@ function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
 }
 exports.loadView = loadView;
 function exportView(ComponentView, model, viewName) {
-    if (viewName === void 0) { viewName = "Main"; }
     var _a;
     var Comp = ComponentView;
     return _a = (function (_super) {

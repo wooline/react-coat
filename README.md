@@ -6,6 +6,10 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 <!-- TOC -->
 
+- [4.1 发布](#41-发布)
+  - [新增框架级 Action: @@framework/VIEW_INVALID](#新增框架级-action-frameworkview_invalid)
+  - [优化 RootState 泛型类型](#优化-rootstate-泛型类型)
+  - [升级帮助](#升级帮助)
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
 - [安装 react-coat](#安装-react-coat)
@@ -30,6 +34,100 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 
 <!-- /TOC -->
 
+## 4.1 发布
+
+### 新增框架级 Action: @@framework/VIEW_INVALID
+
+更优雅的处理 view 的失效与更新：当 view 需要更新时，以前我们习惯监听路由变化 `@@router/LOCATION_CHANGE`，并判断当前 pathname 是否与本 view 相关，如：
+
+```JS
+// ./src/modules/videos/model.ts
+
+// 兼听路由变化的 action
+@effect(null)
+protected async ["@@router/LOCATION_CHANGE"](router: RouterState) {
+  const {pathname} = router.location;
+  if (pathname.indexOf("/videos") === 0) {
+    await this.parseRouter();
+  }
+}
+
+ // 兼听自已初始化的 action
+@effect(null)
+protected async [ModuleNames.videos + "/INIT"]() {
+  await this.parseRouter();
+}
+```
+
+这样写有两个弊端：
+
+- 让 pathname 与 view 强关联，甚至被 hardcode 到代码中
+- 路由变化只是引起视图更新的原因之一，不是全部。
+
+新版 4.1 增加框架级 action: @@framework/VIEW_INVALID，在上述场景中，监听此 action 是比监听@@router/LOCATION_CHANGE 更合理的替代方案。
+
+> @@framework/VIEW_INVALID 派发时机：
+
+- @@router/LOCATION_CHANGE 被派发后的一个任务周期内
+- 任何一个 view 被 Mount 或 Unmount 后的一个任务周期内
+
+一个任务周期只派发一次：该 action 派发使用 setTimeout 延迟处理，在一个任务周期内只派发一次。
+
+在 RootState 中相对应的增加 **views** 节点，用来表示当前哪些 view 被展示：
+
+```JS
+// RootState
+{
+  router: R;  // 路由节点
+  views: { // 用来表示当前哪些 view 被展示
+      [moduleName: string]?: {[viewName: string]: number};
+  };
+}
+```
+
+使用 4.1 后，不需要判断当前 pathname，可直接使用 rootState.views 判断当前 view：
+
+```JS
+  @effect(null)
+  protected async ["@@framework/VIEW_INVALID"]() {
+    const views = this.rootState.views;
+    if (views.photos && views.photos.List) {
+      ...
+    } else if (views.photos && views.photos.Details) {
+      ...
+    }
+  }
+```
+
+### 优化 RootState 泛型类型
+
+使期能自动推断，极大的减少了代码量：
+
+```JS
+// ./src/modules/index.ts
+
+//原 4.0：需要手动引入并合集
+interface States {
+  [ModuleNames.app]: AppState;
+  [ModuleNames.photos]: PhotosState;
+  [ModuleNames.videos]: VideosState;
+  [ModuleNames.messages]: MessagesState;
+  [ModuleNames.comments]: CommentsState;
+}
+
+export type RootState = BaseState & ModulesDefined<States>;
+
+
+// 新 4.1：通过泛型自动推断生成：
+export type RootState = BaseState<ModuleGetter>;
+
+```
+
+### 升级帮助
+
+- [4.0 升级 4.1 操作文档](https://github.com/wooline/react-coat/issues/5)
+- [直接查看 Demo](https://github.com/wooline/react-coat-helloworld)
+
 ## 4.0 发布
 
 - 去除 redux-saga，改用原生的 async 和 await 来组织和管理 effect
@@ -51,21 +149,23 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 依赖周边生态库：
 
 ```
+
 "peerDependencies": {
-    "@types/node": "^9.0.0 || ^10.0.0",
-    "@types/history": "^4.0.0",
-    "@types/react": "^16.0.0",
-    "@types/react-dom": "^16.0.0",
-    "@types/react-redux": "^5.0.0 || ^6.0.0",
-    "@types/react-router-dom": "^4.0.0",
-    "connected-react-router": "^4.0.0 || ^5.0.0",
-    "history": "^4.0.0",
-    "react": "^16.0.0",
-    "react-dom": "^16.0.0",
-    "react-redux": "^5.0.0",
-    "react-router-dom": "^4.0.0",
-    "redux": "^3.0.0 || ^4.0.0"
-  },
+"@types/node": "^9.0.0 || ^10.0.0",
+"@types/history": "^4.0.0",
+"@types/react": "^16.0.0",
+"@types/react-dom": "^16.0.0",
+"@types/react-redux": "^5.0.0 || ^6.0.0",
+"@types/react-router-dom": "^4.0.0",
+"connected-react-router": "^4.0.0 || ^5.0.0",
+"history": "^4.0.0",
+"react": "^16.0.0",
+"react-dom": "^16.0.0",
+"react-redux": "^5.0.0",
+"react-router-dom": "^4.0.0",
+"redux": "^3.0.0 || ^4.0.0"
+},
+
 ```
 
 如果你想省心，并且对以上依赖版本没有特别要求，你可以安装"all in 1"的 [react-coat-pkg](https://github.com/wooline/react-coat-pkg)，它将自动包含以上库，并测试通过各版本不冲突：
@@ -103,7 +203,9 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 [查看详细 API 一览](https://github.com/wooline/react-coat/blob/master/docs/api.md)
 
 ```
+
 BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
+
 ```
 
 ## 与 蚂蚁金服 Dva 的异同
@@ -518,7 +620,8 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 ## 几个特殊的 Action
 
 - **@@router/LOCATION_CHANGE**：本框架集成了 connected-react-router，路由发生变化时将触发此 action，你可以在 moduleHandlers 中监听此 action
-- **"@@framework/ERROR**：本框架 catch 了未处理的 error，发生 error 时将自动派发此 action，你可以在 moduleHandlers 中监听此 action
+- **@@framework/VIEW_INVALID**：当路由发生变化时，或者任何一个 view 发生 Mount 或 Unmount 行为时将触发此 action，它比@@router/LOCATION_CHANGE 更准确反映视图的更新
+- **@@framework/ERROR**：本框架 catch 了未处理的 error，发生 error 时将自动派发此 action，你可以在 moduleHandlers 中监听此 action
 - **module/INIT**：模块初次载入时会触发此 action，来向 store 注入初始 moduleState
 - **module/LOADING**：触发加载进度时会触发此 action，比如 @effect(login)
 

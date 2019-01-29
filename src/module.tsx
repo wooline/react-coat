@@ -63,7 +63,7 @@ export function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, st
   } as any;
 }
 
-export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model, viewName: string = "Main"): C {
+export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model, viewName: string): C {
   const Comp = ComponentView as any;
   return class PureComponent extends React.PureComponent {
     public static contextTypes = {

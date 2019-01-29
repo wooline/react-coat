@@ -58,7 +58,7 @@ export function loadView(moduleGetter, moduleName, viewName, loadingComponent = 
         }
     };
 }
-export function exportView(ComponentView, model, viewName = "Main") {
+export function exportView(ComponentView, model, viewName) {
     var _a;
     const Comp = ComponentView;
     return _a = class PureComponent extends React.PureComponent {
