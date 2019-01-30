@@ -2,7 +2,55 @@
 
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
-你还在老老实实按照原生 redux 教程维护 store 么？试试简单到几乎不用学习就能上手的 react-coat 吧：
+你还在老老实实按照原生 redux 教程维护 store 么？试试简单到几乎不用学习就能上手的 react-coat 吧，代码示例：
+
+```JS
+// 仅需一个类，搞定 action、reducer、effect、loading
+class ModuleHandlers extends BaseModuleHandlers {
+  @reducer
+  protected putCurUser(curUser: CurUser): State {
+    return {...this.state, curUser};
+  }
+  @reducer
+  public putShowLoginPop(showLoginPop: boolean): State {
+    return {...this.state, showLoginPop};
+  }
+  @effect("login") // 使用自定义loading状态
+  public async login(payload: {username: string; password: string}) {
+    const loginResult = await sessionService.api.login(payload);
+    if (!loginResult.error) {
+      this.updateState({curUser: loginResult.data});
+      Toast.success("欢迎您回来！");
+    } else {
+      alert(loginResult.error.message);
+    }
+  }
+  // uncatched错误会触发@@framework/ERROR，兼听并发送给后台
+  @effect(null) // 不需要loading，设置为null
+  protected async ["@@framework/ERROR"](error: CustomError) {
+    if (error.code === "401") {
+      this.dispatch(this.actions.putShowLoginPop(true));
+    } else if (error.code === "301" || error.code === "302") {
+      this.dispatch(this.routerActions.replace(error.detail));
+    } else {
+      Toast.fail(error.message);
+      await settingsService.api.reportError(error);
+    }
+  }
+  // 兼听自已的INIT Action，做一些异步数据请求
+  @effect()
+  protected async ["app/INIT"]() {
+    const [projectConfig, curUser] = await Promise.all([
+      settingsService.api.getSettings(),
+      sessionService.api.getCurUser()
+    ]);
+    this.updateState({
+      projectConfig,
+      curUser,
+    });
+  }
+}
+```
 
 <!-- TOC -->
 
