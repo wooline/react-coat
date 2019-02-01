@@ -38,11 +38,11 @@ function test() {
 
 function compile() {
   console.info(chalk`{green.bold [task]} {white.bold compile}`);
-  spawn("tsc", ["-target", "ES5", "-outDir", "build/dist", "-module", "CommonJs"], "compile failed, please fix");
+  spawn("tsc", ["-p", "tsconfig.build.json", "-target", "ES5", "-outDir", "build/dist", "-module", "CommonJs"], "compile failed, please fix");
   console.info(chalk`{green.bold [task]} {white.bold compile es5}`);
-  spawn("tsc", ["-target", "ES5", "-outDir", "build/es5"], "compile failed, please fix");
+  spawn("tsc", ["-p", "tsconfig.build.json", "-target", "ES5", "-outDir", "build/es5"], "compile failed, please fix");
   console.info(chalk`{green.bold [task]} {white.bold compile es6}`);
-  spawn("tsc", ["-target", "ES6", "-outDir", "build/es6"], "compile failed, please fix");
+  spawn("tsc", ["-p", "tsconfig.build.json", "-target", "ES6", "-outDir", "build/es6"], "compile failed, please fix");
 }
 
 function build() {
