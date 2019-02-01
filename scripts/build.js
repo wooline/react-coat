@@ -31,6 +31,11 @@ function cleanup() {
   fs.emptyDirSync("build");
 }
 
+function test() {
+  console.info(chalk`{green.bold [task]} {white.bold test}`);
+  return spawn("jest", [], "test failed, please fix");
+}
+
 function compile() {
   console.info(chalk`{green.bold [task]} {white.bold compile}`);
   spawn("tsc", ["-target", "ES5", "-outDir", "build/dist", "-module", "CommonJs"], "compile failed, please fix");
@@ -42,6 +47,7 @@ function compile() {
 
 function build() {
   cleanup();
+  test();
   lint();
   compile();
 }

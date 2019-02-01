@@ -6,7 +6,8 @@
   "module": "build/es5/index.js",
   "types": "build/es6/index.d.ts",
   "scripts": {
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -41,13 +42,12 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "~10.12.2",
     "@types/jest": "^23.3.13",
+    "@types/node": "~10.12.2",
     "@types/react": "~16.4.18",
     "@types/react-dom": "~16.0.9",
     "@types/react-redux": "~6.0.9",
     "@types/react-router-dom": "~4.3.1",
-    "jest": "^23.6.0",
     "babel-eslint": "~10.0.1",
     "chalk": "~2.4.1",
     "connected-react-router": "~5.0.1",
@@ -58,12 +58,14 @@
     "eslint-plugin-prettier": "~3.0.0",
     "fs-extra": "~7.0.0",
     "history": "~4.7.2",
+    "jest": "^23.6.0",
     "prettier": "~1.15.2",
     "react": "~16.5.0",
     "react-dom": "~16.5.0",
     "react-redux": "~5.1.0",
     "react-router-dom": "~4.3.1",
     "redux": "~4.0.1",
+    "ts-jest": "~23.10.5",
     "tslint": "~5.11.0",
     "tslint-config-prettier": "~1.15.0",
     "tslint-plugin-prettier": "~2.0.1",
