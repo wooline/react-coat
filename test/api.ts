@@ -1,4 +1,4 @@
-import {CurUser, LoginRequest, LoginResponse} from "./type";
+import {CurUser, LoginRequest, LoginResponse, ListSearch, ListItem, ListSummary} from "./type";
 
 export class API {
   public getCurUser(): Promise<CurUser> {
@@ -14,6 +14,23 @@ export class API {
       },
       error: null,
     });
+  }
+  public searchList(listSearch: ListSearch): Promise<{listItems: ListItem[]; listSummary: ListSummary}> {
+    if (listSearch.title === "error") {
+      return Promise.reject(new Error("获取图片列表失败！"));
+    } else if (listSearch.title === "exception") {
+      return Promise.reject(new Error("服务器内部错误！"));
+    } else {
+      return Promise.resolve({
+        listItems: [{id: "1", title: "photo1"}, {id: "2", title: "photo1"}],
+        listSummary: {
+          page: 1,
+          pageSize: 10,
+          totalItems: 10,
+          totalPages: 1,
+        },
+      });
+    }
   }
 }
 

@@ -24,3 +24,19 @@ export const loginErrorCode = {
   usernameHasExisted: "usernameHasExisted",
 };
 export type LoginResponse = DefaultResult<CurUser, {code: LoginErrorCode; message: string}>;
+
+export interface ListSearch {
+  page: number;
+  pageSize: number;
+  title: string;
+}
+export interface ListItem {
+  id: string;
+  title: string;
+}
+export interface ListSummary {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
