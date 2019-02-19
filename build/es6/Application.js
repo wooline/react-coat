@@ -53,10 +53,16 @@ export function buildApp(moduleGetter, appName, storeOptions = {}, container = "
     getModuleListByNames(preModuleNames, moduleGetter).then(([appModel]) => {
         appModel.model(store);
         const WithRouter = withRouter(appModel.views.Main);
-        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(React.createElement(Provider, { store: store },
+        const app = (React.createElement(Provider, { store: store },
             React.createElement(ConnectedRouter, { history: history },
-                React.createElement(WithRouter, null))), document.getElementById(container));
+                React.createElement(WithRouter, null))));
+        if (typeof container === "function") {
+            container(app);
+        }
+        else {
+            const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+            render(app, typeof container === "string" ? document.getElementById(container) : container);
+        }
     });
     return store;
 }

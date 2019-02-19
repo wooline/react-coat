@@ -1,0 +1,91 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ssr failed:/photos?search={title:error} 1`] = `
+Object {
+  "data": Object {
+    "app": Object {
+      "curUser": Object {
+        "avatarUrl": "/imgs/1.jpg",
+        "hasLogin": true,
+        "uid": "1",
+        "username": "test",
+      },
+      "isModule": true,
+      "loading": Object {
+        "global": "Stop",
+        "login": "Stop",
+      },
+      "ssrError": "获取列表失败！",
+    },
+    "photos": Object {
+      "isModule": true,
+    },
+    "router": Object {
+      "action": "POP",
+      "location": Object {
+        "hash": "",
+        "pathname": "/photos",
+        "search": "?search={\\"title\\":\\"error\\"}",
+        "state": undefined,
+      },
+    },
+  },
+  "html": "<div data-reactroot=\\"\\">获取列表失败！</div>",
+  "ssrInitStoreKey": "reactCoatInitStore",
+}
+`;
+
+exports[`ssr success:/photos?search={title:success} 1`] = `
+Object {
+  "data": Object {
+    "app": Object {
+      "curUser": Object {
+        "avatarUrl": "/imgs/1.jpg",
+        "hasLogin": true,
+        "uid": "1",
+        "username": "test",
+      },
+      "isModule": true,
+      "loading": Object {
+        "global": "Stop",
+        "login": "Stop",
+      },
+    },
+    "photos": Object {
+      "isModule": true,
+      "listItems": Array [
+        Object {
+          "id": "1",
+          "title": "item1",
+        },
+        Object {
+          "id": "2",
+          "title": "item2",
+        },
+      ],
+      "listSearch": Object {
+        "page": 1,
+        "pageSize": 10,
+        "title": "success",
+      },
+      "listSummary": Object {
+        "page": 1,
+        "pageSize": 10,
+        "totalItems": 10,
+        "totalPages": 1,
+      },
+    },
+    "router": Object {
+      "action": "POP",
+      "location": Object {
+        "hash": "",
+        "pathname": "/photos",
+        "search": "?search={\\"title\\":\\"success\\"}",
+        "state": undefined,
+      },
+    },
+  },
+  "html": "<div data-reactroot=\\"\\"><div class=\\"photos\\"><ul><li>photo-<!-- -->item1</li><li>photo-<!-- -->item2</li></ul><div class=\\"pagination\\">共10条，第1/1页</div></div></div>",
+  "ssrInitStoreKey": "reactCoatInitStore",
+}
+`;

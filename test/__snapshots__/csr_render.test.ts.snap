@@ -1,0 +1,66 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`spa success:/videos?search={title:success} 1`] = `
+Object {
+  "data": Object {
+    "app": Object {
+      "curUser": Object {
+        "avatarUrl": "/imgs/1.jpg",
+        "hasLogin": true,
+        "uid": "1",
+        "username": "test",
+      },
+      "isModule": true,
+      "loading": Object {
+        "global": "Stop",
+        "login": "Stop",
+      },
+    },
+    "router": Object {
+      "action": "POP",
+      "location": Object {
+        "hash": "",
+        "pathname": "/videos",
+        "search": "?search={%22title%22:%22success%22}",
+        "state": undefined,
+      },
+    },
+    "videos": Object {
+      "isModule": true,
+      "listItems": Array [
+        Object {
+          "id": "1",
+          "title": "item1",
+        },
+        Object {
+          "id": "2",
+          "title": "item2",
+        },
+      ],
+      "listSearch": Object {
+        "page": 1,
+        "pageSize": 10,
+        "title": "success",
+      },
+      "listSummary": Object {
+        "page": 1,
+        "pageSize": 10,
+        "totalItems": 10,
+        "totalPages": 1,
+      },
+      "loading": Object {
+        "global": "Stop",
+      },
+    },
+    "views": Object {
+      "app": Object {
+        "Main": 1,
+      },
+      "videos": Object {
+        "Main": 1,
+      },
+    },
+  },
+  "html": "<div><div class=\\"videos\\"><ul><li>video-item1</li><li>video-item2</li></ul><div class=\\"pagination\\">共10条，第1/1页</div></div></div>",
+}
+`;

@@ -12,4 +12,6 @@ module.exports = {
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   moduleDirectories: ["node_modules", "src"],
+  setupFiles: ["./test/setup.js"],
+  testURL: "http://localhost/",
 };

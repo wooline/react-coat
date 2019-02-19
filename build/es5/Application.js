@@ -58,10 +58,16 @@ export function buildApp(moduleGetter, appName, storeOptions, container, ssrInit
         var appModel = _a[0];
         appModel.model(store);
         var WithRouter = withRouter(appModel.views.Main);
-        var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(React.createElement(Provider, { store: store },
+        var app = (React.createElement(Provider, { store: store },
             React.createElement(ConnectedRouter, { history: history },
-                React.createElement(WithRouter, null))), document.getElementById(container));
+                React.createElement(WithRouter, null))));
+        if (typeof container === "function") {
+            container(app);
+        }
+        else {
+            var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+            render(app, typeof container === "string" ? document.getElementById(container) : container);
+        }
     });
     return store;
 }

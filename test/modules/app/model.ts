@@ -35,9 +35,11 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
   }
   @effect(null)
   protected async [ERROR](error: Error) {
-    if (error.message === "获取图片列表失败！") {
+    if (error.message === "获取列表失败！") {
+      // 消化error为正常状态
       this.dispatch(this.callThisAction(this.putSsrError, error.message));
     } else {
+      // 不消化error，继续向上抛出
       throw error;
     }
   }
@@ -47,6 +49,7 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
     this.updateState({
       curUser,
     });
+    // photos模块使用ssr渲染，需要手动loadModel
     if (this.rootState.router.location.pathname === "/photos") {
       await loadModel(moduleGetter.photos).then(subModel => {
         return subModel(this.store);

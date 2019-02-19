@@ -2,6 +2,7 @@ import {ConnectedRouter} from "connected-react-router";
 import createBrowserHistory from "history/createBrowserHistory";
 import createMemoryHistory from "history/createMemoryHistory";
 import * as React from "react";
+import {ReactElement} from "react";
 import * as ReactDOM from "react-dom";
 import {renderToNodeStream, renderToString} from "react-dom/server";
 import {Provider} from "react-redux";
@@ -45,7 +46,7 @@ function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter)
   });
   return Promise.all(preModules);
 }
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appName: A, storeOptions: StoreOptions = {}, container: string = "root", ssrInitStoreKey: string = "reactCoatInitStore") {
+export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appName: A, storeOptions: StoreOptions = {}, container: string | Element | ((component: ReactElement<any>) => void) = "root", ssrInitStoreKey: string = "reactCoatInitStore") {
   MetaData.appModuleName = appName;
   const history = createBrowserHistory();
   let initData = {};
@@ -61,15 +62,19 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
     appModel.model(store);
     /* 此处没有使用.then，可以让view不必等init初始化完就及时展示出来，不过会导致和server端渲染不一样，以及可能会出现某些问题，待观察 */
     const WithRouter = withRouter(appModel.views.Main);
-    const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-    render(
+    const app = (
       <Provider store={store}>
         <ConnectedRouter history={history}>
           <WithRouter />
         </ConnectedRouter>
-      </Provider>,
-      document.getElementById(container),
+      </Provider>
     );
+    if (typeof container === "function") {
+      container(app);
+    } else {
+      const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(app, typeof container === "string" ? document.getElementById(container) : container);
+    }
   });
   return store as Store;
 }

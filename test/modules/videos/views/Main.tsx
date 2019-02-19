@@ -15,10 +15,10 @@ export class Component extends React.PureComponent<Props> {
 
     if (listItems && listSearch) {
       return (
-        <div className="photos">
+        <div className="videos">
           <ul>
             {listItems.map(item => (
-              <li key={item.id}>photo-{item.title}</li>
+              <li key={item.id}>video-{item.title}</li>
             ))}
           </ul>
           {listSummary && <div className="pagination">{`共${listSummary.totalItems}条，第${listSummary.page}/${listSummary.totalPages}页`}</div>}
@@ -31,7 +31,7 @@ export class Component extends React.PureComponent<Props> {
 }
 
 const mapStateToProps = (state: RootState) => {
-  const model = state.photos!;
+  const model = state.videos!;
   return {
     listSearch: model.listSearch,
     listItems: model.listItems,

@@ -17,12 +17,12 @@ export class API {
   }
   public searchList(listSearch: ListSearch): Promise<{listItems: ListItem[]; listSummary: ListSummary}> {
     if (listSearch.title === "error") {
-      return Promise.reject(new Error("获取图片列表失败！"));
+      return Promise.reject(new Error("获取列表失败！"));
     } else if (listSearch.title === "exception") {
       return Promise.reject(new Error("服务器内部错误！"));
     } else {
       return Promise.resolve({
-        listItems: [{id: "1", title: "photo1"}, {id: "2", title: "photo1"}],
+        listItems: [{id: "1", title: "item1"}, {id: "2", title: "item2"}],
         listSummary: {
           page: 1,
           pageSize: 10,
