@@ -85,7 +85,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 ## 4.1.1 发布
 
-API：buildApp(moduleGetter,appName,storeOptions,container,ssrInitStoreKey)，中的 container 参数增加 Element | (component: ReactElement<any>) => void 类型，可传入自定义的 render 方法。
+buildApp(moduleGetter,appName,storeOptions,container,ssrInitStoreKey)，中的 container 参数增加 Element | (component: ReactElement<any>) => void 类型，可传入自定义的 render 方法。
 
 此次修订主要为了方便测试时传入自定义的 render 方法替代 ReactDOM.render，例如：
 
