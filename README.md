@@ -54,6 +54,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- TOC -->
 
+- [4.1.1 发布](#411-发布)
 - [4.1 发布](#41-发布)
   - [新增框架级 Action: @@framework/VIEW_INVALID](#新增框架级-action-frameworkview_invalid)
   - [优化 RootState 泛型类型](#优化-rootstate-泛型类型)
@@ -81,6 +82,27 @@ class ModuleHandlers extends BaseModuleHandlers {
   - [学习交流](#学习交流)
 
 <!-- /TOC -->
+
+## 4.1.1 发布
+
+API：buildApp(moduleGetter,appName,storeOptions,container,ssrInitStoreKey)，中的 container 参数增加 Element | (component: ReactElement<any>) => void 类型，可传入自定义的 render 方法。
+
+此次修订主要为了方便测试时传入自定义的 render 方法替代 ReactDOM.render，例如：
+
+```JS
+test("/videos", done => {
+  history.replaceState({}, "Test", `http://localhost/videos`);
+  expect.assertions(1);
+  const store = buildApp(moduleGetter, "app", {}, app => {
+      const wrapper = mount(app);
+      setTimeout(() => {
+        expect({html: wrapper.html(), data: store.getState()}).toMatchSnapshot();
+        done();
+      }, 1000);
+    }
+  )
+});
+```
 
 ## 4.1 发布
 
