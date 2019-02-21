@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
-var PropTypes = require("prop-types");
 var React = require("react");
 var global_1 = require("./global");
 var store_1 = require("./store");
@@ -69,52 +68,45 @@ function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
 }
 exports.loadView = loadView;
 function exportView(ComponentView, model, viewName) {
-    var _a;
     var Comp = ComponentView;
-    return _a = (function (_super) {
-            tslib_1.__extends(PureComponent, _super);
-            function PureComponent() {
-                return _super !== null && _super.apply(this, arguments) || this;
-            }
-            PureComponent.prototype.componentWillMount = function () {
-                var _a;
-                if (global_1.MetaData.isBrowser) {
-                    var store = this.context.store;
-                    model(store);
-                    var currentViews = store.reactCoat.currentViews;
-                    if (!currentViews[model.namespace]) {
-                        currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+    return (function (_super) {
+        tslib_1.__extends(Component, _super);
+        function Component() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Component.prototype.componentWillMount = function () {
+            var _a;
+            if (global_1.MetaData.isBrowser) {
+                model(global_1.MetaData.clientStore);
+                var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
+                if (!currentViews[model.namespace]) {
+                    currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+                }
+                else {
+                    var views = currentViews[model.namespace];
+                    if (!views[viewName]) {
+                        views[viewName] = 1;
                     }
                     else {
-                        var views = currentViews[model.namespace];
-                        if (!views[viewName]) {
-                            views[viewName] = 1;
-                        }
-                        else {
-                            views[viewName]++;
-                        }
+                        views[viewName]++;
                     }
-                    store_1.invalidview();
                 }
-            };
-            PureComponent.prototype.componentWillUnmount = function () {
-                if (global_1.MetaData.isBrowser) {
-                    var store = this.context.store;
-                    var currentViews = store.reactCoat.currentViews;
-                    if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
-                        currentViews[model.namespace][viewName]--;
-                    }
-                    store_1.invalidview();
+                store_1.invalidview();
+            }
+        };
+        Component.prototype.componentWillUnmount = function () {
+            if (global_1.MetaData.isBrowser) {
+                var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
+                if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
+                    currentViews[model.namespace][viewName]--;
                 }
-            };
-            PureComponent.prototype.render = function () {
-                return React.createElement(Comp, tslib_1.__assign({}, this.props));
-            };
-            return PureComponent;
-        }(React.PureComponent)),
-        _a.contextTypes = {
-            store: PropTypes.object,
-        },
-        _a;
+                store_1.invalidview();
+            }
+        };
+        Component.prototype.render = function () {
+            return React.createElement(Comp, tslib_1.__assign({}, this.props));
+        };
+        return Component;
+    }(React.PureComponent));
 }
 exports.exportView = exportView;

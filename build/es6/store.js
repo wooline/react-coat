@@ -42,6 +42,29 @@ function getActionData(action) {
         return data;
     }
 }
+function simpleEqual(obj1, obj2) {
+    if (obj1 === obj2) {
+        return true;
+    }
+    else if (typeof obj1 !== typeof obj2 || typeof obj1 !== "object") {
+        return false;
+    }
+    else {
+        const keys1 = Object.keys(obj1);
+        const keys2 = Object.keys(obj2);
+        if (keys1.length !== keys2.length) {
+            return false;
+        }
+        else {
+            for (const key of keys1) {
+                if (!simpleEqual(obj1[key], obj2[key])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+}
 export function buildStore(storeHistory, reducersMapObject = {}, storeMiddlewares = [], storeEnhancers = [], initData = {}, routerParser) {
     let store;
     const combineReducers = (rootState, action) => {
@@ -59,7 +82,10 @@ export function buildStore(storeHistory, reducersMapObject = {}, storeMiddleware
             }
         });
         if (action.type === VIEW_INVALID) {
-            currentState.views = getActionData(action);
+            const views = getActionData(action);
+            if (!simpleEqual(currentState.views, views)) {
+                currentState.views = views;
+            }
         }
         const handlersCommon = reactCoat.reducerMap[action.type] || {};
         const handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), "*")] || {};

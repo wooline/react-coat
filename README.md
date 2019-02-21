@@ -54,6 +54,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- TOC -->
 
+- [4.1.2 发布](#412-发布)
 - [4.1.1 发布](#411-发布)
 - [4.1 发布](#41-发布)
   - [新增框架级 Action: @@framework/VIEW_INVALID](#新增框架级-action-frameworkview_invalid)
@@ -82,6 +83,19 @@ class ModuleHandlers extends BaseModuleHandlers {
   - [学习交流](#学习交流)
 
 <!-- /TOC -->
+
+## 4.1.2 发布
+
+本次修订主要为兼容 react 最新版本，包括：
+
+```
+"react": "~16.8.2",
+"react-dom": "~16.8.2",
+"react-redux": "~6.0.1",
+"connected-react-router": "~6.3.1",
+```
+
+其中个人感觉 react-redux 6.0.1 版本还不太稳定，建议先使用 react-redux 5.1.1 + connected-react-router@5.0.1
 
 ## 4.1.1 发布
 

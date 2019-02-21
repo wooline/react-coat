@@ -43,6 +43,30 @@ function getActionData(action) {
         return data;
     }
 }
+function simpleEqual(obj1, obj2) {
+    if (obj1 === obj2) {
+        return true;
+    }
+    else if (typeof obj1 !== typeof obj2 || typeof obj1 !== "object") {
+        return false;
+    }
+    else {
+        var keys1 = Object.keys(obj1);
+        var keys2 = Object.keys(obj2);
+        if (keys1.length !== keys2.length) {
+            return false;
+        }
+        else {
+            for (var _i = 0, keys1_1 = keys1; _i < keys1_1.length; _i++) {
+                var key = keys1_1[_i];
+                if (!simpleEqual(obj1[key], obj2[key])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+}
 export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, storeEnhancers, initData, routerParser) {
     if (reducersMapObject === void 0) { reducersMapObject = {}; }
     if (storeMiddlewares === void 0) { storeMiddlewares = []; }
@@ -64,7 +88,10 @@ export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, st
             }
         });
         if (action.type === VIEW_INVALID) {
-            currentState.views = getActionData(action);
+            var views = getActionData(action);
+            if (!simpleEqual(currentState.views, views)) {
+                currentState.views = views;
+            }
         }
         var handlersCommon = reactCoat.reducerMap[action.type] || {};
         var handlersEvery = reactCoat.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), "*")] || {};

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { ReactElement } from "react";
 import { Middleware, ReducersMapObject, StoreEnhancer, Store } from "redux";
 import { ModuleGetter } from "./global";

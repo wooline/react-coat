@@ -1,4 +1,3 @@
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { MetaData } from "./global";
 import { invalidview } from "./store";
@@ -59,45 +58,38 @@ export function loadView(moduleGetter, moduleName, viewName, loadingComponent = 
     };
 }
 export function exportView(ComponentView, model, viewName) {
-    var _a;
     const Comp = ComponentView;
-    return _a = class PureComponent extends React.PureComponent {
-            componentWillMount() {
-                if (MetaData.isBrowser) {
-                    const { store } = this.context;
-                    model(store);
-                    const currentViews = store.reactCoat.currentViews;
-                    if (!currentViews[model.namespace]) {
-                        currentViews[model.namespace] = { [viewName]: 1 };
+    return class Component extends React.PureComponent {
+        componentWillMount() {
+            if (MetaData.isBrowser) {
+                model(MetaData.clientStore);
+                const currentViews = MetaData.clientStore.reactCoat.currentViews;
+                if (!currentViews[model.namespace]) {
+                    currentViews[model.namespace] = { [viewName]: 1 };
+                }
+                else {
+                    const views = currentViews[model.namespace];
+                    if (!views[viewName]) {
+                        views[viewName] = 1;
                     }
                     else {
-                        const views = currentViews[model.namespace];
-                        if (!views[viewName]) {
-                            views[viewName] = 1;
-                        }
-                        else {
-                            views[viewName]++;
-                        }
+                        views[viewName]++;
                     }
-                    invalidview();
                 }
+                invalidview();
             }
-            componentWillUnmount() {
-                if (MetaData.isBrowser) {
-                    const { store } = this.context;
-                    const currentViews = store.reactCoat.currentViews;
-                    if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
-                        currentViews[model.namespace][viewName]--;
-                    }
-                    invalidview();
+        }
+        componentWillUnmount() {
+            if (MetaData.isBrowser) {
+                const currentViews = MetaData.clientStore.reactCoat.currentViews;
+                if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
+                    currentViews[model.namespace][viewName]--;
                 }
+                invalidview();
             }
-            render() {
-                return React.createElement(Comp, Object.assign({}, this.props));
-            }
-        },
-        _a.contextTypes = {
-            store: PropTypes.object,
-        },
-        _a;
+        }
+        render() {
+            return React.createElement(Comp, Object.assign({}, this.props));
+        }
+    };
 }

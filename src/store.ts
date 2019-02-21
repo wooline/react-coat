@@ -1,14 +1,14 @@
 import {connectRouter, routerMiddleware} from "connected-react-router";
 import {History} from "history";
 import {applyMiddleware, compose, createStore, Middleware, ReducersMapObject, StoreEnhancer} from "redux";
-import {Action, LOADING, LOCATION_CHANGE, MetaData, ModelStore, NSP, errorAction, viewInvalidAction, VIEW_INVALID} from "./global";
+import {Action, CurrentViews, LOADING, LOCATION_CHANGE, MetaData, ModelStore, NSP, errorAction, viewInvalidAction, VIEW_INVALID} from "./global";
 
 let invalidViewTimer: NodeJS.Timer | null;
 
 function checkInvalidview() {
   invalidViewTimer = null;
   const currentViews = MetaData.clientStore.reactCoat.currentViews;
-  const views: typeof currentViews = {};
+  const views: CurrentViews = {};
   for (const moduleName in currentViews) {
     if (currentViews.hasOwnProperty(moduleName)) {
       const element = currentViews[moduleName];
@@ -48,6 +48,26 @@ function getActionData(action: Action) {
 
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
+function simpleEqual(obj1: any, obj2: any): boolean {
+  if (obj1 === obj2) {
+    return true;
+  } else if (typeof obj1 !== typeof obj2 || typeof obj1 !== "object") {
+    return false;
+  } else {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) {
+      return false;
+    } else {
+      for (const key of keys1) {
+        if (!simpleEqual(obj1[key], obj2[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+}
 export function buildStore(storeHistory: History, reducersMapObject: ReducersMapObject<any, any> = {}, storeMiddlewares: Middleware[] = [], storeEnhancers: StoreEnhancer[] = [], initData: any = {}, routerParser?: RouterParser): ModelStore {
   let store: ModelStore;
   const combineReducers = (rootState: {[key: string]: any}, action: Action) => {
@@ -67,7 +87,10 @@ export function buildStore(storeHistory: History, reducersMapObject: ReducersMap
     });
     // 内置 action handler
     if (action.type === VIEW_INVALID) {
-      currentState.views = getActionData(action);
+      const views: CurrentViews = getActionData(action);
+      if (!simpleEqual(currentState.views, views)) {
+        currentState.views = views;
+      }
     }
     const handlersCommon = reactCoat.reducerMap[action.type] || {};
     // 支持泛监听，形如 */loading
