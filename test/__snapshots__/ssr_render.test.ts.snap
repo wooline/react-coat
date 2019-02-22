@@ -30,7 +30,7 @@ Object {
       },
     },
   },
-  "html": "<div data-reactroot=\\"\\">获取列表失败！</div>",
+  "html": "<div>获取列表失败！</div>",
   "ssrInitStoreKey": "reactCoatInitStore",
 }
 `;
@@ -85,7 +85,7 @@ Object {
       },
     },
   },
-  "html": "<div data-reactroot=\\"\\"><div class=\\"photos\\"><ul><li>photo-<!-- -->item1</li><li>photo-<!-- -->item2</li></ul><div class=\\"pagination\\">共10条，第1/1页</div></div></div>",
+  "html": "<div><div class=\\"photos\\"><ul><li>photo-<!-- -->item1</li><li>photo-<!-- -->item2</li></ul><div class=\\"pagination\\">共10条，第1/1页</div></div></div>",
   "ssrInitStoreKey": "reactCoatInitStore",
 }
 `;

@@ -26,18 +26,20 @@ export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M[
     return Promise.resolve(result.model);
   }
 }
-interface State {
+interface LoadViewState {
   Component: ComponentType<any> | null;
 }
-
+interface ViewState {
+  modelReady: boolean;
+}
 export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : never;
 
 export function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N, loadingComponent: React.ReactNode = null): V[N] {
   return class Loader extends React.Component {
-    public state: State = {
+    public state: LoadViewState = {
       Component: null,
     };
-    public shouldComponentUpdate(nextProps: any, nextState: State) {
+    public shouldComponentUpdate(nextProps: any, nextState: LoadViewState) {
       return nextState.Component !== this.state.Component;
     }
     public componentWillMount() {
@@ -64,37 +66,43 @@ export function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, st
 
 export function exportView<C extends ComponentType<any>>(ComponentView: C, model: Model, viewName: string): C {
   const Comp = ComponentView as any;
-  return class Component extends React.PureComponent {
-    public componentWillMount() {
-      if (MetaData.isBrowser) {
-        model(MetaData.clientStore);
-        const currentViews = MetaData.clientStore.reactCoat.currentViews;
-        if (!currentViews[model.namespace]) {
-          currentViews[model.namespace] = {[viewName]: 1};
-        } else {
-          const views = currentViews[model.namespace];
-          if (!views[viewName]) {
-            views[viewName] = 1;
+  if (MetaData.isBrowser) {
+    return class Component extends React.PureComponent {
+      public state: ViewState = {
+        modelReady: false,
+      };
+      public componentWillMount() {
+        model(MetaData.clientStore).then(() => {
+          const currentViews = MetaData.clientStore.reactCoat.currentViews;
+          if (!currentViews[model.namespace]) {
+            currentViews[model.namespace] = {[viewName]: 1};
           } else {
-            views[viewName]++;
+            const views = currentViews[model.namespace];
+            if (!views[viewName]) {
+              views[viewName] = 1;
+            } else {
+              views[viewName]++;
+            }
           }
-        }
-        invalidview();
+          invalidview();
+          this.setState({modelReady: true});
+        });
       }
-    }
-    public componentWillUnmount() {
-      if (MetaData.isBrowser) {
+      public componentWillUnmount() {
         const currentViews = MetaData.clientStore.reactCoat.currentViews;
         if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
           currentViews[model.namespace][viewName]--;
         }
         invalidview();
       }
-    }
-    public render() {
-      return <Comp {...this.props} />;
-    }
-  } as any;
+      public render() {
+        return this.state.modelReady ? <Comp {...this.props} /> : null;
+      }
+    } as any;
+  } else {
+    // ssr时不存在invalidview，也不需要 model初始化，因为必须提前将 model初始化（单向数据流）
+    return Comp;
+  }
 }
 
 /*

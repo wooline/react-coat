@@ -59,37 +59,46 @@ export function loadView(moduleGetter, moduleName, viewName, loadingComponent = 
 }
 export function exportView(ComponentView, model, viewName) {
     const Comp = ComponentView;
-    return class Component extends React.PureComponent {
-        componentWillMount() {
-            if (MetaData.isBrowser) {
-                model(MetaData.clientStore);
-                const currentViews = MetaData.clientStore.reactCoat.currentViews;
-                if (!currentViews[model.namespace]) {
-                    currentViews[model.namespace] = { [viewName]: 1 };
-                }
-                else {
-                    const views = currentViews[model.namespace];
-                    if (!views[viewName]) {
-                        views[viewName] = 1;
+    if (MetaData.isBrowser) {
+        return class Component extends React.PureComponent {
+            constructor() {
+                super(...arguments);
+                this.state = {
+                    modelReady: false,
+                };
+            }
+            componentWillMount() {
+                model(MetaData.clientStore).then(() => {
+                    const currentViews = MetaData.clientStore.reactCoat.currentViews;
+                    if (!currentViews[model.namespace]) {
+                        currentViews[model.namespace] = { [viewName]: 1 };
                     }
                     else {
-                        views[viewName]++;
+                        const views = currentViews[model.namespace];
+                        if (!views[viewName]) {
+                            views[viewName] = 1;
+                        }
+                        else {
+                            views[viewName]++;
+                        }
                     }
-                }
-                invalidview();
+                    invalidview();
+                    this.setState({ modelReady: true });
+                });
             }
-        }
-        componentWillUnmount() {
-            if (MetaData.isBrowser) {
+            componentWillUnmount() {
                 const currentViews = MetaData.clientStore.reactCoat.currentViews;
                 if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
                     currentViews[model.namespace][viewName]--;
                 }
                 invalidview();
             }
-        }
-        render() {
-            return React.createElement(Comp, Object.assign({}, this.props));
-        }
-    };
+            render() {
+                return this.state.modelReady ? React.createElement(Comp, Object.assign({}, this.props)) : null;
+            }
+        };
+    }
+    else {
+        return Comp;
+    }
 }

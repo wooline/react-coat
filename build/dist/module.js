@@ -69,44 +69,52 @@ function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
 exports.loadView = loadView;
 function exportView(ComponentView, model, viewName) {
     var Comp = ComponentView;
-    return (function (_super) {
-        tslib_1.__extends(Component, _super);
-        function Component() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        Component.prototype.componentWillMount = function () {
-            var _a;
-            if (global_1.MetaData.isBrowser) {
-                model(global_1.MetaData.clientStore);
-                var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
-                if (!currentViews[model.namespace]) {
-                    currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
-                }
-                else {
-                    var views = currentViews[model.namespace];
-                    if (!views[viewName]) {
-                        views[viewName] = 1;
+    if (global_1.MetaData.isBrowser) {
+        return (function (_super) {
+            tslib_1.__extends(Component, _super);
+            function Component() {
+                var _this = _super !== null && _super.apply(this, arguments) || this;
+                _this.state = {
+                    modelReady: false,
+                };
+                return _this;
+            }
+            Component.prototype.componentWillMount = function () {
+                var _this = this;
+                model(global_1.MetaData.clientStore).then(function () {
+                    var _a;
+                    var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
+                    if (!currentViews[model.namespace]) {
+                        currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
                     }
                     else {
-                        views[viewName]++;
+                        var views = currentViews[model.namespace];
+                        if (!views[viewName]) {
+                            views[viewName] = 1;
+                        }
+                        else {
+                            views[viewName]++;
+                        }
                     }
-                }
-                store_1.invalidview();
-            }
-        };
-        Component.prototype.componentWillUnmount = function () {
-            if (global_1.MetaData.isBrowser) {
+                    store_1.invalidview();
+                    _this.setState({ modelReady: true });
+                });
+            };
+            Component.prototype.componentWillUnmount = function () {
                 var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
                 if (currentViews[model.namespace] && currentViews[model.namespace][viewName]) {
                     currentViews[model.namespace][viewName]--;
                 }
                 store_1.invalidview();
-            }
-        };
-        Component.prototype.render = function () {
-            return React.createElement(Comp, tslib_1.__assign({}, this.props));
-        };
-        return Component;
-    }(React.PureComponent));
+            };
+            Component.prototype.render = function () {
+                return this.state.modelReady ? React.createElement(Comp, tslib_1.__assign({}, this.props)) : null;
+            };
+            return Component;
+        }(React.PureComponent));
+    }
+    else {
+        return Comp;
+    }
 }
 exports.exportView = exportView;
