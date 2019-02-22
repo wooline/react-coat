@@ -56,7 +56,7 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   const store = buildStore(history, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, initData, storeOptions.routerParser);
   const preModuleNames: string[] = [appName];
   if (initData) {
-    preModuleNames.push(...Object.keys(initData).filter(key => key !== appName && key !== "router"));
+    preModuleNames.push(...Object.keys(initData).filter(key => key !== appName && initData[key].isModule));
   }
   getModuleListByNames(preModuleNames, moduleGetter).then(([appModel]) => {
     appModel.model(store);

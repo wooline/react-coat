@@ -68,11 +68,14 @@ export function exportView<C extends ComponentType<any>>(ComponentView: C, model
   const Comp = ComponentView as any;
   if (MetaData.isBrowser) {
     return class Component extends React.PureComponent {
-      public state: ViewState = {
-        modelReady: false,
-      };
+      public state: ViewState;
       constructor(props: any, context?: any) {
         super(props, context);
+        const state = MetaData.clientStore.getState();
+        const namespace = model.namespace;
+        this.state = {
+          modelReady: !!state[namespace],
+        };
         model(MetaData.clientStore).then(() => {
           if (!this.state.modelReady) {
             this.setState({modelReady: true});

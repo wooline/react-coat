@@ -52,7 +52,7 @@ export function buildApp(moduleGetter, appName, storeOptions, container, ssrInit
     var store = buildStore(history, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, initData, storeOptions.routerParser);
     var preModuleNames = [appName];
     if (initData) {
-        preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) { return key !== appName && key !== "router"; }));
+        preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) { return key !== appName && initData[key].isModule; }));
     }
     getModuleListByNames(preModuleNames, moduleGetter).then(function (_a) {
         var appModel = _a[0];

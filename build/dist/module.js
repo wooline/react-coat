@@ -74,8 +74,10 @@ function exportView(ComponentView, model, viewName) {
             tslib_1.__extends(Component, _super);
             function Component(props, context) {
                 var _this = _super.call(this, props, context) || this;
+                var state = global_1.MetaData.clientStore.getState();
+                var namespace = model.namespace;
                 _this.state = {
-                    modelReady: false,
+                    modelReady: !!state[namespace],
                 };
                 model(global_1.MetaData.clientStore).then(function () {
                     if (!_this.state.modelReady) {

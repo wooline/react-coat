@@ -48,7 +48,7 @@ export function buildApp(moduleGetter, appName, storeOptions = {}, container = "
     const store = buildStore(history, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, initData, storeOptions.routerParser);
     const preModuleNames = [appName];
     if (initData) {
-        preModuleNames.push(...Object.keys(initData).filter(key => key !== appName && key !== "router"));
+        preModuleNames.push(...Object.keys(initData).filter(key => key !== appName && initData[key].isModule));
     }
     getModuleListByNames(preModuleNames, moduleGetter).then(([appModel]) => {
         appModel.model(store);

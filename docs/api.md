@@ -86,7 +86,7 @@ declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, str
     moduleGetter: M, // 模块的获取方式，同步或是异步
     appName: A, // 入口模块的 moduleName
     storeOptions?: StoreOptions, // store配置参数
-    container?: string, // 容器 dom id
+    container?: string | Element | Function, // 容器 dom id
     ssrInitStoreKey?: string // 如果使用ssr，服务端的脱水数据 key
 ): Store<any, AnyAction>;
 

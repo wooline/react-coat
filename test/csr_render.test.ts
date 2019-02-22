@@ -12,7 +12,7 @@ test("spa success:/videos?search={title:success}", done => {
     const wrapper = mount(app);
     setTimeout(() => {
       expect({html: wrapper.html(), data: store.getState()}).toMatchSnapshot();
-      expect(actions).toEqual(["app/INIT", "app/LOADING", "app/UPDATE", "videos/INIT", "app/LOADING", "@@framework/VIEW_INVALID", "videos/searchList", "videos/LOADING", "videos/UPDATE", "videos/LOADING"]);
+      expect(actions).toEqual(["app/INIT", "app/LOADING", "videos/INIT", "app/UPDATE", "app/LOADING", "@@framework/VIEW_INVALID", "videos/searchList", "videos/LOADING", "videos/UPDATE", "videos/LOADING"]);
       done();
     }, 1000);
   });

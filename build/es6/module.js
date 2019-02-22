@@ -63,8 +63,10 @@ export function exportView(ComponentView, model, viewName) {
         return class Component extends React.PureComponent {
             constructor(props, context) {
                 super(props, context);
+                const state = MetaData.clientStore.getState();
+                const namespace = model.namespace;
                 this.state = {
-                    modelReady: false,
+                    modelReady: !!state[namespace],
                 };
                 model(MetaData.clientStore).then(() => {
                     if (!this.state.modelReady) {
