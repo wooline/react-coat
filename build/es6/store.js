@@ -75,6 +75,9 @@ export function buildStore(storeHistory, reducersMapObject = {}, storeMiddleware
         reactCoat.prevState = rootState;
         const currentState = Object.assign({}, rootState);
         reactCoat.currentState = currentState;
+        if (!currentState.views) {
+            currentState.views = {};
+        }
         Object.keys(reducersMapObject).forEach(namespace => {
             currentState[namespace] = reducersMapObject[namespace](currentState[namespace], action);
             if (namespace === "router" && routerParser && rootState.router !== currentState.router) {

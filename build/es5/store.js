@@ -81,6 +81,9 @@ export function buildStore(storeHistory, reducersMapObject, storeMiddlewares, st
         reactCoat.prevState = rootState;
         var currentState = tslib_1.__assign({}, rootState);
         reactCoat.currentState = currentState;
+        if (!currentState.views) {
+            currentState.views = {};
+        }
         Object.keys(reducersMapObject).forEach(function (namespace) {
             currentState[namespace] = reducersMapObject[namespace](currentState[namespace], action);
             if (namespace === "router" && routerParser && rootState.router !== currentState.router) {

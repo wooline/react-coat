@@ -71,22 +71,27 @@ export function exportView<C extends ComponentType<any>>(ComponentView: C, model
       public state: ViewState = {
         modelReady: false,
       };
-      public componentWillMount() {
+      constructor(props: any, context?: any) {
+        super(props, context);
         model(MetaData.clientStore).then(() => {
-          const currentViews = MetaData.clientStore.reactCoat.currentViews;
-          if (!currentViews[model.namespace]) {
-            currentViews[model.namespace] = {[viewName]: 1};
-          } else {
-            const views = currentViews[model.namespace];
-            if (!views[viewName]) {
-              views[viewName] = 1;
-            } else {
-              views[viewName]++;
-            }
+          if (!this.state.modelReady) {
+            this.setState({modelReady: true});
           }
-          invalidview();
-          this.setState({modelReady: true});
         });
+      }
+      public componentWillMount() {
+        const currentViews = MetaData.clientStore.reactCoat.currentViews;
+        if (!currentViews[model.namespace]) {
+          currentViews[model.namespace] = {[viewName]: 1};
+        } else {
+          const views = currentViews[model.namespace];
+          if (!views[viewName]) {
+            views[viewName] = 1;
+          } else {
+            views[viewName]++;
+          }
+        }
+        invalidview();
       }
       public componentWillUnmount() {
         const currentViews = MetaData.clientStore.reactCoat.currentViews;

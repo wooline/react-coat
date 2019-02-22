@@ -72,33 +72,34 @@ function exportView(ComponentView, model, viewName) {
     if (global_1.MetaData.isBrowser) {
         return (function (_super) {
             tslib_1.__extends(Component, _super);
-            function Component() {
-                var _this = _super !== null && _super.apply(this, arguments) || this;
+            function Component(props, context) {
+                var _this = _super.call(this, props, context) || this;
                 _this.state = {
                     modelReady: false,
                 };
+                model(global_1.MetaData.clientStore).then(function () {
+                    if (!_this.state.modelReady) {
+                        _this.setState({ modelReady: true });
+                    }
+                });
                 return _this;
             }
             Component.prototype.componentWillMount = function () {
-                var _this = this;
-                model(global_1.MetaData.clientStore).then(function () {
-                    var _a;
-                    var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
-                    if (!currentViews[model.namespace]) {
-                        currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+                var _a;
+                var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;
+                if (!currentViews[model.namespace]) {
+                    currentViews[model.namespace] = (_a = {}, _a[viewName] = 1, _a);
+                }
+                else {
+                    var views = currentViews[model.namespace];
+                    if (!views[viewName]) {
+                        views[viewName] = 1;
                     }
                     else {
-                        var views = currentViews[model.namespace];
-                        if (!views[viewName]) {
-                            views[viewName] = 1;
-                        }
-                        else {
-                            views[viewName]++;
-                        }
+                        views[viewName]++;
                     }
-                    store_1.invalidview();
-                    _this.setState({ modelReady: true });
-                });
+                }
+                store_1.invalidview();
             };
             Component.prototype.componentWillUnmount = function () {
                 var currentViews = global_1.MetaData.clientStore.reactCoat.currentViews;

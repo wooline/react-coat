@@ -61,30 +61,32 @@ export function exportView(ComponentView, model, viewName) {
     const Comp = ComponentView;
     if (MetaData.isBrowser) {
         return class Component extends React.PureComponent {
-            constructor() {
-                super(...arguments);
+            constructor(props, context) {
+                super(props, context);
                 this.state = {
                     modelReady: false,
                 };
+                model(MetaData.clientStore).then(() => {
+                    if (!this.state.modelReady) {
+                        this.setState({ modelReady: true });
+                    }
+                });
             }
             componentWillMount() {
-                model(MetaData.clientStore).then(() => {
-                    const currentViews = MetaData.clientStore.reactCoat.currentViews;
-                    if (!currentViews[model.namespace]) {
-                        currentViews[model.namespace] = { [viewName]: 1 };
+                const currentViews = MetaData.clientStore.reactCoat.currentViews;
+                if (!currentViews[model.namespace]) {
+                    currentViews[model.namespace] = { [viewName]: 1 };
+                }
+                else {
+                    const views = currentViews[model.namespace];
+                    if (!views[viewName]) {
+                        views[viewName] = 1;
                     }
                     else {
-                        const views = currentViews[model.namespace];
-                        if (!views[viewName]) {
-                            views[viewName] = 1;
-                        }
-                        else {
-                            views[viewName]++;
-                        }
+                        views[viewName]++;
                     }
-                    invalidview();
-                    this.setState({ modelReady: true });
-                });
+                }
+                invalidview();
             }
             componentWillUnmount() {
                 const currentViews = MetaData.clientStore.reactCoat.currentViews;

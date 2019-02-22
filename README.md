@@ -54,8 +54,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- TOC -->
 
-- [4.1.3 发布](#413-发布)
-- [4.1.2 发布](#412-发布)
+- [4.1.4 发布](#414-发布)
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
 - [安装 react-coat](#安装-react-coat)
@@ -80,20 +79,9 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- /TOC -->
 
-## 4.1.3 发布
+## 4.1.4 发布
 
 本次修订主要 fix react-redux@6.0.1 中，mapStateToProps 被提前触发的 Bug
-
-## 4.1.2 发布
-
-本次修订主要为兼容 react 最新版本，包括：
-
-```
-"react": "~16.8.2",
-"react-dom": "~16.8.2",
-"react-redux": "~6.0.1",
-"connected-react-router": "~6.3.1",
-```
 
 ## 4.0 发布
 
