@@ -1,4 +1,4 @@
-**各路神仙大侠，如果有错误或 Bug 欢迎批评指正，如果觉得还不错请别忘了给个`Star` >\_<**
+**注：本框架实为 React 状态及数据流管理，并不对 React 本身进行任何改进及封装。目前 React Hooks 已经 release，本框架后续将保持 API 不变的前提下，使用 Hooks 替换 Redux 及 React-Redux，方便用户无感知的升级。**
 
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
@@ -73,7 +73,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 - [路由与动态加载](#路由与动态加载)
 - [几个特殊的 Action](#几个特殊的-action)
 - [后续开发](#后续开发)
-  - [react-coat-immutable](#react-coat-immutable)
+  - [react hooks](#react-hooks)
   - [react-shirt](#react-shirt)
   - [学习交流](#学习交流)
 
@@ -582,9 +582,9 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 
 ## 后续开发
 
-### react-coat-immutable
+### react hooks
 
-将 immutable.js 引入本框架
+保持 API 不变，向下兼容的基础上，使用 react hooks 替换 redux、react-redux、connected-react-router
 
 ### react-shirt
 
