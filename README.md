@@ -107,22 +107,21 @@ class ModuleHandlers extends BaseModuleHandlers {
 依赖周边生态库：
 
 ```
-
-"peerDependencies": {
-"@types/node": "^9.0.0 || ^10.0.0",
-"@types/history": "^4.0.0",
-"@types/react": "^16.0.0",
-"@types/react-dom": "^16.0.0",
-"@types/react-redux": "^5.0.0 || ^6.0.0",
-"@types/react-router-dom": "^4.0.0",
-"connected-react-router": "^4.0.0 || ^5.0.0",
-"history": "^4.0.0",
-"react": "^16.0.0",
-"react-dom": "^16.0.0",
-"react-redux": "^5.0.0",
-"react-router-dom": "^4.0.0",
-"redux": "^3.0.0 || ^4.0.0"
-},
+  "peerDependencies": {
+    "@types/node": "^9.0.0 || ^10.0.0  || ^11.0.0",
+    "@types/history": "^4.0.0",
+    "@types/react": "^16.0.0",
+    "@types/react-dom": "^16.0.0",
+    "@types/react-redux": "^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@types/react-router-dom": "^4.0.0",
+    "connected-react-router": "^5.0.0 || ^6.0.0",
+    "history": "^4.0.0",
+    "react": "^16.3.0",
+    "react-dom": "^16.3.0",
+    "react-redux": "^5.0.0 || ^6.0.0",
+    "react-router-dom": "^4.0.0",
+    "redux": "^3.0.0 || ^4.0.0"
+  }
 
 ```
 
