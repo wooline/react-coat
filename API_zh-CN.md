@@ -1,3 +1,5 @@
+[English](./API.md) | **简体中文**
+
 <!-- TOC -->
 
 - [BaseModuleHandlers](#basemodulehandlers)

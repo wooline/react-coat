@@ -64,8 +64,8 @@ class ModuleHandlers extends BaseModuleHandlers {
 - [react-coat 特点](#react-coat-特点)
 - [安装 react-coat](#安装-react-coat)
 - [兼容性](#兼容性)
-- [快速上手及 Demo](#快速上手及-demo)
 - [API 一览](#api-一览)
+- [快速上手及 Demo](#快速上手及-demo)
 - [与 蚂蚁金服 Dva 的异同](#与-蚂蚁金服-dva-的异同)
 - [基本概念与名词](#基本概念与名词)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
@@ -137,6 +137,16 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 本框架依赖于完整版"Promise"，低版本浏览器请自行安装 polyfill，推荐安装@babel/polyfill，该库可模拟 unhandledrejection error，当你需要在客户端捕捉错误并上报时需要。
 
+## API 一览
+
+[查看详细 API 一览](./API_zh-CN.md)
+
+```
+
+BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
+
+```
+
 ## 快速上手及 Demo
 
 本框架上手简单
@@ -156,16 +166,6 @@ class ModuleHandlers extends BaseModuleHandlers {
   > [进阶：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
 
   > [升级：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
-
-## API 一览
-
-[查看详细 API 一览](./API_zh-CN.md)
-
-```
-
-BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
-
-```
 
 ## 与 蚂蚁金服 Dva 的异同
 

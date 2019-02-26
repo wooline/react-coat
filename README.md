@@ -33,8 +33,8 @@ class ModuleHandlers extends BaseModuleHandlers {
     }
   }
   // uncatched error will dispatch @@framework/ERROR action
-  // observed it and send to the server
-  @effect(null) // set null that mean loading state are not needed
+  // observed it and reporting to the server
+  @effect(null) // set null that means loading state are not needed
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {
       // dispatch action
@@ -67,9 +67,9 @@ class ModuleHandlers extends BaseModuleHandlers {
 - [Feature](#feature)
 - [Install](#install)
 - [Compatibility](#compatibility)
-- [Quick Start and Demo](#quick-start-and-demo)
 - [List of API](#list-of-api)
-- [Similarities and Differences with DvaJS](#similarities-and-differences-with-dvajs)
+- [Quick Start and Demo](#quick-start-and-demo)
+- [Similarities and Differences with dvaJS](#similarities-and-differences-with-dvajs)
 - [Basic concepts and nouns](#basic-concepts-and-nouns)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
@@ -131,6 +131,16 @@ If you want to save your mind and have no special requirements for the dependent
 
 Mainstream browser、>=IE9 (with es6 polyfill，recommend @babel/polyfill)
 
+## List of API
+
+[Click to view](./API.md)
+
+```
+
+BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
+
+```
+
 ## Quick Start and Demo
 
 The framework is simple to use.
@@ -151,19 +161,9 @@ The framework is simple to use.
 
   > [SPA+SSR (Server Rendering)](https://github.com/wooline/react-coat-ssr-demo)
 
-## List of API
+## Similarities and Differences with dvaJS
 
-[List of API](./API.md)
-
-```
-
-BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
-
-```
-
-## Similarities and Differences with DvaJS
-
-> The framework is similar to `Dvajs` in concept, and the main differences are as follows:：
+> The framework is similar to `dvajs` in concept, and the main differences are as follows:：
 
 - Introduce the ActionHandler Observer Model to collaborate between more elegant processing modules.
 - Remove redux-saga and replace it with async and await to simplify the code and support `TS Types` more comprehensively.
