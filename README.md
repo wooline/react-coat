@@ -1,14 +1,18 @@
-- 本框架实为 React 状态及数据流管理，并不对 React 本身进行任何改进及封装，也不违反 React FP 的风格和趋势。
-- 本框架遵循 Redux 的理念，但对外暴露的是封装后的糖衣 API，并不强绑定 Redux。后续将保持 API 不变的前提下，使用 React Hooks 替换 Redux 及 React-Redux，方便用户无感知的升级。
-- 本框架使用 Class 的方式组织 Model，支持继承，但不强制使用继承，有的时候继承会增加项目复杂度。
-- 欢迎批评指正，如有错误或 Bug 请反馈，觉得还不错的别忘了给个`Star` >\_<
+**English** | [简体中文](./README_zh-CN.md)
 
-react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
+- The framework is React state and data flow management. It does not improve and encapsulate React itself, nor does it violate the style and trend of React FP.
+- The framework follows the concept of Redux, but it exposes the packaged sugar-coated API and does not bind Redux strongly.Subsequently, with the API unchanged, React Hooks will be used to replace Redux and React-Redux to facilitate user's senseless upgrade.
+- The framework uses Class to organize the Model, supports inheritance, but does not force the use of inheritance, sometimes inheritance will increase the complexity of the project.
+- Criticism and correction are welcome. Feedback if there are any mistakes or Bugs. Don't forget to **give a Star** if you think it's good.\_<
 
-你还在老老实实按照原生 redux 教程维护 store 么？试试简单到几乎不用学习就能上手的 react-coat 吧，代码示例：
+The opening, freedom and prosperity of react ecosphere also lead to tedious development and configuration and confused choice.Reaction-coat abandons some flexibility, replaces some configurations with conventions, solidifies some best practices, and provides developers with a more concise sugar coat.
+
+Are you still honestly maintaining the store according to the native Redux tutorial?Try react-coat, which is so simple that you can do it almost without learning.
+
+For example:
 
 ```JS
-// 仅需一个类，搞定 action、reducer、effect、loading
+//  Only one class, action、reducer、effect、loading
 class ModuleHandlers extends BaseModuleHandlers {
   @reducer
   protected putCurUser(curUser: CurUser): State {
@@ -18,20 +22,22 @@ class ModuleHandlers extends BaseModuleHandlers {
   public putShowLoginPop(showLoginPop: boolean): State {
     return {...this.state, showLoginPop};
   }
-  @effect("login") // 使用自定义loading状态
+  @effect("login") // use loading state
   public async login(payload: {username: string; password: string}) {
     const loginResult = await sessionService.api.login(payload);
     if (!loginResult.error) {
       this.updateState({curUser: loginResult.data});
-      Toast.success("欢迎您回来！");
+      Toast.success("welcome！");
     } else {
       alert(loginResult.error.message);
     }
   }
-  // uncatched错误会触发@@framework/ERROR，监听并发送给后台
-  @effect(null) // 不需要loading，设置为null
+  // uncatched error will dispatch @@framework/ERROR action
+  // observed it and send to the server
+  @effect(null) // set null that mean loading state are not needed
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {
+      // dispatch action
       this.dispatch(this.actions.putShowLoginPop(true));
     } else if (error.code === "301" || error.code === "302") {
       this.dispatch(this.routerActions.replace(error.detail));
@@ -40,7 +46,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       await settingsService.api.reportError(error);
     }
   }
-  // 监听自已的INIT Action，做一些异步数据请求
+  // observed itself's INIT Action and to do any async request
   @effect()
   protected async ["app/INIT"]() {
     const [projectConfig, curUser] = await Promise.all([
@@ -57,15 +63,14 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- TOC -->
 
-- [4.1.5 发布](#415-发布)
-- [4.0 发布](#40-发布)
-- [react-coat 特点](#react-coat-特点)
-- [安装 react-coat](#安装-react-coat)
-- [兼容性](#兼容性)
-- [快速上手及 Demo](#快速上手及-demo)
-- [API 一览](#api-一览)
-- [与 蚂蚁金服 Dva 的异同](#与-蚂蚁金服-dva-的异同)
-- [基本概念与名词](#基本概念与名词)
+- [4.0 Released](#40-released)
+- [Feature](#feature)
+- [Install](#install)
+- [Compatibility](#compatibility)
+- [Quick Start and Demo](#quick-start-and-demo)
+- [List of API](#list-of-api)
+- [Similarities and Differences with DvaJS](#similarities-and-differences-with-dvajs)
+- [Basic concepts and nouns](#basic-concepts-and-nouns)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
   - [ActionHandler](#actionhandler)
@@ -73,38 +78,31 @@ class ModuleHandlers extends BaseModuleHandlers {
   - [ModuleState、RootState](#modulestaterootstate)
   - [Model](#model)
   - [View、Component](#viewcomponent)
-- [路由与动态加载](#路由与动态加载)
-- [几个特殊的 Action](#几个特殊的-action)
-- [后续开发](#后续开发)
-  - [react hooks](#react-hooks)
-  - [react-shirt](#react-shirt)
-  - [学习交流](#学习交流)
+- [Routing and Dynamic Loading](#routing-and-dynamic-loading)
+- [Several special actions](#several-special-actions)
+- [Roadmap](#roadmap)
 
 <!-- /TOC -->
 
-## 4.1.5 发布
+## 4.0 Released
 
-本次修订主要 fix react-redux@6.0.1 中，mapStateToProps 被提前触发的 Bug
+- Remove redux-saga and use es6 async and await to organize and manage effects
+- Support SPA (single page application) and SSR (server side rendering), complete support client and server isomorphism
 
-## 4.0 发布
+## Feature
 
-- 去除 redux-saga，改用原生的 async 和 await 来组织和管理 effect
-- 同时支持 SPA(单页应用)和 SSR(服务器渲染)、完整的支持客户端与服务端同构
+- Integrated react, redux, react-router, history and other related frameworks
+- Sugarcoat for the above frame only, does not change its basic concept, does not have strong invasion and destructiveness.
+- Structured front-end engineering, business modularization, support on-demand loading
+- Support SPA (single page application) and SSR (server side rendering)
+- Using Typescript, better static checking and intelligent prompts
+- Open source micro framework, less than 1000 lines of source code, almost without learning to start
 
-## react-coat 特点
-
-- 集成 react、redux、react-router、history 等相关框架
-- 仅为以上框架的糖衣外套，不改变其基本概念，无强侵入与破坏性
-- 结构化前端工程、业务模块化，支持按需加载
-- 同时支持 SPA(单页应用)和 SSR(服务器渲染)
-- 使用 typescript 严格类型，更好的静态检查与智能提示
-- 开源微框架，源码不到千行，几乎不用学习即可上手
-
-## 安装 react-coat
+## Install
 
     $ npm install react-coat
 
-依赖周边生态库：
+peerDependencies
 
 ```
   "peerDependencies": {
@@ -125,39 +123,37 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 ```
 
-如果你想省心，并且对以上依赖版本没有特别要求，你可以安装"all in 1"的 [react-coat-pkg](https://github.com/wooline/react-coat-pkg)，它将自动包含以上库，并测试通过各版本不冲突：
+If you want to save your mind and have no special requirements for the dependent versions, you can install the [**react-coat-pkg**](https://github.com/wooline/react-coat-pkg) of "all in 1", which will automatically contain the above libraries and the versions pass without conflict after test.
 
     $ npm install react-coat-pkg
 
-## 兼容性
+## Compatibility
 
-各主流浏览器、IE9 或 IE9 以上
+Mainstream browser、>=IE9 (with es6 polyfill，recommend @babel/polyfill)
 
-本框架依赖于完整版"Promise"，低版本浏览器请自行安装 polyfill，推荐安装@babel/polyfill，该库可模拟 unhandledrejection error，当你需要在客户端捕捉错误并上报时需要。
+## Quick Start and Demo
 
-## 快速上手及 Demo
+The framework is simple to use.
 
-本框架上手简单
-
-- 8 个新概念：
+- 8 new concepts：
 
   > Effect、ActionHandler、Module、ModuleState、RootState、Model、View、Component
 
-- 4 步创建：
+- 4 steps to create:
 
   > exportModel(), exportView(), exportModule(), createApp()
 
-- 3 个 Demo，循序渐进:
+- 3 demos, Step by Step:
 
-  > [入手：Helloworld](https://github.com/wooline/react-coat-helloworld)
+  > [Helloworld](https://github.com/wooline/react-coat-helloworld)
 
-  > [进阶：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
+  > [Single Page Application](https://github.com/wooline/react-coat-spa-demo)
 
-  > [升级：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+  > [SPA+SSR (Server Rendering)](https://github.com/wooline/react-coat-ssr-demo)
 
-## API 一览
+## List of API
 
-[查看详细 API 一览](https://github.com/wooline/react-coat/blob/master/docs/api.md)
+[List of API](./API.md)
 
 ```
 
@@ -165,34 +161,34 @@ BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, erro
 
 ```
 
-## 与 蚂蚁金服 Dva 的异同
+## Similarities and Differences with DvaJS
 
-> 本框架与 `Dvajs` 理念略同，主要差异：
+> The framework is similar to `Dvajs` in concept, and the main differences are as follows:：
 
-- 引入 ActionHandler 观察者模式，更优雅的处理模块之间的协作
-- 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
-- 原生使用 typescript 组织和开发，更全面的类型安全
-- 路由组件化、无 Page 概念、更自然的 API 和更简单的组织结构
-- 更大的灵活性和自由度，不强封装脚手架等
-- 支持 SPA(单页应用)和 SSR(服务器渲染)一键切换，
-- 支持模块异步按需加载和同步加载一键切换
+- Introduce the ActionHandler Observer Model to collaborate between more elegant processing modules.
+- Remove redux-saga and replace it with async and await to simplify the code and support `TS Types` more comprehensively.
+- Using Typescript organization and development, more comprehensive type safety.
+- Routing componentization, Page-free concepts, more natural APIs and simpler organizational structure.
+- Greater flexibility and freedom, not strong encapsulation scaffolding, etc.
+- Support SPA (single page application) and SSR (server rendering) quick switching
+- Support module asynchronous on-demand loading and synchronous loading quick switching
 
-> 差异示例：使用强类型组织所有 reducer 和 effect
+> Examples of differences: Organize all reducers and effects with TS types
 
 ```JS
-// Dva中常这样写
+//In dvaJS:
 dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
 
-//本框架中可直接利用ts类型反射和检查:
+//In react-coat:
 this.dispatch(moduleA.actions.query({username:"jimmy"}))
 ```
 
-> 差异示例：State 和 Actions 支持继承
+> Examples of differences: State 和 Actions support inheritance
 
 ```JS
-// Dva不支持继承
+//Cannot extends in dvaJS:
 
-// 本框架可以直接继承
+//In react-coat:
 
 class ModuleHandlers extends ArticleHandlers<State, PhotoResource> {
   constructor() {
@@ -212,18 +208,17 @@ class ModuleHandlers extends ArticleHandlers<State, PhotoResource> {
 
 ```
 
-> 差异示例：在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
+> Examples of differences: In dvaJS, because redux-saga is used, it is assumed that yield put is used to dispatch an action in an effect to invoke another effect. Although yield can wait for the action to be dispatched, it cannot wait for the subsequent effect to be processing completed.
 
 ```JS
-// 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
+// In dvaJS, updateState reducer does not wait for the otherModule/query effect to be processing completed before it is executed.
 effects: {
     * query (){
         yield put({type: 'otherModule/query',payload:1});
         yield put({type: 'updateState',  payload: 2});
     }
 }
-
-// 在本框架中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
+// In react-coat, the awiat function can be used, and updateState waits for the effect processing of other Module/query to be completed before execution.
 class ModuleHandlers {
     async query (){
         await this.dispatch(otherModule.actions.query(1));
@@ -232,10 +227,10 @@ class ModuleHandlers {
 }
 ```
 
-> 差异示例：如果 ModuleA 进行某项操作成功之后，ModuleB 或 ModuleC 都需要 update 自已的 State，由于缺少 action 的观察者模式，所以只能将 ModuleB 或 ModuleC 的刷新动作写死在 ModuleA 中：
+> Examples of differences: If ModuleA succeeds in an operation, either ModuleB or ModuleC will need to update their own State. Because of the lack of observer mode for action, the refresh action of ModuleB or ModuleC can only be hard code in ModuleA.
 
 ```JS
-// 在Dva中需要主动Put调用ModuleB或ModuleC的Action
+// In dvaJS, ModuleA call other Module action by proactively initiated
 effects: {
     * update (){
         ...
@@ -247,66 +242,67 @@ effects: {
     }
 }
 
-// 在本框架中,可使用ActionHandler观察者模式：
+// In react-coat used observer mode：
 class ModuleB {
-    //在ModuleB中兼听"ModuleA/update" action
+    //Observed "ModuleA/update" action in ModuleB
     async ["ModuleA/update"] (){
         ....
     }
 }
 
 class ModuleC {
-    //在ModuleC中兼听"ModuleA/update" action
+    //Observed "ModuleA/update" action in ModuleC
     async ["ModuleA/update"] (){
         ....
     }
 }
 ```
 
-## 基本概念与名词
+## Basic concepts and nouns
 
-前提：假设你已经熟悉了 `React` 和 `Redux`，有过一定的开发经验
+Premise: Suppose you are familiar with React and Redux and have some development experience.
 
 ### Store、Reducer、Action、State、Dispatch
 
-以上概念与 Redux 基本一致，本框架无强侵入性，遵循 react 和 redux 的理念和原则：
+The above concepts are basically the same as Redux. The framework is non-intrusive and follows the concepts and principles of react and redux:
 
-- M 和 V 之间使用单向数据流
-- 整站保持单个 Store
-- Store 为 Immutability 不可变数据
-- 改变 Store 数据，必须通过 Reducer
-- 调用 Reducer 必须通过显式的 dispatch Action
-- Reducer 必须为 pure function 纯函数
-- 有副作用的行为，全部放到 Effect 函数中
-- 每个 reducer 只能修改 Store 下的某个节点，但可以读取所有节点
-- 路由组件化，不使用集中式配置
+- Using one-way data flow between M and V.
+- Keep a single Store for the whole station.
+- Store is Immutability immutable data.
+- To change the store state, you need reducer.
+- Calling Reducer must pass explicit dispatch action.
+- Reducer must be pure function
+- Behaviors with side effects, all in the Effect function
+- Each reducer can only modify a node under Store, but it can read all nodes.
+- Componentized routing without centralized configuration
 
 ### Effect
 
-我们知道在 Redux 中，改变 State 必须通过 dispatch action 以触发 reducer，在 reducer 中返回一个新的 state， reducer 是一个 pure function 纯函数，无任何副作用，只要入参相同，其返回结果也是相同的，并且是同步执行的。而 effect 是相对于 reducer 而言的，与 reducer 一样，它也必须通过 dispatch action 来触发，不同的是：
+We know that in Redux, changing the state must trigger the reducer through dispatch action and return a new State in the reducer. The reducer is a pure function with no side effects. As long as the input parameters are the same, the return results are the same and are executed synchronously.And effect is relative to reducer. Like reducer, it must also be triggered by dispatch action. The difference is:
 
-- 它是一个非纯函数，可以包含副作用，可以无返回，也可以是异步的。
-- 它不能直接改变 State，要改变 State，它必须再次 dispatch action 来触发 reducer
+- It is a non-pure function that can contain side effects. It can be either non-return or asynchronous.
+- It can't change state directly. To change state, it must dispatch action again to trigger reducer.
 
 ### ActionHandler
 
-我们可以简单的认为：在 Redux 中 store.dispatch(action)，可以触发一个注册过的 reducer，看起来似乎是一种观察者模式。推广到以上的 effect 概念，effect 同样是一个观察者。一个 action 被 dispatch，可能触发多个观察者被执行，它们可能是 reducer，也可能是 effect。所以 reducer 和 effect 统称为：**ActionHandler**
+We can simply think that:In Redux, store.dispatch(action) can trigger a registered reducer, which seems to be an observer mode. Extending to the above concept of effect, effect is also an observer.An action is dispatched, which may trigger multiple observers to be executed. They may be reducer or effect. So reducer and effect are collectively called: **ActionHandler**
 
-- 如果有一组 actionHandler 在兼听某一个 action，那它们的执行顺序是什么呢？
+- If a group of actionHandlers are listening to an action at the same time, what is their execution order?
 
-  答：当一个 action 被 dispatch 时，最先执行的是所有的 reducer，它们被依次同步执行。所有的 reducer 执行完毕之后，才开始所有 effect 执行。
+  Answer: When an action is dispatched, all reducers are executed first, and they are executed synchronously in turn. After all reducer have been executed, all effect execution will begin.
 
-- 我想等待这一组 actionHandler 全部执行完毕之后，再下一步操作，可是 effect 是异步执行的，我如何知道所有的 effect 都被处理完毕了？
-  答：本框架改良了 store.dispatch()方法，如果有 effect 兼听此 action，它会返回一个 Promise，所以你可以使用 await store.dispatch({type:"search"}); 来等待所有的 effect 处理完成。
+- I want to wait for this set of actionHandlers to complete the execution, then the next step, but the effect is asynchronous, how do I know that all the effects have been processed?
+
+  Answer: The framework improves the store.dispatch method. If has any effect listening to this action, it will return a Promise, so you can use await store.dispatch({type: search"}) to wait for all effect processing to complete.
 
 ### Module
 
-当我们接到一个复杂的前端项目时，首先要化繁为简，进行功能拆解。通常以**高内聚、低偶合**的原则对其进行模块划分，一个 Module 是相对独立的业务功能的集合，它通常包含一个 Model(用来处理业务逻辑)和一组 View(用来展示数据与交互)，需要注意的是：
+When we receive a complex front-end project, we first need to simplify the complexity and disassemble the functions.It is usually divided into Modules according to the principles of high cohesion and low coupling. A module is a collection of relatively independent business functions. It usually includes a Model ( for processing business logic ) and a group of View ( for render data and interaction ). It should be noted that:
 
-- SPA 应用已经没有了 Page 的边界，不要以 Page 的概念来划分模块
-- 一个 Module 可能包含一组 View，不要以 View 的概念来划分模块
+- SPA applications have no boundaries of Page. Don't divide modules by Page concepts.
+- A Module may contain a set of Views. Don't divide modules by the concept of View
 
-Module 虽然是逻辑上的划分，但我们习惯于用文件夹目录来组织与体现，例如：
+Module is a logical division, but we are used to using folder directories to organize and reflect, for example:
 
 ```
 src
@@ -322,18 +318,18 @@ src
 │       └── app(Module)
 ```
 
-通过以上可以看出，此工程包含 7 大模块 app、userOverview、userTransaction、blacklist、agentOverview、agentBonus、agentSale，虽然 modules 目录下面还有子目录 user、angent，但它们仅属于归类，不属于模块。我们约定：
+As can be seen from the above, the project includes seven modules: app、userOverview、userTransaction、blacklist、agentOverview、agentBonus、agentSale, Although there are subdirectories user and angent under the modules directory, they are only classified and do not belong to modules. We agree that:
 
-- 每个 Module 是一个独立的文件夹
-- Module 本身只有一级，但是可以放在多级的目录中进行归类
-- 每个 Module 文件夹名即为该 Module 名，因为所有 Module 都是平级的，所以需要保证 Module 名不重复，实践中，我们可以通过 Typescript 的 enum 类型来保证，你也可以将所有 Module 都放在一级目录中。
-- 每个 Module 保持一定的独立性，它们可以被同步、异步、按需、动态加载
+- Each Module is a separate folder
+- Module itself has only one level, but it can be categorized in a multilevel directory
+- Each Module folder name is the Module name, because all Modules are level-level, so we need to ensure that the Module name does not repeat, in practice, we can use the Enum type of Typescript to ensure that, you can also put all Modules in the first directory.
+- Each module maintains a certain degree of independence and can be loaded synchronously, asynchronously, on-demand and dynamically.
 
 ### ModuleState、RootState
 
-系统被划分为多个相对独立且平级的 Module，不仅体现在文件夹目录，更体现在 Store 上。每个 Module 负责维护和管理 Store 下的一个节点，我们称之为 **ModuleState**，而整个 Store 我们习惯称之为**RootState**
+The system is divided into several relatively independent and level Modules, not only in the folder directory, but also in Store State. Each Module is responsible for maintaining and managing a node under the Store, which we call **ModuleState**, while the entire Store is customarily called **RootState**.
 
-例如：某个 Store 数据结构:
+For example:A Store data structure:
 
 ```JS
 
@@ -349,29 +345,29 @@ agentSale:{...} // ModuleState
 }
 ```
 
-- 每个 Module 管理并维护 Store 下的某一个节点，我们称之为 ModuleState
-- 每个 ModuleState 都是 Store 的根子节点，并以 Module 名为 Key
-- 每个 Module 只能修改自已的 ModuleState，但是可以读取其它 ModuleState
-- 每个 Module 修改自已的 ModuleState，必须通过 dispatch action 来触发
-- 每个 Module 可以观察者身份，监听其它 Module 发出的 action，来配合修改自已的 ModuleState
+- Each Module manages and maintains a node under the Store, which we call ModuleState.
+- Each ModuleState is the root node of Store and is named Key by Module.
+- Each Module can only update its own ModuleState, but it can read other ModuleState.
+- Each Module update its own Module State and must be triggered by dispatch action.
+- Each Module can observe the identity of the observer and listen for actions emanating from other Modules to cooperate with modifying its own Module State.
 
-你可能注意到上面 Store 的子节点中，第一个名为 router，它并不是一个 ModuleState，而是一个由第三方 Reducer 生成的节点。我们知道 Redux 中允许使用多个 Reducer 来共同维护 Stroe，并提供 combineReducers 方法来合并。由于 ModuleState 的 key 名即为 Module 名，所以：`Module名自然也不能与其它第三方Reducer生成节点重名`。
+You may notice that the first of the Store's sub-nodes above is `router`, which is not a ModuleState, but a node generated by a third-party Reducer.We know that Redux allows multiple Reducers to co-maintain Stroe and provides a combineReducers method for merging. Because the key name of ModuleState is Module name, so:`Module names naturally cannot be renamed with other third-party Reducers`.
 
 ### Model
 
-在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`，此处的 Model 实际上指的是 view model，它主要包含两大功能：
+Within Module, we can further divide it into `a model` (maintenance data) and `a set of views` (render data). Here, the model actually refers to the view model, which mainly contains two functions:
 
-- ModuleState 的定义
-- ModuleState 的维护，前面有介绍过 ActionHandler，实际上就是对 ActionHandler 的编写
+- ModuleStated Definition
+- Maintenance of ModuleState. ActionHandler has been introduced before. There is actually coding for ActionHandler.
 
-> 数据流是从 Model 单向流入 View，所以 Model 是独立的，是不依赖于 View 的。所以理论上即使没有 View，整个程序依然是可以通过命令行来驱动的。
+> Data flow flows from Model into View in one direction, so Model is independent and independent of View.So in theory, even without View, the program can still be driven from the command line.
 
-我们约定：
+We agree that:
 
-- 集中在一个名为**model.js**的文件中编写 Model，并将此文件放在本模块根目录下
-- 集中在一个名为**ModuleHandlers**的 class 中编写 所有的 ActionHandler，每个 reducer、effect 都对应该 class 中的一个方法
+- Focus on coding Model in a file named **model.js**, and put this file under the root directory of this module.
+- Coding all **ActionHandlers** in a class called ModuleHandlers, and each reducer and effect corresponds to a method in that class.
 
-例如，userOverview 模块中的 Model:
+For example, Model in the userOverview module:
 
 ```
 src
@@ -386,7 +382,7 @@ src
 src/modules/user/userOverview/model.ts
 
 ```JS
-// 定义本模块的ModuleState类型
+// Define ModuleState types
 export interface State extends BaseModuleState {
   listSearch: {username:string; page:number; pageSize:number};
   listItems: {uid:string; username:string; age:number}[];
@@ -396,10 +392,10 @@ export interface State extends BaseModuleState {
   };
 }
 
-// 定义本模块所有的ActionHandler
+// Coding Module's ActionHandler
 class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
   constructor() {
-    // 定义本模块ModuleState的初始值
+    // Define ModuleState's initial value
     const initState: State = {
       listSearch: {username:null, page:1, pageSize:20},
       listItems: null,
@@ -411,65 +407,64 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
     super(initState);
   }
 
-  // 一个reducer，用来update本模块的ModuleState
+  // Define a reducer
   @reducer
   public putSearchList({listItems, listSummary}): State {
     return {...this.state, listItems, listSummary};
   }
 
 
-  // 一个effect，使用ajax查询数据，然后dispatch action来触发以上putSearchList
-  // this.dispatch是store.dispatch的引用
-  // searchLoading指明将这个effect的执行状态注入到State.loading.searchLoading中
+  // Define a effect that request data with ajax
+  // And then dispatch a action that tigger putSearchList reducer
+  // this.dispatch is store.dispatch's feference
+  // searchLoading indicates to inject the execution state of this effect into State.loading.searchLoading
   @effect("searchLoading")
   public async searchList(options: {username?:string; page?:number; pageSize?:number} = {}) {
-    // this.state指向本模块的ModuleState
+    // this.state is own ModuleState
     const listSearch = {...this.state.listSearch, ...options};
     const {listItems, listSummary} = await api.searchList(listSearch);
     this.dispatch(this.action.putSearchList({listItems, listSummary}));
   }
 
-  // 一个effect，监听其它Module发出的Action，然后改变自已的ModuleState
-  // 因为是监听其它Module发出的Action，所以它不需要主动触发，使用非public权限对外隐藏
-  // @effect(null)表示不需要跟踪此effect的执行状态
+  // Define a effect that observed another module's action and then update its own ModuleState
+  // Use protected permission because there is no need to actively call
+  // @effect(null) indicates that there is no need to track the execution state
   @effect(null)
   protected async ["@@router/LOCATION_CHANGE]() {
-      // this.rootState指向整个Store
+      // this.rootState is the entire store state
       if(this.rootState.router.location.pathname === "/list"){
-          // 使用await 来等待所有的actionHandler处理完成之后再返回
           await this.dispatch(this.action.searchList());
       }
   }
 }
 ```
 
-需要特别说明的是以上代码的最后一个 ActionHandler：
+In particular, the last ActionHandler of the above code:
 
 ```JS
 protected async ["@@router/LOCATION_CHANGE](){
-    // this.rootState指向整个Store
     if(this.rootState.router.location.pathname === "/list"){
         await this.dispatch(this.action.searchList());
     }
 }
 ```
 
-前面有强调过两点：
+Two points have been emphasized before:
 
-- Module 可以兼听其它 Module 发出的 Action，并配合来完成自已 ModuleState 的更新。
-- Module 只能更新自已的 ModuleState 节点，但是可以读取整个 Store。
+- Module can listen to actions from other modules and cooperate to update its own ModuleState.
+- Module can only update its own ModuleState node, but it can read the entire Store.
 
-另外注意到语句：await this.dispatch(this.action.searchList())：
+Also note the statement：await this.dispatch(this.action.searchList())：
 
-- dispatch 派发一个名为 searchList 的 action 可以理解，可是为什么前面还能 awiat？难道 dispatch action 也是异步的？
+- It's understandable that dispatch dispatches an action called searchList, but why can we still have awiat before? Is dispatch action asynchronous?
 
-  答：dispatch 派发 action 本身是同步的，我们前面讲过 ActionHandler 的概念，一个 action 被 dispatch 时，可能有一组 reducer 或 effect 在兼听它，reducer 是同步处理的，可是 effect 可能是异步处理的，如果你想等所有的兼听都执行完成之后，再做下一步操作，此处就可以使用 await，否则，你可以不使用 await。
+  Answer: The dispatch dispatch action itself is synchronous. We talked about the concept of ActionHandler before. When an action is dispatch, there may be a group of reducers or effects listening to it simultaneously. Reducers are synchronous, but effects may be asynchronous. If you want to wait for all the concurrent listening to be completed, you can use await here. Otherwise, you can not use await.
 
 ### View、Component
 
-在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`。所以一个 Module 中的 view 可能有多个，我们习惯在 Module 根目录下创建一个名为 views 的文件夹：
+Within the Module, we can further divide it into a model ( maintenance data ) and a group of view ( render data ).So there may be more than one view in a Module, and we are used to creating a folder named views under the Module root directory:
 
-例如，userOverview 模块中的 views:
+For example, views in the userOverview module:
 
 ```
 src
@@ -491,12 +486,12 @@ src
 │       │     │
 ```
 
-- 每个 view 其实是一个 React Component 类，所以使用大写字母打头
-- 对于 css 和 img 等附属资源，如果是属于某个 view 私有的，跟随 view 放到一起，如果是多个 view 公有的，提出来放到公共目录中。
-- view 可以嵌套，包括可以给别的 Module 中的 view 嵌套，如果需要给别的 Module 使用，必须在 views/index.ts 中使用`exportView()`导出。
-- 在 view 中通过 dispatch action 的方式触发 Model 中的 ActionHandler，除了可以 dispatch 本模块的 action，也能 dispatch 其它模块的 action
+- Each view is actually a React Component, so start with uppercase letters.
+- For accessory resources such as CSS and img, if they belong to a view private, follow the view together, and if multiple views are public, put them in the public directory.
+- Views can be nested, including views that can be nested in other modules. If you need to use them for other modules, you must use `exportView()` in `views/index.ts` to export.
+- ActionHandler in Model is triggered by dispatch action in view. In addition to dispatch action of this module, it can also dispatch action of other modules.
 
-例如，某个 LoginForm：
+For example: LoginForm：
 
 ```JS
 interface Props extends DispatchProp {
@@ -507,7 +502,7 @@ class Component extends React.PureComponent<Props> {
   public onLogin = (evt: any) => {
     evt.stopPropagation();
     evt.preventDefault();
-    // 发出本模块的action，将触发本model中定义的名为login的ActionHandler
+    // ActionHandler in Model is triggered by dispatch action
     this.props.dispatch(thisModule.actions.login({username: "", password: ""}));
   };
 
@@ -515,7 +510,7 @@ class Component extends React.PureComponent<Props> {
     const {logining} = this.props;
     return (
       <form className="app-Login" onSubmit={this.onLogin}>
-        <h3>请登录</h3>
+        <h3>Login</h3>
         <ul>
           <li><input name="username" placeholder="Username" /></li>
           <li><input name="password" type="password" placeholder="Password" /></li>
@@ -535,21 +530,21 @@ const mapStateToProps = (state: RootState) => {
 export default connect(mapStateToProps)(Component);
 ```
 
-从以上代码可看出，View 就是一个 Component，那 View 和 Component 有区别吗？编码上没有，逻辑上是有的：
+As you can see from the above code, View is a Component. Is there any difference between View and Component? No coding, logically there are:
 
-- view 体现的是 ModuleState 的视图展现，更偏重于表现特定的具体的业务逻辑，所以它的 props 一般是直接用 mapStateToProps connect 到 store。
-- component 体现的是一个没有业务逻辑上下文的纯组件，它的 props 一般来源于父级传递。
-- component 通常是公共的，而 view 通常非公用
+- View embodies the view presentation of ModuleState, which emphasizes the specific business logic, so its props are usually connected directly to the store with mapStateToProps connect.
+- Component represents a pure component without business logic context, and its props are generally derived from parent delivery.
+- Components are usually public, while views are not.
 
-## 路由与动态加载
+## Routing and Dynamic Loading
 
-react-coat 赞同 react-router 4 `组件化路由`的理念，路由即组件，嵌套路由好比嵌套 component 一样简单，无需繁琐的配置。如：
+React-coat agrees with the idea of react-router 4 modular routing. Routing is a component. Nested routing is as simple as nested component, without complicated configuration. Such as: `PhotosView` and `VideosView` come from Photos module and Videos module respectively. They are loaded asynchronously on demand.
 
 ```JS
-import {BottomNav} from "modules/navs/views"; // BottomNav 来自于 navs 模块
-import LoginForm from "./LoginForm"; // LoginForm 来自于本模块
+import {BottomNav} from "modules/navs/views"; // BottomNav come from another module
+import LoginForm from "./LoginForm"; // LoginForm come from this module
 
-// PhotosView 和 VideosView 分别来自于 photos 模块和 videos 模块，使用异步按需加载
+// PhotosView an VideosView come from other module
 const PhotosView = loadView(moduleGetter, ModuleNames.photos, "Main");
 const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 
@@ -563,45 +558,31 @@ const VideosView = loadView(moduleGetter, ModuleNames.videos, "Main");
 </div>
 ```
 
-以上某个 view 中以不同加载方式嵌套了多个其它 view：
+Several other views are nested in one of the above views in different loading modes:
 
-- BottomNav 是一个名为 navs 模块下的 view，直接嵌套意味着它会同步加载到本 view 中
-- LoginForm 是本模块下的一个 view，所以直接用相对路径引用，同样直接嵌套，意味着它会同步加载
-- PhotosView 和 VideosView 来自于别的模块，但是是通过 loadView()获取和 Route 嵌套，意味着它们会异步按需加载，当然你也可以直接 import {PhotosView} from "modules/photos/views"来同步按需加载
+- BottomNav is a view of navsModule. Direct import means that it will be loaded into this view synchronously.
+- LoginForm is a view of this module, so it is directly import by relative paths and nested directly, which means it will load synchronously.
+- PhotosView and VideosView come from other modules, but they are acquired through loadView() and nested by Route, which means that they will load asynchronously on demand. Of course, you can also `import {PhotosView} from "modules/photos/views"` to load on demand synchronously.
 
-所以本框架对于模块和视图的加载灵活简单，无需复杂配置与修改：
+Therefore, the framework is flexible and simple to load modules and views without complex configuration and modification.
 
-- 不管是同步、异步、按：需、动态加载，要改变的仅仅是加载方式，而不用修改被加载的模块。模块本身并不需要事先拟定自已将被谁、以何种方式加载，保证的模块的独立性。
-- 前面讲过，view 是 model 数据的展现，那嵌入其它模块 view 时，是否还要导入其它模块的 model 呢？无需，框架将自动导入。
+- Whether synchronous, asynchronous, on-demand, dynamic loading, only to change the loading mode, without modifying the module.The module itself does not need to formulate in advance who and how it will be loaded to ensure the independence of the module.
+- As mentioned earlier, view is the presentation of model data. When embedding other module views, do you need to import other module models? No, the framework will be imported automatically.
 
-## 几个特殊的 Action
+## Several special actions
 
-- **@@router/LOCATION_CHANGE**：本框架集成了 connected-react-router，路由发生变化时将触发此 action，你可以在 moduleHandlers 中监听此 action
-- **@@framework/VIEW_INVALID**：当路由发生变化时，或者任何一个 view 发生 Mount 或 Unmount 行为时将触发此 action，它比@@router/LOCATION_CHANGE 更准确反映视图的更新
-- **@@framework/ERROR**：本框架 catch 了未处理的 error，发生 error 时将自动派发此 action，你可以在 moduleHandlers 中监听此 action
-- **module/INIT**：模块初次载入时会触发此 action，来向 store 注入初始 moduleState
-- **module/LOADING**：触发加载进度时会触发此 action，比如 @effect(login)
+- **@@router/LOCATION_CHANGE**：The framework integrates connected-react-router, which dispatches the action when the routing changes, and you can listen the action in moduleHandlers.
+- **@@framework/VIEW_INVALID**：This action is dispatched when the routing changes, or when any view has Mount or Unmount behavior, which more accurately reflects view updates than @@router/LOCATION_CHANGE
+- **@@framework/ERROR**: The framework catches uncatched error and automatically dispatches this action when errors occur. You can monitor this action in moduleHandlers
+- **module/INIT**：This action is dispatched when the module is first loaded to inject the initial moduleState into the store
+- **module/LOADING**：This action is dispatched when loading progress is triggered, such as @effect("login")
 
-## 后续开发
+## Roadmap
 
-### react hooks
+- react hooks
 
-保持 API 不变，向下兼容的基础上，使用 react hooks 替换 redux、react-redux、connected-react-router
+with the API unchanged, React Hooks will be used to replace Redux and React-Redux to facilitate user's senseless upgrade.
 
-### react-shirt
+- react-shirt
 
-用 mobx 替换 redux。本框架不仅是一个 redux 框架，也是一种数据流模型、API 风格、代码组织架构，所以理论上不仅仅适应于 redux。react-shirt 是计划中的后续开发项目，使用 mobx 替换 redux，并将部分 Immutability 不可变数据变为可变数据，敬请期待。
-
-### 学习交流
-
-- 使用本框架必须使用 typescript 吗？
-
-  答：推荐使用 typescript，可以做到静态检查与智能提示，但也可以直接使用原生 JS
-
-- [讨论留言专用贴](https://github.com/wooline/react-coat/issues/1)
-- Email：[wooline@qq.com](wooline@qq.com)
-- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
-
-  ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
-
-  ### 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
+with the same API, Mobx will be used to replace Redux.
