@@ -1,13 +1,18 @@
-**English** | [简体中文](./README_zh-CN.md)
+[**Github: react-coat**](https://github.com/wooline/react-coat)
 
-- The framework is React state and data flow management. It does not improve and encapsulate React itself, nor does it violate the style and trend of React FP.
-- The framework follows the concept of Redux, but it exposes the packaged sugar-coated API and does not bind Redux strongly.Subsequently, with the API unchanged, React Hooks will be used to replace Redux and React-Redux to facilitate user's senseless upgrade.
-- The framework uses Class to organize the Model, supports inheritance, but does not force the use of inheritance, sometimes inheritance will increase the complexity of the project.
-- Criticism and correction are welcome. Feedback if there are any mistakes or Bugs. Don't forget to **give a Star** if you think it's good.\_<
+## 4.0 Released
 
-The opening, freedom and prosperity of react ecosphere also lead to tedious development and configuration and confused choice.Reaction-coat abandons some flexibility, replaces some configurations with conventions, solidifies some best practices, and provides developers with a more concise sugar coat.
+- Remove redux-saga and use es6 async and await to organize and manage effects
+- Support SPA (single page application) and SSR (server side rendering), complete support client and server isomorphism
 
-Are you still honestly maintaining the store according to the native Redux tutorial?Try react-coat, which is so simple that you can do it almost without learning.
+## Feature
+
+- Integrated react, redux, react-router, history and other related frameworks
+- Sugarcoat for the above frame only, does not change its basic concept, does not have strong invasion and destructiveness.
+- Structured front-end engineering, business modularization, support on-demand loading
+- Support SPA (single page application) and SSR (server side rendering)
+- Using Typescript, better static checking and intelligent prompts
+- Open source micro framework, less than 1000 lines of source code, almost without learning to start
 
 For example:
 
@@ -33,7 +38,7 @@ class ModuleHandlers extends BaseModuleHandlers {
     }
   }
   // uncatched error will dispatch @@framework/ERROR action
-  // subscribe it and reporting to the server
+  // observed it and reporting to the server
   @effect(null) // set null that means loading state are not needed
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {
@@ -46,7 +51,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       await settingsService.api.reportError(error);
     }
   }
-  // subscribe itself's INIT Action and to do any async request
+  // observed itself's INIT Action and to do any async request
   @effect()
   protected async ["app/INIT"]() {
     const [projectConfig, curUser] = await Promise.all([
@@ -61,85 +66,13 @@ class ModuleHandlers extends BaseModuleHandlers {
 }
 ```
 
-<!-- TOC -->
-
-- [4.0 Released](#40-released)
-- [Feature](#feature)
-- [Install](#install)
-- [Compatibility](#compatibility)
-- [List of API](#list-of-api)
-- [Quick Start and Demo](#quick-start-and-demo)
-- [Similarities and Differences with dvaJS](#similarities-and-differences-with-dvajs)
-- [Basic concepts and nouns](#basic-concepts-and-nouns)
-  - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
-  - [Effect](#effect)
-  - [ActionHandler](#actionhandler)
-  - [Module](#module)
-  - [ModuleState、RootState](#modulestaterootstate)
-  - [Model](#model)
-  - [View、Component](#viewcomponent)
-- [Routing and Dynamic Loading](#routing-and-dynamic-loading)
-- [Several special actions](#several-special-actions)
-- [Roadmap](#roadmap)
-
-<!-- /TOC -->
-
-## 4.0 Released
-
-- Remove redux-saga and use es6 async and await to organize and manage effects
-- Support SPA (single page application) and SSR (server side rendering), complete support client and server isomorphism
-
-## Feature
-
-- Integrated react, redux, react-router, history and other related frameworks
-- Sugarcoat for the above frame only, does not change its basic concept, does not have strong invasion and destructiveness.
-- Structured front-end engineering, business modularization, support on-demand loading
-- Support SPA (single page application) and SSR (server side rendering)
-- Using Typescript, better static checking and intelligent prompts
-- Open source micro framework, less than 1000 lines of source code, almost without learning to start
-
 ## Install
 
     $ npm install react-coat
 
-peerDependencies
-
-```
-  "peerDependencies": {
-    "@types/node": "^9.0.0 || ^10.0.0  || ^11.0.0",
-    "@types/history": "^4.0.0",
-    "@types/react": "^16.0.0",
-    "@types/react-dom": "^16.0.0",
-    "@types/react-redux": "^5.0.0 || ^6.0.0 || ^7.0.0",
-    "@types/react-router-dom": "^4.0.0",
-    "connected-react-router": "^5.0.0 || ^6.0.0",
-    "history": "^4.0.0",
-    "react": "^16.3.0",
-    "react-dom": "^16.3.0",
-    "react-redux": "^5.0.0 || ^6.0.0",
-    "react-router-dom": "^4.0.0",
-    "redux": "^3.0.0 || ^4.0.0"
-  }
-
-```
-
-If you want to save your mind and have no special requirements for the dependent versions, you can install the [**react-coat-pkg**](https://github.com/wooline/react-coat-pkg) of "all in 1", which will automatically contain the above libraries and the versions pass without conflict after test.
-
-    $ npm install react-coat-pkg
-
 ## Compatibility
 
 Mainstream browser、>=IE9 (with es6 polyfill，recommend @babel/polyfill)
-
-## List of API
-
-[Click to view](./API.md)
-
-```
-
-BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, errorAction, exportModel, exportModule, exportView, GetModule, INIT, LoadingState, loadModel, loadView, LOCATION_CHANGE, logger, ModelStore, Module, ModuleGetter, reducer, renderApp, RootState, RouterParser, setLoading, setLoadingDepthTime
-
-```
 
 ## Quick Start and Demo
 
@@ -244,14 +177,14 @@ effects: {
 
 // In react-coat used observer mode：
 class ModuleB {
-    //subscribed "ModuleA/update" action in ModuleB
+    //Observed "ModuleA/update" action in ModuleB
     async ["ModuleA/update"] (){
         ....
     }
 }
 
 class ModuleC {
-    //subscribed "ModuleA/update" action in ModuleC
+    //Observed "ModuleA/update" action in ModuleC
     async ["ModuleA/update"] (){
         ....
     }
@@ -287,13 +220,13 @@ We know that in Redux, changing the state must trigger the reducer through dispa
 
 We can simply think that:In Redux, store.dispatch(action) can trigger a registered reducer, which seems to be an observer mode. Extending to the above concept of effect, effect is also an observer.An action is dispatched, which may trigger multiple observers to be executed. They may be reducer or effect. So reducer and effect are collectively called: **ActionHandler**
 
-- If a group of actionHandlers are subscribe to an action at the same time, what is their execution order?
+- If a group of actionHandlers are listening to an action at the same time, what is their execution order?
 
   Answer: When an action is dispatched, all reducers are executed first, and they are executed synchronously in turn. After all reducer have been executed, all effect execution will begin.
 
 - I want to wait for this set of actionHandlers to complete the execution, then the next step, but the effect is asynchronous, how do I know that all the effects have been processed?
 
-  Answer: The framework improves the store.dispatch method. If has any effect subscribe to this action, it will return a Promise, so you can use await store.dispatch({type: search"}) to wait for all effect processing to complete.
+  Answer: The framework improves the store.dispatch method. If has any effect listening to this action, it will return a Promise, so you can use await store.dispatch({type: search"}) to wait for all effect processing to complete.
 
 ### Module
 
@@ -349,7 +282,7 @@ agentSale:{...} // ModuleState
 - Each ModuleState is the root node of Store and is named Key by Module.
 - Each Module can only update its own ModuleState, but it can read other ModuleState.
 - Each Module update its own Module State and must be triggered by dispatch action.
-- Each Module can be the identity of the observer and subscribe for actions emanating from other Modules to cooperate with modifying its own Module State.
+- Each Module can observe the identity of the observer and listen for actions emanating from other Modules to cooperate with modifying its own Module State.
 
 You may notice that the first of the Store's sub-nodes above is `router`, which is not a ModuleState, but a node generated by a third-party Reducer.We know that Redux allows multiple Reducers to co-maintain Stroe and provides a combineReducers method for merging. Because the key name of ModuleState is Module name, so:`Module names naturally cannot be renamed with other third-party Reducers`.
 
@@ -426,7 +359,7 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState, ModuleNames> {
     this.dispatch(this.action.putSearchList({listItems, listSummary}));
   }
 
-  // Define a effect that subscribed another module's action and then update its own ModuleState
+  // Define a effect that observed another module's action and then update its own ModuleState
   // Use protected permission because there is no need to actively call
   // @effect(null) indicates that there is no need to track the execution state
   @effect(null)
@@ -451,14 +384,14 @@ protected async ["@@router/LOCATION_CHANGE](){
 
 Two points have been emphasized before:
 
-- Module can subscribe to actions from other modules and cooperate to update its own ModuleState.
+- Module can listen to actions from other modules and cooperate to update its own ModuleState.
 - Module can only update its own ModuleState node, but it can read the entire Store.
 
 Also note the statement：await this.dispatch(this.action.searchList())：
 
 - It's understandable that dispatch dispatches an action called searchList, but why can we still have awiat before? Is dispatch action asynchronous?
 
-  Answer: The dispatch dispatch action itself is synchronous. We talked about the concept of ActionHandler before. When an action is dispatch, there may be a group of reducers or effects subscribe to it simultaneously. Reducers are synchronous, but effects may be asynchronous. If you want to wait for all the concurrent subscriber to be completed, you can use await here. Otherwise, you can not use await.
+  Answer: The dispatch dispatch action itself is synchronous. We talked about the concept of ActionHandler before. When an action is dispatch, there may be a group of reducers or effects listening to it simultaneously. Reducers are synchronous, but effects may be asynchronous. If you want to wait for all the concurrent listening to be completed, you can use await here. Otherwise, you can not use await.
 
 ### View、Component
 
@@ -571,7 +504,7 @@ Therefore, the framework is flexible and simple to load modules and views withou
 
 ## Several special actions
 
-- **@@router/LOCATION_CHANGE**：The framework integrates connected-react-router, which dispatches the action when the routing changes, and you can subscribe the action in moduleHandlers.
+- **@@router/LOCATION_CHANGE**：The framework integrates connected-react-router, which dispatches the action when the routing changes, and you can listen the action in moduleHandlers.
 - **@@framework/VIEW_INVALID**：This action is dispatched when the routing changes, or when any view has Mount or Unmount behavior, which more accurately reflects view updates than @@router/LOCATION_CHANGE
 - **@@framework/ERROR**: The framework catches uncatched error and automatically dispatches this action when errors occur. You can monitor this action in moduleHandlers
 - **module/INIT**：This action is dispatched when the module is first loaded to inject the initial moduleState into the store

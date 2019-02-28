@@ -50,9 +50,9 @@ declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState,
         type: string;
         playload?: any;
     };
-    protected INIT(payload: S): S; // a Reducer Handler，observed action: moduleName/INIT
-    protected UPDATE(payload: S): S; // a Reducer Handler，observed action: moduleName/UPDATE
-    protected LOADING(payload: { // a Reducer Handler，observed action: moduleName/LOADING
+    protected INIT(payload: S): S; // a Reducer Handler，subscribed action: moduleName/INIT
+    protected UPDATE(payload: S): S; // a Reducer Handler，subscribed action: moduleName/UPDATE
+    protected LOADING(payload: { // a Reducer Handler，subscribed action: moduleName/LOADING
         [group: string]: string;
     }): S;
     // a shortcut method，Alias: this.dispatch(this.callThisAction(this.UPDATE, {...this.state, ...payload}));
@@ -61,7 +61,7 @@ declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState,
 ```
 
 - state / currentState and rootState / currentRootState Difference:
-  Because of the use of the action handler observer-listener mode, an action may be listened to by multiple actionHandlers, whose execution is sequential, and when all reducer executions are completed, the combine will form a total rootState to update the store.If you need to get the latest state after other handler update in one actionHandler in time during the update process, please use currentState or currentRootState.
+  Because of the use of the action handler observer-subscriber mode, an action may be subscribed to by multiple actionHandlers, whose execution is sequential, and when all reducer executions are completed, the combine will form a total rootState to update the store.If you need to get the latest state after other handler update in one actionHandler in time during the update process, please use currentState or currentRootState.
 
 ### BaseModuleState
 
@@ -128,7 +128,7 @@ declare function effect(
 
 ### ERROR
 
-A constant defined. When the framework catches uncatched errors, it will dispatching the Error action, which can be listened to in the module to focus on handling certain errors, such as reporting to the server.
+A constant defined. When the framework catches uncatched errors, it will dispatching the Error action, which can be subscribed to in the module to focus on handling certain errors, such as reporting to the server.
 
 ```JS
 declare const ERROR = "@@framework/ERROR";
@@ -175,7 +175,7 @@ declare function exportView<C extends ComponentType<any>>(
 
 ### INIT
 
-A constant defined, when module initialized, dispatches a module/INIT action that can listen to and respond.
+A constant defined, when module initialized, dispatches a module/INIT action that can subscribe to and respond.
 
 ```JS
 declare const INIT = "INIT";
@@ -221,7 +221,7 @@ declare function loadView<MG extends ModuleGetter, M extends Extract<keyof MG, s
 
 ### LOCATION_CHANGE
 
-A constant defined，when the URL changes, will dispatch an @@router/LOCATION_CHANGE action, can listen to this action, and respond to it.
+A constant defined，when the URL changes, will dispatch an @@router/LOCATION_CHANGE action, can subscribe to this action, and respond to it.
 
 ```JS
 declare const LOCATION_CHANGE = "@@router/LOCATION_CHANGE";
@@ -317,7 +317,7 @@ A constant defined，when the view needs to be updated, a VIEW_INVALID action is
 export declare const VIEW_INVALID = "@@framework/VIEW_INVALID";
 ```
 
-When it's necessary to listen for views to be updated, it's more reasonable to listen for this action than LOCATION_CHANGE.
+When it's necessary to subscribe for views to be updated, it's more reasonable to subscribe for this action than LOCATION_CHANGE.
 The action is dispatched on:
 
 - A task cycle after @@router/LOCATION_CHANGE is dispatched
