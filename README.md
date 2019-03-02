@@ -65,11 +65,11 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 - [4.0 Released](#40-released)
 - [Feature](#feature)
+- [why not dvaJS](#why-not-dvajs)
 - [Install](#install)
 - [Compatibility](#compatibility)
 - [List of API](#list-of-api)
 - [Quick Start and Demo](#quick-start-and-demo)
-- [Similarities and Differences with dvaJS](#similarities-and-differences-with-dvajs)
 - [Basic concepts and nouns](#basic-concepts-and-nouns)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
@@ -97,6 +97,18 @@ class ModuleHandlers extends BaseModuleHandlers {
 - Support SPA (single page application) and SSR (server side rendering)
 - Using Typescript, better static checking and intelligent prompts
 - Open source micro framework, less than 1000 lines of source code, almost without learning to start
+
+## why not dvaJS
+
+> The framework is similar to `dvajs` in concept, and the main differences are as follows:：
+
+- Introduce the ActionHandler Observer Model to collaborate between more elegant processing modules.
+- Remove redux-saga and replace it with async and await to simplify the code and support `TS Types` more comprehensively.
+- Using Typescript organization and development, more comprehensive type safety.
+- Module division by business function, Page-free concepts.
+- Routing componentization and not configuration, simpler organizational structure.
+- Support SPA (single page application) and SSR (server rendering) isomorphic.
+- [**`More differences with dvaJS`**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
 
 ## Install
 
@@ -160,103 +172,6 @@ The framework is simple to use.
   > [Single Page Application](https://github.com/wooline/react-coat-spa-demo)
 
   > [SPA+SSR (Server Rendering)](https://github.com/wooline/react-coat-ssr-demo)
-
-## Similarities and Differences with dvaJS
-
-> The framework is similar to `dvajs` in concept, and the main differences are as follows:：
-
-- Introduce the ActionHandler Observer Model to collaborate between more elegant processing modules.
-- Remove redux-saga and replace it with async and await to simplify the code and support `TS Types` more comprehensively.
-- Using Typescript organization and development, more comprehensive type safety.
-- Routing componentization, Page-free concepts, more natural APIs and simpler organizational structure.
-- Greater flexibility and freedom, not strong encapsulation scaffolding, etc.
-- Support SPA (single page application) and SSR (server rendering) quick switching
-- Support module asynchronous on-demand loading and synchronous loading quick switching
-
-> Examples of differences: Organize all reducers and effects with TS types
-
-```JS
-//In dvaJS:
-dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
-
-//In react-coat:
-this.dispatch(moduleA.actions.query({username:"jimmy"}))
-```
-
-> Examples of differences: State 和 Actions support inheritance
-
-```JS
-//Cannot extends in dvaJS:
-
-//In react-coat:
-
-class ModuleHandlers extends ArticleHandlers<State, PhotoResource> {
-  constructor() {
-    super({}, {api});
-  }
-  @effect()
-  protected async parseRouter() {
-    const result = await super.parseRouter();
-    this.dispatch(this.actions.putRouteData({showComment: true}));
-    return result;
-  }
-  @effect()
-  protected async [ModuleNames.photos + "/INIT"]() {
-    await super.onInit();
-  }
-}
-
-```
-
-> Examples of differences: In dvaJS, because redux-saga is used, it is assumed that yield put is used to dispatch an action in an effect to invoke another effect. Although yield can wait for the action to be dispatched, it cannot wait for the subsequent effect to be processing completed.
-
-```JS
-// In dvaJS, updateState reducer does not wait for the otherModule/query effect to be processing completed before it is executed.
-effects: {
-    * query (){
-        yield put({type: 'otherModule/query',payload:1});
-        yield put({type: 'updateState',  payload: 2});
-    }
-}
-// In react-coat, the awiat function can be used, and updateState waits for the effect processing of other Module/query to be completed before execution.
-class ModuleHandlers {
-    async query (){
-        await this.dispatch(otherModule.actions.query(1));
-        this.dispatch(thisModule.actions.updateState(2));
-    }
-}
-```
-
-> Examples of differences: If ModuleA succeeds in an operation, either ModuleB or ModuleC will need to update their own State. Because of the lack of observer mode for action, the refresh action of ModuleB or ModuleC can only be hard code in ModuleA.
-
-```JS
-// In dvaJS, ModuleA call other Module action by proactively initiated
-effects: {
-    * update (){
-        ...
-        if(callbackModuleName==="ModuleB"){
-          yield put({type: 'ModuleB/update',payload:1});
-        }else if(callbackModuleName==="ModuleC"){
-          yield put({type: 'ModuleC/update',payload:1});
-        }
-    }
-}
-
-// In react-coat used observer mode：
-class ModuleB {
-    //subscribed "ModuleA/update" action in ModuleB
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-
-class ModuleC {
-    //subscribed "ModuleA/update" action in ModuleC
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-```
 
 ## Basic concepts and nouns
 

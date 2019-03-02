@@ -14,9 +14,15 @@ React-coat：我野蛮生长我怕谁？
 Dva：...
 ```
 
+- DvaJS：[项目地址](https://github.com/dvajs/dva)
+- React-coat：[项目地址](https://github.com/wooline/react-coat)
+
+react-coat 只不过是我的个人项目，之前一直在公司内部使用，今年 1 月升级到 4.0 后感觉较稳定了才开始向外界发布。互联网是一个神奇的世界，人人都有机会发表自已的观点，正所谓初生蚂蚁不畏象，希望 Dva 不要介意，毕竟两者不是一个量级，没有吐槽哪有进步嘛。
+
+撇开其它因素，仅从一个用户的角度对两者进行横向对比。如果存在对 DvaJS 理解错误的地方，请网友们指正。
+
 <!-- TOC -->
 
-- [概况](#概况)
 - [开发语言](#开发语言)
 - [集成框架](#集成框架)
 - [Page vs Module](#page-vs-module)
@@ -27,21 +33,9 @@ Dva：...
 - [Model 结构](#model-结构)
 - [Action 派发](#action-派发)
 - [React-coat 独有的 ActionHandler 机制](#react-coat-独有的-actionhandler-机制)
+- [总结](#总结)
 
 <!-- /TOC -->
-
-## 概况
-
-失去了时空回沧
-
-- DvaJS：[项目地址](https://github.com/dvajs/dva)
-- React-coat：[项目地址](https://github.com/wooline/react-coat)
-
-dvaJS 由阿里系团队维护，可以说是根红苗正的正规军，而 react-coat 只不过是我的个人项目，之前一直在公司内部使用，今年 1 月升级到 4.0 后感觉较稳定了才开始向外界发布。互联网是一个神奇的世界，人人都有机会发表自已的观点，正所谓初生蚂蚁不畏象，希望 Dva 不要介意，毕竟两者不是一个量级，没有吐槽哪有进步嘛。
-
-首先撇开其它因素，仅从一个用户的角度对两者进行横向对比。如果存在对 DvaJS 理解错误的地方，请网友们指正。
-
----
 
 ## 开发语言
 
@@ -146,8 +140,8 @@ src
 
 几个质疑：
 
-- 单页 SPA，什么是 Page? 它的边界在哪里？它和其它 Component 有什么区别？目前看起来是个 Page，说不一定有一天它被嵌套在别的 Component 里，也说不定有一天它被 Modal 弹窗弹出。
-- 某些 Component 可能被多个 Page 引用，那应当放在哪个 Page 下面呢？
+- 单页 SPA，什么是 Page? 它的边界在哪里？它和其它 ContainerComponent 有什么区别？目前看起来是个 Page，说不一定有一天它被嵌套在别的 Component 里，也说不定有一天它被 Modal 弹窗弹出。
+- 某些 ContainerComponent 可能被多个 Page 引用，那应当放在哪个 Page 下面呢？
 - 为什么路由要和 Page 强关联？Page 切换必须要用路由加载吗？不用路由行不行？
 - model 跟着 Page 走？model 是抽象的数据模型，UI 依赖 Model 而不是 Model 依赖 UI，一个 model 可能被多个 Page 共用。
 
@@ -294,9 +288,8 @@ React-coat 这样做的好处：
 
 - 代码分割只做代码分割，不参和路由的事，因为模块也不一定是非得用路由的方式来加载。
 - 路由只做路由的事情，不参和代码分割的事，因为模块也不一定非得做代码分割。
-- 一个 Module 整体打包成一个 bundle，包括 model 和 views，更清晰合理。
+- 一个 Module 整体打包成一个 bundle，包括 model 和 views，不至于太碎片。
 - 载入 View 会自动 载入与该 View 相关的所有 Model，无需手工配置。
-- 一个 module(包含 model 和一组 view)做一个 split code，打包成一个 bundle，更合理。
 - 将路由逻辑分散在各 View 内部并对外隐藏细节，更符合一切皆组件的理念。
 
 **结论：**
@@ -329,7 +322,8 @@ Dva 动态加载 model 时，破坏了 Redux 的基本原则，而 React-coat �
 
 ## Model 定义
 
-Dva 中的 Model 跟着 Page 走，比较散，可以随意定义多个，但是又有某些限制，如：
+- Dva 中的 Model 跟着 Page 走，而 Page 又跟着路由走。
+- Dva 中的 Model 比较散，可以随意定义多个，也可以随意 load，于是 umi 又出了某些限制，如：
 
 ```
 model 分两类，一是全局 model，二是页面 model。全局 model 存于 /src/models/ 目录，所有页面都可引用；页面 model 不能被其他页面所引用。
@@ -337,16 +331,21 @@ global model 全量载入，page model 在 production 时按需载入，在 deve
 
 ```
 
+一个字：**饶**
+
 React-coat 中 model 跟着业务功能走，一个 module 只能有一个 model：
 
 ```
 在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`
 集中在一个名为model.js的文件中编写 Model，并将此文件放在本模块根目录下
+model状态可以被所有Module读取，但只能被自已Module修改，(切合combineReducers理念)
 ```
 
 **结论：**
 
-- react-coat 中的 model 更简单和纯粹，不与 UI 和路由挂勾。
+- React-coat 中的 model 更简单和纯粹，不与 UI 和路由挂勾。
+- Dva 中路由按需加载 Page 时还需要手工配置加载 Model。
+- React-coat 中按需加载 View 时会自动加载相应的 Model。
 
 ---
 
@@ -509,3 +508,17 @@ class ModuleC {
 **结论**
 
 React-coat 中因为引入了 ActionHandler 机制，对于复杂流程和跨 model 协作比 Dva 简单清晰得多。
+
+---
+
+## 总结
+
+好了，先对比这些点，其它想起来再补充吧！百闻不如一试，只有切身用过这两个框架才能感受它们之间的差别。所以还是请君一试吧：
+
+```JS
+git clone https://github.com/wooline/react-coat-helloworld.git
+npm install
+npm start
+```
+
+当然，Dva 也有很多优秀的地方，因为它已经广为人知，所以就不在此讼赞它了。另外如果文中对 Dva 理解有误，欢迎批评指正，也欢迎您发表客观公正的评价。

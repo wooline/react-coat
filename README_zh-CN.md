@@ -59,14 +59,13 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- TOC -->
 
-- [4.1.5 发布](#415-发布)
 - [4.0 发布](#40-发布)
 - [react-coat 特点](#react-coat-特点)
+- [why not dvaJS](#why-not-dvajs)
 - [安装 react-coat](#安装-react-coat)
 - [兼容性](#兼容性)
 - [API 一览](#api-一览)
 - [快速上手及 Demo](#快速上手及-demo)
-- [与 蚂蚁金服 Dva 的异同](#与-蚂蚁金服-dva-的异同)
 - [基本概念与名词](#基本概念与名词)
   - [Store、Reducer、Action、State、Dispatch](#storereduceractionstatedispatch)
   - [Effect](#effect)
@@ -84,10 +83,6 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 <!-- /TOC -->
 
-## 4.1.5 发布
-
-本次修订主要 fix react-redux@6.0.1 中，mapStateToProps 被提前触发的 Bug
-
 ## 4.0 发布
 
 - 去除 redux-saga，改用原生的 async 和 await 来组织和管理 effect
@@ -101,6 +96,18 @@ class ModuleHandlers extends BaseModuleHandlers {
 - 同时支持 SPA(单页应用)和 SSR(服务器渲染)
 - 使用 typescript 严格类型，更好的静态检查与智能提示
 - 开源微框架，源码不到千行，几乎不用学习即可上手
+
+## why not dvaJS
+
+如果你用过 dvaJS，本框架与其理念略同，主要差异：
+
+- 引入 ActionHandler 观察者模式，更优雅的处理模块之间的协作
+- 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
+- 原生使用 typescript 组织和开发，更全面的类型安全
+- 按业务功能划分 Module，无 Page 概念。
+- 路由组件化，无需集中配置，更清晰灵活。
+- 支持 SPA(单页应用)和 SSR(服务器渲染)同构
+- [**`更多差异请看这里`**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
 
 ## 安装 react-coat
 
@@ -166,104 +173,6 @@ BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, erro
   > [进阶：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
 
   > [升级：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
-
-## 与 蚂蚁金服 Dva 的异同
-
-> 本框架与 `Dvajs` 理念略同，主要差异：
-
-- 引入 ActionHandler 观察者模式，更优雅的处理模块之间的协作
-- 去除 redux-saga，使用 async、await 替代，简化代码的同时对 TS 类型支持更全面
-- 原生使用 typescript 组织和开发，更全面的类型安全
-- 路由组件化、无 Page 概念、更自然的 API 和更简单的组织结构
-- 更大的灵活性和自由度，不强封装脚手架等
-- 支持 SPA(单页应用)和 SSR(服务器渲染)一键切换，
-- 支持模块异步按需加载和同步加载一键切换
-
-> 差异示例：使用强类型组织所有 reducer 和 effect
-
-```JS
-// Dva中常这样写
-dispatch({ type: 'moduleA/query', payload:{username:"jimmy"}} })
-
-//本框架中可直接利用ts类型反射和检查:
-this.dispatch(moduleA.actions.query({username:"jimmy"}))
-```
-
-> 差异示例：State 和 Actions 支持继承
-
-```JS
-// Dva不支持继承
-
-// 本框架可以直接继承
-
-class ModuleHandlers extends ArticleHandlers<State, PhotoResource> {
-  constructor() {
-    super({}, {api});
-  }
-  @effect()
-  protected async parseRouter() {
-    const result = await super.parseRouter();
-    this.dispatch(this.actions.putRouteData({showComment: true}));
-    return result;
-  }
-  @effect()
-  protected async [ModuleNames.photos + "/INIT"]() {
-    await super.onInit();
-  }
-}
-
-```
-
-> 差异示例：在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
-
-```JS
-// 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
-effects: {
-    * query (){
-        yield put({type: 'otherModule/query',payload:1});
-        yield put({type: 'updateState',  payload: 2});
-    }
-}
-
-// 在本框架中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
-class ModuleHandlers {
-    async query (){
-        await this.dispatch(otherModule.actions.query(1));
-        this.dispatch(thisModule.actions.updateState(2));
-    }
-}
-```
-
-> 差异示例：如果 ModuleA 进行某项操作成功之后，ModuleB 或 ModuleC 都需要 update 自已的 State，由于缺少 action 的观察者模式，所以只能将 ModuleB 或 ModuleC 的刷新动作写死在 ModuleA 中：
-
-```JS
-// 在Dva中需要主动Put调用ModuleB或ModuleC的Action
-effects: {
-    * update (){
-        ...
-        if(callbackModuleName==="ModuleB"){
-          yield put({type: 'ModuleB/update',payload:1});
-        }else if(callbackModuleName==="ModuleC"){
-          yield put({type: 'ModuleC/update',payload:1});
-        }
-    }
-}
-
-// 在本框架中,可使用ActionHandler观察者模式：
-class ModuleB {
-    //在ModuleB中兼听"ModuleA/update" action
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-
-class ModuleC {
-    //在ModuleC中兼听"ModuleA/update" action
-    async ["ModuleA/update"] (){
-        ....
-    }
-}
-```
 
 ## 基本概念与名词
 
