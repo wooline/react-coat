@@ -107,7 +107,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 - 按业务功能划分 Module，无 Page 概念。
 - 路由组件化，无需集中配置，更清晰灵活。
 - 支持 SPA(单页应用)和 SSR(服务器渲染)同构
-- [**`更多差异请看这里`**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
+- [**更多深度对比请看这里**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
 
 ## 安装 react-coat
 

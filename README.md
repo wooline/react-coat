@@ -108,7 +108,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 - Module division by business function, Page-free concepts.
 - Routing componentization and not configuration, simpler organizational structure.
 - Support SPA (single page application) and SSR (server rendering) isomorphic.
-- [**`More differences with dvaJS`**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
+- [**More differences with dvaJS**](https://github.com/wooline/react-coat/blob/master/docs/vs-dva.md)
 
 ## Install
 

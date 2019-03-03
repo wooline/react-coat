@@ -33,7 +33,7 @@ react-coat 只不过是我的个人项目，之前一直在公司内部使用，
 - [Model 结构](#model-结构)
 - [Action 派发](#action-派发)
 - [React-coat 独有的 ActionHandler 机制](#react-coat-独有的-actionhandler-机制)
-- [总结](#总结)
+- [结语](#结语)
 
 <!-- /TOC -->
 
@@ -140,10 +140,10 @@ src
 
 几个质疑：
 
-- 单页 SPA，什么是 Page? 它的边界在哪里？它和其它 ContainerComponent 有什么区别？目前看起来是个 Page，说不一定有一天它被嵌套在别的 Component 里，也说不定有一天它被 Modal 弹窗弹出。
-- 某些 ContainerComponent 可能被多个 Page 引用，那应当放在哪个 Page 下面呢？
+- 单页 SPA，什么是 Page? 它的边界在哪里？它和其它 Component 有什么区别？目前看起来是个 Page，说不一定有一天它被嵌套在别的 Component 里，也说不定有一天它被 Modal 弹窗弹出。
+- 某些 Component 可能被多个 Page 引用，那应当放在哪个 Page 下面呢？
 - 为什么路由要和 Page 强关联？Page 切换必须要用路由加载吗？不用路由行不行？
-- model 跟着 Page 走？model 是抽象的数据模型，UI 依赖 Model 而不是 Model 依赖 UI，一个 model 可能被多个 Page 共用。
+- model 跟着 Page 走？model 是抽象的数据，它与 UI 可能是一对多的关系。
 
 **来看看 React-coat**
 
@@ -511,7 +511,7 @@ React-coat 中因为引入了 ActionHandler 机制，对于复杂流程和跨 mo
 
 ---
 
-## 总结
+## 结语
 
 好了，先对比这些点，其它想起来再补充吧！百闻不如一试，只有切身用过这两个框架才能感受它们之间的差别。所以还是请君一试吧：
 
@@ -521,4 +521,4 @@ npm install
 npm start
 ```
 
-当然，Dva 也有很多优秀的地方，因为它已经广为人知，所以就不在此讼赞它了。另外如果文中对 Dva 理解有误，欢迎批评指正，也欢迎您发表客观公正的评价。
+当然，Dva 也有很多优秀的地方，因为它已经广为人知，所以就不在此复述了。另外如果文中对 Dva 理解有误，欢迎批评指正。
