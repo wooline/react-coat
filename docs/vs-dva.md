@@ -19,7 +19,7 @@ Dva：...
 
 react-coat 只不过是我的个人项目，之前一直在公司内部使用，今年 1 月升级到 4.0 后感觉较稳定了才开始向外界发布。互联网是一个神奇的世界，人人都有机会发表自已的观点，正所谓初生蚂蚁不畏象，希望 Dva 不要介意，毕竟两者不是一个量级，没有吐槽哪有进步嘛。
 
-撇开其它因素，仅从一个用户的角度对两者进行横向对比。如果存在对 DvaJS 理解错误的地方，请网友们指正。
+dva 是个团队项目，而且上线已经好几年了，从文档、稳定性、测试充分度、辅助工具等方面都自然比 react-coat 强。本文撇开其它因素，仅从设计思路和用户使用 API 上寻找槽点。如果存在对 DvaJS 理解错误的地方，请网友们指正。
 
 <!-- TOC -->
 
@@ -103,7 +103,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 - Dva 集成 Redux-Saga，使用 yield 处理异步
 - React-Coat 使用原生 async + await
 
-Redux-Saga 有很多优点，比如方便测试、方便 Fork 模拟多线程事务等。缺点也很明显：
+Redux-Saga 有很多优点，比如方便测试、方便 Fork 多任务、 多个 Effects 之间 race 等。但缺点也很明显：
 
 - 概念太多、容易把问题复杂化
 - 使用 yield 时，不能返回 typescript 类型
@@ -454,18 +454,18 @@ ActionHandler 机制对于复杂业务流程、跨 model 之间的协作有着�
   }
   ```
 
-- 在 Dva 中，因为使用 redux-saga，假设在一个 effect 中使用 yield put 派发一个 action，以此来调用另一个 effect，虽然 yield 可以等待 action 的派发，但并不能等待后续 effect 的处理：
+- 在 Dva 中，要同步处理 effect 必须使用 put.resolve，有点抽象，在 React-coat 中直接 await 更直观和容易理解。
 
 ```JS
-// 在Dva中,updateState并不会等待otherModule/query的effect处理完毕了才执行
+// 在 Dva 中处理同步 effect
 effects: {
     * query (){
-        yield put({type: 'otherModule/query',payload:1});
+        yield put.resolve({type: 'otherModule/query',payload:1});
         yield put({type: 'updateState',  payload: 2});
     }
 }
 
-// 在React-coat中,可使用awiat关键字， updateState 会等待otherModule/query的effect处理完毕了才执行
+// 在React-coat中,可使用 awiat
 class ModuleHandlers {
     async query (){
         await this.dispatch(otherModule.actions.query(1));
