@@ -10,7 +10,7 @@ react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选�
 你还在老老实实按照原生 redux 教程维护 store 么？试试简单到几乎不用学习就能上手的 react-coat 吧，代码示例：
 
 ```JS
-// 仅需一个类，搞定 action、reducer、effect、loading
+// 仅需一个类，搞定 action、dispatch、reducer、effect、loading
 class ModuleHandlers extends BaseModuleHandlers {
   @reducer
   protected putCurUser(curUser: CurUser): State {
@@ -24,6 +24,7 @@ class ModuleHandlers extends BaseModuleHandlers {
   public async login(payload: {username: string; password: string}) {
     const loginResult = await sessionService.api.login(payload);
     if (!loginResult.error) {
+      // this.updateState()是this.dispatch(this.actions.updateState(...))的快捷
       this.updateState({curUser: loginResult.data});
       Toast.success("欢迎您回来！");
     } else {
@@ -34,8 +35,10 @@ class ModuleHandlers extends BaseModuleHandlers {
   @effect(null) // 不需要loading，设置为null
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {
+      // dispatch Action：putShowLoginPop
       this.dispatch(this.actions.putShowLoginPop(true));
     } else if (error.code === "301" || error.code === "302") {
+      // dispatch Action：路由跳转
       this.dispatch(this.routerActions.replace(error.detail));
     } else {
       Toast.fail(error.message);
@@ -49,6 +52,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       settingsService.api.getSettings(),
       sessionService.api.getCurUser()
     ]);
+    // this.updateState()是this.dispatch(this.actions.updateState(...))的快捷
     this.updateState({
       projectConfig,
       curUser,

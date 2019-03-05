@@ -26,6 +26,7 @@ class ModuleHandlers extends BaseModuleHandlers {
   public async login(payload: {username: string; password: string}) {
     const loginResult = await sessionService.api.login(payload);
     if (!loginResult.error) {
+      // this.updateState() is a shortcut to this.dispatch(this.actions.updateState())
       this.updateState({curUser: loginResult.data});
       Toast.success("welcome！");
     } else {
@@ -37,9 +38,10 @@ class ModuleHandlers extends BaseModuleHandlers {
   @effect(null) // set null that means loading state are not needed
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {
-      // dispatch action
+      // dispatch action: putShowLoginPop
       this.dispatch(this.actions.putShowLoginPop(true));
     } else if (error.code === "301" || error.code === "302") {
+      // dispatch action: router change
       this.dispatch(this.routerActions.replace(error.detail));
     } else {
       Toast.fail(error.message);
@@ -53,6 +55,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       settingsService.api.getSettings(),
       sessionService.api.getCurUser()
     ]);
+    // this.updateState() is a shortcut to this.dispatch(this.actions.updateState())
     this.updateState({
       projectConfig,
       curUser,
