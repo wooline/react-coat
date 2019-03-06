@@ -28,7 +28,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       this.updateState({curUser: loginResult.data});
       Toast.success("欢迎您回来！");
     } else {
-      alert(loginResult.error.message);
+      Toast.fail(loginResult.error.message);
     }
   }
   // uncatched错误会触发@@framework/ERROR，监听并发送给后台
@@ -172,11 +172,11 @@ BaseModuleHandlers, BaseModuleState, buildApp, delayPromise, effect, ERROR, erro
 
 - 3 个 Demo，循序渐进:
 
-  > [入手：Helloworld](https://github.com/wooline/react-coat-helloworld)
+  > [SPA(单页) Helloworld](https://github.com/wooline/react-coat-helloworld)
 
-  > [进阶：SPA(单页应用)](https://github.com/wooline/react-coat-spa-demo)
+  > [SPA(单页) 进一步优化](https://github.com/wooline/react-coat-spa-demo)
 
-  > [升级：SPA(单页应用)+SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+  > [SPA(单页) + SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
 
 ## 基本概念与名词
 

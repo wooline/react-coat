@@ -30,7 +30,7 @@ class ModuleHandlers extends BaseModuleHandlers {
       this.updateState({curUser: loginResult.data});
       Toast.success("welcome！");
     } else {
-      alert(loginResult.error.message);
+      Toast.fail(loginResult.error.message);
     }
   }
   // uncatched error will dispatch @@framework/ERROR action
@@ -170,11 +170,11 @@ The framework is simple to use.
 
 - 3 demos, Step by Step:
 
-  > [Helloworld](https://github.com/wooline/react-coat-helloworld)
+  > [Single Page Helloworld](https://github.com/wooline/react-coat-helloworld)
 
-  > [Single Page Application](https://github.com/wooline/react-coat-spa-demo)
+  > [Single Page Optimization](https://github.com/wooline/react-coat-spa-demo)
 
-  > [SPA+SSR (Server Rendering)](https://github.com/wooline/react-coat-ssr-demo)
+  > [SPA+SSR (Server-Side Rendering)](https://github.com/wooline/react-coat-ssr-demo)
 
 ## Basic concepts and nouns
 
