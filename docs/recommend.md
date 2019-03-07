@@ -1,5 +1,3 @@
-![如花](https://github.com/wooline/react-coat/blob/master/docs/imgs/d.jpg)
-
 这年头，Redux 状态管理框架满天飞，前几天在网上闲逛偶然又发现 Rematch、Mirror、Smox、Xredux，都用了一下，发现都是套瓷娃娃，大同小异，拿几个比较历害的来说：
 
 - [DvaJS](https://github.com/dvajs/dva) Github Stars `12000+`
@@ -25,6 +23,8 @@ model({
 ![无聊](https://github.com/wooline/react-coat/blob/master/docs/imgs/c.gif)
 
 审美疲劳了？H 起来，给大家推荐一款小鲜肉：`React-coat`：
+
+[https://github.com/wooline/react-coat](https://github.com/wooline/react-coat)
 
 ```JS
 class ModuleHandlers extends BaseModuleHandlers {
@@ -77,7 +77,7 @@ Demo：[SPA(单页) + SSR(服务器渲染)](https://github.com/wooline/react-coa
 - 而且**SSR 在开发时也可以享受：“热更新”**
 - 还支持 SPA(单页) + SSR(服务器渲染)一键切换。
 
-  > 打开项目根下的./package.json，在"devServer"项中，将 ssr 设为 true 将启用服务器渲染，设为 false 仅使用浏览器渲染
+> 打开项目根下的./package.json，在"devServer"项中，将 ssr 设为 true 将启用服务器渲染，设为 false 仅使用浏览器渲染
 
 ![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
