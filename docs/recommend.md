@@ -1,4 +1,4 @@
-吐血推荐，这绝对是最骚气的 Redux 状态管理框架，没有之一
+![如花](https://github.com/wooline/react-coat/blob/master/docs/imgs/d.jpg)
 
 这年头，Redux 状态管理框架满天飞，前几天在网上闲逛偶然又发现 Rematch、Mirror、Smox、Xredux，都用了一下，发现都是套瓷娃娃，大同小异，拿几个比较历害的来说：
 
@@ -22,9 +22,9 @@ model({
 })
 ```
 
-![无聊](https://github.com/wooline/react-coat/blob/master/docs/imgs/c.png)
+![无聊](https://github.com/wooline/react-coat/blob/master/docs/imgs/c.gif)
 
-审美疲劳了？H 起来，给大家推荐一款小鲜肉：React-coat：
+审美疲劳了？H 起来，给大家推荐一款小鲜肉：`React-coat`：
 
 ```JS
 class ModuleHandlers extends BaseModuleHandlers {
@@ -44,7 +44,7 @@ class ModuleHandlers extends BaseModuleHandlers {
 
 spring 风格？ng 风格？就问你骚气不骚气？😂
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.png)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
 
 可能你会说，用 Class 呀，不喜欢，我喜欢 FP 风格。我想说，这是状态管理框架非 React UI 框架，不要为了流行 FP 就皆 FP，就象当年 JS 流行面向对象编程，把面向过程说成洪水猛兽。
 
@@ -70,7 +70,7 @@ Store State 结构的类型反射：
 
 就问你骚气不骚气？😂
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.png)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
 
 ## 支持单页 SPA 和服务器渲染 SSR 同构
 
@@ -83,7 +83,7 @@ Store State 结构的类型反射：
 
 就问你骚气不骚气？😂
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.png)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
 
 ## 强大而便捷的 Dispatch Action
 
@@ -129,7 +129,7 @@ await this.dispatch(moduleA.actions.increment(2));
 
 就问你骚气不骚气？😂
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.png)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
 
 ## 彻底的模块化
 
@@ -190,7 +190,7 @@ render() {
 
 就问你骚气不骚气？😂
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.png)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
 
 ## 跨模块的调用与协作
 
