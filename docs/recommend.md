@@ -42,9 +42,9 @@ class ModuleHandlers extends BaseModuleHandlers {
 }
 ```
 
-spring 风格？ng 风格？就问你骚气不骚气？😂
+spring 风格？ng 风格？
 
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
 可能你会说，用 Class 呀，不喜欢，我喜欢 FP 风格。我想说，这是状态管理框架非 React UI 框架，不要为了流行 FP 就皆 FP，就象当年 JS 流行面向对象编程，把面向过程说成洪水猛兽。
 
@@ -68,22 +68,18 @@ Store State 结构的类型反射：
 
 ![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/7.png)
 
-就问你骚气不骚气？😂
-
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
 ## 支持单页 SPA 和服务器渲染 SSR 同构
 
-[SPA(单页) + SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
+Demo：[SPA(单页) + SSR(服务器渲染)](https://github.com/wooline/react-coat-ssr-demo)
 
-- **SSR 在开发时也可以享受：“热更新”**
+- 而且**SSR 在开发时也可以享受：“热更新”**
 - 还支持 SPA(单页) + SSR(服务器渲染)一键切换。
 
   > 打开项目根下的./package.json，在"devServer"项中，将 ssr 设为 true 将启用服务器渲染，设为 false 仅使用浏览器渲染
 
-就问你骚气不骚气？😂
-
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
 ## 强大而便捷的 Dispatch Action
 
@@ -125,11 +121,9 @@ await this.dispatch(moduleA.actions.increment(2));
   this.dispatch(thisModule.actions.updateState(2));
   ```
 
-- React-coat 的独有的杀手锏：action 名称和参数的类型反射和智能提示、public private 权限的控制，让我感受到了什么才叫真正的封装。试想下如果多人同时并行开发多个模块，你还需要为你的模块写一大篇 API 说明文档么？
+- React-coat 的独有的杀手锏：action 名称和参数的类型反射和智能提示、public private 权限的控制，让你感受什么才叫真正的封装。试想下如果多人同时并行开发多个模块，你还需要为你的模块写一大篇 API 说明文档么？
 
-就问你骚气不骚气？😂
-
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
 ## 彻底的模块化
 
@@ -188,9 +182,7 @@ render() {
 
 更多差异还是请看：[与 DvaJS 风云对话，是 DvaJS 挑战者？还是又一轮子？](https://juejin.im/post/5c7c84a951882546c54c1910)
 
-就问你骚气不骚气？😂
-
-![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif)
+![好](https://github.com/wooline/react-coat/blob/master/docs/imgs/e.gif) 就问你骚气不骚气？😂
 
 ## 跨模块的调用与协作
 
@@ -228,5 +220,5 @@ class ModuleC {
 
 React-coat 主动调用、事件广播两种模式都支持，二手都要抓，二手都要硬。就问你骚气不骚气？😂
 
-![完毕](https://github.com/wooline/react-coat/blob/master/docs/imgs/a.png)
-![完毕](https://github.com/wooline/react-coat/blob/master/docs/imgs/b.png)
+![完毕](https://github.com/wooline/react-coat/blob/master/docs/imgs/a.gif)
+![完毕](https://github.com/wooline/react-coat/blob/master/docs/imgs/b.gif)
