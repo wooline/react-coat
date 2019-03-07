@@ -1,9 +1,9 @@
 **English** | [简体中文](./README_zh-CN.md)
 
 - The framework is React state and data flow management. It does not improve and encapsulate React itself, nor does it violate the style and trend of React FP.
-- The framework follows the concept of Redux, but it exposes the packaged sugar-coated API and does not bind Redux strongly.Subsequently, with the API unchanged, React Hooks will be used to replace Redux and React-Redux to facilitate user's senseless upgrade.
 - The framework uses Class to organize the Model, supports inheritance, but does not force the use of inheritance, sometimes inheritance will increase the complexity of the project.
 - Criticism and correction are welcome. Feedback if there are any mistakes or Bugs. Don't forget to **give a Star** if you think it's good.\_<
+- Why? Article Recommendation：[https://zhuanlan.zhihu.com/p/58583636](https://zhuanlan.zhihu.com/p/58583636)
 
 The opening, freedom and prosperity of react ecosphere also lead to tedious development and configuration and confused choice.Reaction-coat abandons some flexibility, replaces some configurations with conventions, solidifies some best practices, and provides developers with a more concise sugar coat.
 
