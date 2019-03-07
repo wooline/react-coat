@@ -64,6 +64,8 @@ class ModuleHandlers extends BaseModuleHandlers {
 }
 ```
 
+![TS Types](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
+
 <!-- TOC -->
 
 - [4.0 Released](#40-released)

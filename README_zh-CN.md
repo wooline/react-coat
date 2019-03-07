@@ -3,7 +3,7 @@
 - 本框架实为 React 状态及数据流管理，并不对 React 本身进行任何改进及封装，也不违反 React FP 的风格和趋势。
 - 本框架使用 Class 的方式组织 Model，支持继承，但不强制使用继承，有的时候继承会增加项目复杂度。
 - 欢迎批评指正，如有错误或 Bug 请反馈，觉得还不错的别忘了给个`Star` >\_<
-- why?知乎金文：[https://zhuanlan.zhihu.com/p/58583636](https://zhuanlan.zhihu.com/p/58583636)
+- why?请看知乎金文：[https://zhuanlan.zhihu.com/p/58583636](https://zhuanlan.zhihu.com/p/58583636)
 
 react 生态圈的开放、自由、繁荣，也导致开发配置繁琐、选择迷茫。react-coat 放弃某些灵活性、以`约定替代某些配置`，固化某些`最佳实践`方案，从而提供给开发者一个更简洁的糖衣外套。
 
@@ -60,6 +60,8 @@ class ModuleHandlers extends BaseModuleHandlers {
   }
 }
 ```
+
+![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
 
 <!-- TOC -->
 
