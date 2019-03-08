@@ -61,7 +61,11 @@ class ModuleHandlers extends BaseModuleHandlers {
 }
 ```
 
+Typescript 类型反射：
+
 ![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
+
+---
 
 <!-- TOC -->
 

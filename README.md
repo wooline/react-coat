@@ -64,7 +64,11 @@ class ModuleHandlers extends BaseModuleHandlers {
 }
 ```
 
+Static checking and intelligent prompts with Typescript：
+
 ![TS Types](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
+
+---
 
 <!-- TOC -->
 
