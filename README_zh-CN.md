@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/wooline/react-coat.svg?branch=master)](https://travis-ci.org/wooline/react-coat)
+[![TypeScript](https://badges.frapsoft.com/typescript/version/typescript-next.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
+[![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
+
 [English](./README.md) | **简体中文**
 
 - 本框架实为 React 状态及数据流管理，并不对 React 本身进行任何改进及封装，也不违反 React FP 的风格和趋势。

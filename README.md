@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/wooline/react-coat.svg?branch=master)](https://travis-ci.org/wooline/react-coat)
+[![TypeScript](https://badges.frapsoft.com/typescript/version/typescript-next.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
+[![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
+
 **English** | [简体中文](./README_zh-CN.md)
 
 - The framework is React state and data flow management. It does not improve and encapsulate React itself, nor does it violate the style and trend of React FP.
