@@ -2,11 +2,15 @@
 [![TypeScript](https://badges.frapsoft.com/typescript/version/typescript-next.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 
-### I'm not going to maintain this framework anymore, because there's a better alternative, This is another project for me and can be seen as the next version of the this framework.
+### I'm not going to maintain this framework anymore, because there's a better alternative, This is another project for me and can be seen as the next version of the this framework:
 
 # [medux](https://github.com/wooline/medux)
 
----
+
+
+
+
+
 
 
 **English** | [简体中文](./README_zh-CN.md)
