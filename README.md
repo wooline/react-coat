@@ -7,6 +7,7 @@
 # [Welcome to Medux](https://github.com/wooline/medux)
 
 
+This package is already outdated! Welcome to [medux](https://github.com/wooline/medux)
 
 **English** | [简体中文](./README_zh-CN.md)
 
