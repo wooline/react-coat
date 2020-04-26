@@ -2,10 +2,12 @@
 [![TypeScript](https://badges.frapsoft.com/typescript/version/typescript-next.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 
-### 此框架不再维护了，因为有了更好的替代品，它是我的另一个项目，可以视为这个框架的下一个版本，欢迎使用：
+### 此框架不再维护了，因为有了更好的替代品，那是我的另一个项目，可以视为这个框架的下一个版本：
 
-# [medux](https://github.com/wooline/medux)
+# [欢迎使用：medux](https://github.com/wooline/medux)
 
+
+本框架已经过时了，请使用[medux](https://github.com/wooline/medux)
 
 [English](./README.md) | **简体中文**
 
